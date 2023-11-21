@@ -360,7 +360,7 @@ class Env(gym.Env, metaclass=ABCMeta):
                     routing_actions.append(route_contr.choose_route(self))
 
             self.k.vehicle.choose_routes(routing_ids, routing_actions)
-
+            #print(rl_actions)
             self.apply_rl_actions(rl_actions)
 
             self.additional_command()
@@ -389,10 +389,11 @@ class Env(gym.Env, metaclass=ABCMeta):
 
         # collect information of the state of the network based on the
         # environment class used
-        self.state = np.asarray(states).T
+        #self.state = np.asarray(states).T	THIS LINE
 
         # collect observation new state associated with action
-        next_observation = np.copy(states)
+        #next_observation = np.copy(states)	THIS LINE
+        next_observation = states	# THIS LINE
 
         # test if the environment should terminate due to a collision or the
         # time horizon being met
@@ -405,10 +406,10 @@ class Env(gym.Env, metaclass=ABCMeta):
 
         # compute the reward
         if self.env_params.clip_actions:
-            rl_clipped = self.clip_actions(rl_actions)
-            reward = self.compute_reward(rl_clipped, fail=crash)
+            #rl_clipped = self.clip_actions(rl_actions)
+            reward = self.compute_reward(rl_actions, state=next_observation, fail=crash)	# THIS LINE
         else:
-            reward = self.compute_reward(rl_actions, fail=crash)
+            reward = self.compute_reward(rl_actions, state=next_observation, fail=crash)	# THIS LINE
 
         return next_observation, reward, done, infos
 
@@ -546,10 +547,10 @@ class Env(gym.Env, metaclass=ABCMeta):
 
         # collect information of the state of the network based on the
         # environment class used
-        self.state = np.asarray(states).T
+        #self.state = np.asarray(states).T	# THIS LINE
 
         # observation associated with the reset (no warm-up steps)
-        observation = np.copy(states)
+        #observation = np.copy(states)	# THIS LINE
 
         # perform (optional) warm-up steps before training
         for _ in range(self.env_params.warmup_steps):
@@ -557,8 +558,9 @@ class Env(gym.Env, metaclass=ABCMeta):
 
         # render a frame
         self.render(reset=True)
-
-        return observation
+        
+        return states
+        #return observation	THIS LINE
 
     def additional_command(self):
         """Additional commands that may be performed by the step method."""
@@ -611,9 +613,9 @@ class Env(gym.Env, metaclass=ABCMeta):
         # ignore if no actions are issued
         if rl_actions is None:
             return
-
-        rl_clipped = self.clip_actions(rl_actions)
-        self._apply_rl_actions(rl_clipped)
+        
+        #rl_clipped = self.clip_actions(rl_actions) # this line
+        self._apply_rl_actions(rl_actions) # this line
 
     @abstractmethod
     def _apply_rl_actions(self, rl_actions):
@@ -662,7 +664,7 @@ class Env(gym.Env, metaclass=ABCMeta):
         """
         pass
 
-    def compute_reward(self, rl_actions, **kwargs):
+    def compute_reward(self, rl_actions, state=None, **kwargs):	# THIS LINE
         """Reward function for the RL agent(s).
 
         MUST BE implemented in new environments.

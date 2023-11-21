@@ -847,7 +847,7 @@ class SumoCarFollowingParams:
 
     def __init__(
             self,
-            speed_mode='right_of_way',
+            speed_mode='aggressive', # THIS LINE
             accel=2.6,
             decel=4.5,
             sigma=0.5,
@@ -1245,7 +1245,7 @@ class InFlows:
             "departLane": depart_lane,
             "departSpeed": depart_speed,
             "begin": begin,
-            "end": end
+            "end": end,
         }
         new_inflow.update(kwargs)
 

@@ -148,6 +148,7 @@ class Experiment:
 
                 # Compute the velocity speeds and cumulative returns.
                 veh_ids = self.env.k.vehicle.get_ids()
+                print(veh_ids)
                 vel.append(np.mean(self.env.k.vehicle.get_speed(veh_ids)))
                 ret += reward
 
