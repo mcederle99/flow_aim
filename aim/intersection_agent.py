@@ -7,15 +7,15 @@ import numpy as np
 from memory import ReplayBuffer
 from networks import Actor, Critic
 
-torch.cuda.set_device(2)
-device = torch.device('cuda:2')
+#torch.cuda.set_device(2)
+device = torch.device('cuda')
 
 class AIM():
     
     def __init__(self, actor_model, actor_optimizer, critic_model_1, critic_optimizer_1,
                  critic_model_2, critic_optimizer_2, explore_noise, warmup, replay_buffer,
                  batch_size, update_interval, update_interval_actor, target_update_interval,
-                 soft_update_tau, n_steps, gamma, model_name, evaluate):
+                 soft_update_tau, n_steps, gamma, model_name):
         
         self.actor_model = actor_model
         self.actor_optimizer = actor_optimizer
@@ -45,7 +45,6 @@ class AIM():
         self.loss_record = collections.deque(maxlen=100)
         
         self.device = device
-        self.eval = evaluate
         
     def store_transition(self, nodes, edges, edges_type, action, reward, nodes_, edges_, edges_type_, done):
         
@@ -65,9 +64,8 @@ class AIM():
             action = torch.as_tensor(action, dtype=torch.float32).to(self.device)
         else:
             action = self.actor_model.forward(nodes, edges, edges_type)
-            if not self.eval:
-                noise = torch.as_tensor(np.random.normal(scale=self.explore_noise)).to(self.device)
-                action = action + noise
+            noise = torch.as_tensor(np.random.normal(scale=self.explore_noise)).to(self.device)
+            action = action + noise
    
         action = torch.clamp(action, -self.actor_model.max_action, self.actor_model.max_action)
         

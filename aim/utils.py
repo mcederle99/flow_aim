@@ -3,8 +3,8 @@ import torch
 from numpy.linalg import inv
 from numpy import pi, sin, cos, linspace
 
-torch.cuda.set_device(2)
-device = torch.device('cuda:2')
+#torch.cuda.set_device(2)
+device = torch.device('cuda')
 
 edges_dict = {"b_c": 0, "c_r": 1, "r_c": 2, "c_t": 3, "t_c": 4, "c_l": 5,
               "l_c": 6, "c_b": 7, ":center_0": 8, ":center_1": 9, ":center_2": 10,
@@ -16,7 +16,6 @@ routes_dict = {('t_c', 'c_l'): 0, ('t_c', 'c_b'): 1, ('t_c', 'c_r'): 2, ('r_c', 
                ('r_c', 'c_l'): 4, ('r_c', 'c_b'): 5, ('b_c', 'c_r'): 6, ('b_c', 'c_t'): 7,
                ('b_c', 'c_l'): 8, ('l_c', 'c_b'): 9, ('l_c', 'c_r'): 10, ('l_c', 'c_t'): 11}
 
-all_vehicles = {}
 
 conflicting_routes_matrix = np.zeros((12,12))
 for i in range(12):
@@ -241,7 +240,7 @@ class Graph:
         
         self.edata = {}
         self.ndata = {}
-        self.sparse_adj = torch.zeros([2,len(self.edges)], dtype=torch.int64, device=device)
+        self.sparse_adj = torch.zeros([2,len(self.edges)], dtype=torch.long, device=device)
         for k in range(len(self.edges)):
             self.sparse_adj[0][k] = self.edges[k][0]
             self.sparse_adj[1][k] = self.edges[k][1]
@@ -258,3 +257,10 @@ class Graph:
     def insert_edge_features(self, edges_feat, edges_types): 
         self.edata['x'] = edges_feat
         self.edata['type'] = list(edges_types.values())
+        self.edata['type_bin'] = list(edges_types.values())
+        for i in range(len(self.edata['type_bin'])):
+            if self.edata['type_bin'][i] == 'same_lane':
+                self.edata['type_bin'][i] = 0
+            else:
+                self.edata['type_bin'][i] = 1
+        self.edata['type_bin'] = torch.tensor(self.edata['type_bin'])

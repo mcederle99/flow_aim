@@ -237,8 +237,9 @@ class myEnv(Env):
         speed_limit = 25
         w_v = 0.03
         w_a = 0.01
-        w_i = 0.5
+        w_i = 0.01
         w_c = 1
+        #w_r = 0.01 IN STALLO PER ORA
         
         # the get_ids() method is used to get the names of all vehicles in the network
         ids = self.k.vehicle.get_ids()
@@ -285,6 +286,9 @@ class myEnv(Env):
         else:
             Rc = 0
             
+        # RELUCTANCE TERM
+        # IN STALLO PER ORA
+
         R = w_v*Rv + w_a*Ra + w_i*Ri + w_c*Rc
 
         return R

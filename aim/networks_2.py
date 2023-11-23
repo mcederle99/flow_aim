@@ -4,15 +4,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import torch_geometric.nn as gnn
-from torch_geometric.data import Data
 from rgcn import RGCNLayer
 from utils import Graph
 
-#torch.cuda.set_device(2)
-device = torch.device('cuda')
+torch.cuda.set_device(2)
+device = torch.device('cuda:2')
 
 class Actor(nn.Module):
-    def __init__(self, node_dim=3, edge_dim=2, action_dim=1, max_action=5):
+    def __init__(self, node_dim=4, edge_dim=2, action_dim=1, max_action=5):
         super(Actor, self).__init__()
         
         # node encoder
@@ -20,10 +19,12 @@ class Actor(nn.Module):
         # edge encoder
         self.e_enc = nn.Linear(edge_dim, 32)
         
-        # first RGCN layer, with edge features (handcrafted)
+        # first RGCN layer
         self.RGCN1 = RGCNLayer(96, 64, 2)
-        # second RGCN layer, without edge features (PyTorch Geometric)
-        self.RGCN2 = gnn.RGCNConv(64, 64, 2, aggr='max')
+        # GAT layer
+        self.GAT = gnn.GATConv(64, 64, add_self_loops=False, edge_dim=32)
+        # second RGCN layer
+        self.RGCN2 = RGCNLayer(96, 64, 2)
         
         # node decoder
         self.n_dec = nn.Linear(64, action_dim)
@@ -56,13 +57,22 @@ class Actor(nn.Module):
         g = Graph(list(nodes.keys()), list(edges.keys()))
         g.insert_node_features(n)
         g.insert_edge_features(e, edges_type)
-
+        
         # first RGCN layer
         h = self.RGCN1(g)
         h = F.relu(h)
         
+        # GAT layer
+        h = self.GAT(h, g.sparse_adj, e)
+        h = F.relu(h)
+        
+        # graph embedding
+        g = Graph(list(nodes.keys()), list(edges.keys()))
+        g.insert_node_features(h)
+        g.insert_edge_features(e, edges_type)
+        
         # second RGCN layer
-        h = self.RGCN2(h, g.sparse_adj, g.edata['type_bin'])
+        h = self.RGCN2(g)
         h = F.relu(h)
         
         # decoding
@@ -72,7 +82,7 @@ class Actor(nn.Module):
         return out
     
 class Critic(nn.Module):
-    def __init__(self, node_dim=3, edge_dim=2, action_dim=1, max_action=5, aggr_func='mean'):
+    def __init__(self, node_dim=4, edge_dim=2, action_dim=1, max_action=5, aggr_func='mean'):
         super(Critic, self).__init__()
         
         # node encoder
@@ -80,10 +90,12 @@ class Critic(nn.Module):
         # edge encoder
         self.e_enc = nn.Linear(edge_dim, 32)
         
-        # first RGCN layer, handcrafted
+        # first RGCN layer
         self.RGCN1 = RGCNLayer(96, 64, 2)
-        # second RGCN layer, without edge features (PyTorch Geometric)
-        self.RGCN2 = gnn.RGCNConv(64, 64, 2, aggr='max')
+        # GAT layer
+        self.GAT = gnn.GATConv(64, 64, add_self_loops=False, edge_dim=32)
+        # second RGCN layer
+        self.RGCN2 = RGCNLayer(96, 64, 2)
         
         # node decoder
         self.n_dec = nn.Linear(64, 1)
@@ -123,8 +135,17 @@ class Critic(nn.Module):
         h = self.RGCN1(g)
         h = F.relu(h)
         
+        # GAT layer
+        h = self.GAT(h, g.sparse_adj, e)
+        h = F.relu(h)
+
+        # graph embedding
+        g = Graph(list(nodes.keys()), list(edges.keys()))
+        g.insert_node_features(h)
+        g.insert_edge_features(e, edges_type)
+        
         # second RGCN layer
-        h = self.RGCN2(h, g.sparse_adj, g.edata['type_bin'])
+        h = self.RGCN2(g)
         h = F.relu(h)
 
         # decoding

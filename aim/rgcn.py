@@ -2,8 +2,8 @@ import torch
 import torch.nn as nn
 import numpy as np
 
-torch.cuda.set_device(2)
-device = torch.device('cuda:2')
+#torch.cuda.set_device(2)
+device = torch.device('cuda')
 
 class RGCNLayer(nn.Module):
     def __init__(self, in_feat, out_feat, num_rels):

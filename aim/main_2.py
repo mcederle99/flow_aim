@@ -16,8 +16,8 @@ from memory import ReplayBuffer
 from networks import Actor, Critic
 import torch
 
-#torch.cuda.set_device(2)
-device = torch.device('cuda')
+torch.cuda.set_device(2)
+device = torch.device('cuda:2')
 
 vehicles = VehicleParams()
 
@@ -62,61 +62,76 @@ env_params = EnvParams(additional_params=ADDITIONAL_ENV_PARAMS)
 additional_net_params = ADDITIONAL_NET_PARAMS.copy()
 net_params = NetParams(inflows=inflow, additional_params=additional_net_params)
 
-def evaluate(aim, env, st):
-    num_steps = 1000
-    returns = []
-    outflows = []
-    eval_steps_list = []
-    for i in range(10):
-        ret = 0
+def evaluate(aim):
+    flow_params = dict(
+    exp_tag='test_network',
+    env_name=myEnv,
+    network=IntersectionNetwork,
+    simulator='traci',
+    sim=sim_params,
+    env=env_params,
+    net=net_params,
+    veh=vehicles,
+    initial=initial_config,
+    )
+
+    # number of time steps
+    flow_params['env'].horizon = 5000
+
+    # Get the env name and a creator for the environment.
+    create_env, _ = make_create_env(flow_params)
+
+    # Create the environment.
+    env = create_env()
+    num_steps = env.env_params.horizon
     
-        state = env.reset()
+    ret = 0
+    state = env.reset()
     
+    veh_ids = env.k.vehicle.get_ids()
+    edges, edges_type = compute_edges(env, state)
+    nodes = {}
+    for node in list(state.keys()):
+        nodes[node] = state[node][:4]
+    aim.eval = True
+    eval_steps = 0
+    
+    for j in range(num_steps):
+        
+        actions = aim.test_action(nodes, edges, edges_type)
+        
+        state_, reward, done, _ = env.step(rl_actions=actions.cpu().detach().numpy())
+
         veh_ids = env.k.vehicle.get_ids()
-        edges, edges_type = compute_edges(env, state)
-        nodes = {}
-        for node in list(state.keys()):
-            nodes[node] = state[node][:3]
-        eval_steps = 0
-  
-        for j in range(num_steps):
+        edges_, edges_type_ = compute_edges(env, state_)
+        nodes_ = {}
+        for node in list(state_.keys()):
+            nodes_[node] = state_[node][:4]
         
-            actions = aim.test_action(nodes, edges, edges_type)
+        proximity_reward = compute_rp(edges)
+        w_p = 0.2
+        reward += proximity_reward*w_p
         
-            state_, reward, done, _ = env.step(rl_actions=actions.cpu().detach().numpy())
-
-            veh_ids = env.k.vehicle.get_ids()
-            edges_, edges_type_ = compute_edges(env, state_)
-            nodes_ = {}
-            for node in list(state_.keys()):
-                nodes_[node] = state_[node][:3]
+        nodes = nodes_
+        edges = edges_
+        edges_type = edges_type_
         
-            proximity_reward = compute_rp(edges)
-            w_p = 0.2
-            reward += proximity_reward*w_p
+        ret += reward
+        eval_steps += 1
         
-            nodes = nodes_
-            edges = edges_
-            edges_type = edges_type_
-        
-            ret += reward
-            eval_steps += 1
-        
-            if done:
-                break
+        if done:
+            break
     
-        # Store the information from the run in info_dict.
-        outflow = env.k.vehicle.get_outflow_rate(int(eval_steps))
-        outflows.append(outflow)
-        returns.append(ret)
-        eval_steps_list.append(eval_steps)
+    # Store the information from the run in info_dict.
+    outflow = env.k.vehicle.get_outflow_rate(int(eval_steps))
 
-    print("Average return: {0}".format(np.mean(returns)))
-    print("Average duration of the episode: {0}".format(np.mean(eval_steps_list)))
-    print("Average outflow of the episode: {0}".format(np.mean(outflows)))
-    print("Total training steps up to now: {0}".format(st))
+    print("Weighted return: {0}".format(ret/eval_steps))
+    print("Duration of the episode: {0}".format(eval_steps))
+    print("Outflow: {0}".format(outflow))
+    print('-----------------------')
+    env.terminate()
 
-    return np.mean(returns)
+    return ret
 
 flow_params = dict(
     exp_tag='test_network',
@@ -163,7 +178,8 @@ if convert_to_csv and env.sim_params.emission_path is None:
         'emissions, set the convert_to_csv parameter to False.')
 
 # used to store
-eval_returns = []
+outflows = []
+returns = []
 
 # time profiling information
 t = time.time()
@@ -174,7 +190,7 @@ actor = Actor()
 critic_1 = Critic()
 critic_2 = Critic()
 
-lr = 1e-4
+lr = 3e-4
 actor_optimizer = torch.optim.Adam(actor.parameters(), lr=lr)
 critic_optimizer_1 = torch.optim.Adam(critic_1.parameters(), lr=lr)
 critic_optimizer_2 = torch.optim.Adam(critic_2.parameters(), lr=lr)
@@ -183,7 +199,7 @@ explore_noise = 0.1
 
 replay_buffer = ReplayBuffer(size=10**6)
 
-gamma = 0.9
+gamma = 0.99
 
 warmup = 25000
 # RL agent initialization - fine
@@ -198,13 +214,17 @@ aim = AIM(actor,
           warmup,
           replay_buffer,
           batch_size=256,
-          update_interval=1000,
-          update_interval_actor=2,
-          target_update_interval=1000,
+          #update_interval=1,
+          update_interval=100,
+          #update_interval_actor=2,
+          update_interval_actor=500,
+          target_update_interval=100,
+          #target_update_interval=5000,
           soft_update_tau=0.01,
           n_steps=1,
           gamma=gamma,
-          model_name='AIM_model')
+          model_name='AIM_model',
+          evaluate=False)
 
 st = 0
 best_eval_return = -1000
@@ -218,7 +238,7 @@ while not finished:
     edges, edges_type = compute_edges(env, state)
     nodes = {}
     for node in list(state.keys()):
-        nodes[node] = state[node][:3]
+        nodes[node] = state[node][:4]
     
     for j in range(num_steps):
         actions = aim.choose_action(nodes, edges, edges_type)
@@ -230,7 +250,7 @@ while not finished:
         edges_, edges_type_ = compute_edges(env, state_)
         nodes_ = {}
         for node in list(state_.keys()):
-            nodes_[node] = state_[node][:3]
+            nodes_[node] = state_[node][:4]
         
         Rp = compute_rp(edges)
         w_p = 0.2
@@ -239,7 +259,7 @@ while not finished:
         if nodes != {}:
             aim.store_transition(nodes, edges, edges_type, actions, reward, nodes_, edges_, edges_type_, done)
             aim.learn()
-        st += 1
+            st += 1
         ep_steps += 1
         
         nodes = nodes_
@@ -258,14 +278,23 @@ while not finished:
             break
         if st % 5000 == 0 and st > 25000:
             print('EVALUATION RUN')
-            eval_ret = evaluate(aim, env, st)
+            eval_ret = evaluate(aim)
             if eval_ret > best_eval_return:
                 aim.save_model('../TrainedModels/TD3')
-                best_eval_return = eval_ret
-                eval_returns.append(eval_ret)
             print('END EVALUATION')
             break
     
+    # Store the information from the run in info_dict.
+    outflow = env.k.vehicle.get_outflow_rate(int(ep_steps))
+    outflows.append(outflow)
+    returns.append(ret)
+
+    print("Weighted return: {0}".format(ret/ep_steps))
+    print("Duration of the episode: {0}".format(ep_steps))
+    print("Outflow: {0}".format(outflow))
+    print("Total number of steps: {0}".format(st))
+    print('-----------------------')
+
     # Save emission data at the end of every rollout. This is skipped
     # by the internal method if no emission path was specified.
     #if env.simulator == "traci":
