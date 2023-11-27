@@ -263,7 +263,8 @@ while not finished:
                 aim.save_model('../TrainedModels/TD3')
                 best_eval_return = eval_ret
                 eval_returns.append(eval_ret)
-            print('END EVALUATION')
+                np.save('returns.npy', eval_returns)
+                print('END EVALUATION')
             break
     
     # Save emission data at the end of every rollout. This is skipped

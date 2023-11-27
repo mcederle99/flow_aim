@@ -605,7 +605,7 @@ class SumoParams(SimParams):
                  overtake_right=False,
                  seed=None,
                  restart_instance=False,
-                 print_warnings=True,
+                 print_warnings=False, # this line
                  teleport_time=-1,
                  num_clients=1,
                  color_by_speed=False,
