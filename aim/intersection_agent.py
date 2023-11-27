@@ -104,7 +104,7 @@ class AIM():
             with torch.no_grad():
                 action_target = self.actor_model_target.forward(nodes_, edges_, edges_type_)
                 action_target = action_target + \
-                                torch.clamp(torch.as_tensor(np.random.normal(scale=0.1)), -0.5, 0.5)
+                                torch.clamp(torch.as_tensor(np.random.normal(scale=0.2)), -0.5, 0.5)
                 action_target = torch.clamp(action_target,
                                             -self.actor_model.max_action,
                                             self.actor_model.max_action)
