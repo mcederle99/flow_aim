@@ -53,7 +53,7 @@ inflow.add(veh_type="rl",
           )
 
 
-sim_params = SumoParams(sim_step=0.1, render=True)
+sim_params = SumoParams(sim_step=0.1, render=False)
 
 initial_config = InitialConfig()
 
@@ -150,7 +150,7 @@ aim = AIM(actor,
           gamma=gamma,
           model_name='AIM_model')
 
-aim.load_model('TrainedModels/TD3')
+aim.load_model('../TrainedModels/TD3')
 
 st = 0
 
@@ -194,6 +194,8 @@ while not finished:
         ret += reward
         
         if done:
+            print(ret)
+            print(ep_steps)
             break
         if st == 1000000:
             finished = True

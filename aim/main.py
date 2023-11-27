@@ -199,7 +199,7 @@ aim = AIM(actor,
           replay_buffer,
           batch_size=256,
           update_interval=1000,
-          update_interval_actor=2,
+          update_interval_actor=2000,
           target_update_interval=1000,
           soft_update_tau=0.01,
           n_steps=1,
@@ -251,8 +251,6 @@ while not finished:
         
         ret += reward
         
-        if done:
-            break
         if st == 1000000:
             finished = True
             break
@@ -262,9 +260,11 @@ while not finished:
             if eval_ret > best_eval_return:
                 aim.save_model('../TrainedModels/TD3')
                 best_eval_return = eval_ret
-                eval_returns.append(eval_ret)
                 np.save('returns.npy', eval_returns)
                 print('END EVALUATION')
+            eval_returns.append(eval_ret)
+            break
+        if done:
             break
     
     # Save emission data at the end of every rollout. This is skipped
