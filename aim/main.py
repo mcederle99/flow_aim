@@ -63,7 +63,7 @@ additional_net_params = ADDITIONAL_NET_PARAMS.copy()
 net_params = NetParams(inflows=inflow, additional_params=additional_net_params)
 
 def evaluate(aim, env, st):
-    num_steps = 1000
+    num_steps = 500
     returns = []
     outflows = []
     eval_steps_list = []
@@ -131,7 +131,7 @@ flow_params = dict(
 )
 
 # number of time steps
-flow_params['env'].horizon = 1000
+flow_params['env'].horizon = 500
 
 # Get the env name and a creator for the environment.
 create_env, _ = make_create_env(flow_params)
@@ -183,7 +183,7 @@ explore_noise = 0.1
 
 replay_buffer = ReplayBuffer(size=10**6)
 
-gamma = 0.99
+gamma = 0.9
 
 warmup = 25000
 # RL agent initialization - fine
@@ -251,7 +251,7 @@ while not finished:
         
         ret += reward
         
-        if st == 2000000:
+        if st == 5000000:
             finished = True
             break
         if st % 5000 == 0 and st > 25000:
@@ -273,6 +273,6 @@ while not finished:
     #    env.k.simulation.save_emission(run_id=i)
 
 # Print the averages/std for all variables in the info_dict.
-print("Total time:", time.time() - t)
-print("steps/second:", np.mean(times))
+#print("Total time:", time.time() - t)
+#print("steps/second:", np.mean(times))
 env.terminate()
