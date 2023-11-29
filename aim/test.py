@@ -75,7 +75,7 @@ flow_params = dict(
 )
 
 # number of time steps
-flow_params['env'].horizon = 1000
+flow_params['env'].horizon = 500
 
 # Get the env name and a creator for the environment.
 create_env, _ = make_create_env(flow_params)
@@ -107,7 +107,8 @@ if convert_to_csv and env.sim_params.emission_path is None:
         'emissions, set the convert_to_csv parameter to False.')
 
 # used to store
-eval_returns = []
+returns = []
+episode_lengths = []
 
 # time profiling information
 t = time.time()
@@ -153,8 +154,8 @@ aim = AIM(actor,
 aim.load_model('../TrainedModels/TD3')
 
 st = 0
-
-while not finished:
+good_eps = 0
+for i in range(100):
     ep_steps = 0
     ret = 0
     state = env.reset()
@@ -194,19 +195,23 @@ while not finished:
         ret += reward
         
         if done:
-            print(ret)
-            print(ep_steps)
+            if ep_steps == num_steps:
+                good_eps += 1
+            #print(ret)
+            #print(ep_steps)
             break
-        if st == 1000000:
-            finished = True
-            break
-    
+
+    returns.append(ret)
+    episode_lengths.append(ep_steps)
+
+print(np.mean(returns))
+print(good_eps)
     # Save emission data at the end of every rollout. This is skipped
     # by the internal method if no emission path was specified.
     #if env.simulator == "traci":
     #    env.k.simulation.save_emission(run_id=i)
 
 # Print the averages/std for all variables in the info_dict.
-print("Total time:", time.time() - t)
-print("steps/second:", np.mean(times))
+#print("Total time:", time.time() - t)
+#print("steps/second:", np.mean(times))
 env.terminate()
