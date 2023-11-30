@@ -34,22 +34,22 @@ inflow = InFlows()
 inflow.add(veh_type="rl",
            edge="b_c",
            probability=0.05,
-           #depart_speed="random",
+           depart_speed="random",
           )
 inflow.add(veh_type="rl",
            edge="t_c",
            probability=0.1,
-           #depart_speed="random",
+           depart_speed="random",
           )
 inflow.add(veh_type="rl",
            edge="l_c",
            probability=0.1,
-           #depart_speed="random",
+           depart_speed="random",
           )
 inflow.add(veh_type="rl",
            edge="r_c",
            probability=0.05,
-           #depart_speed="random",
+           depart_speed="random",
           )
 
 
@@ -63,7 +63,7 @@ additional_net_params = ADDITIONAL_NET_PARAMS.copy()
 net_params = NetParams(inflows=inflow, additional_params=additional_net_params)
 
 def evaluate(aim, env, st):
-    num_steps = 500
+    num_steps = 1000
     returns = []
     outflows = []
     eval_steps_list = []
@@ -131,7 +131,7 @@ flow_params = dict(
 )
 
 # number of time steps
-flow_params['env'].horizon = 500
+flow_params['env'].horizon = 1000
 
 # Get the env name and a creator for the environment.
 create_env, _ = make_create_env(flow_params)
@@ -171,8 +171,8 @@ times = []
 
 # RL agent initialization - inizio
 actor = Actor()
-critic_1 = Critic()
-critic_2 = Critic()
+critic_1 = Critic(aggr_func='mean')
+critic_2 = Critic(aggr_func='mean')
 
 lr = 1e-4
 actor_optimizer = torch.optim.Adam(actor.parameters(), lr=lr)
@@ -198,10 +198,10 @@ aim = AIM(actor,
           warmup,
           replay_buffer,
           batch_size=256,
-          update_interval=1000,
-          update_interval_actor=2000,
-          target_update_interval=1000,
-          soft_update_tau=0.01,
+          update_interval=100,
+          update_interval_actor=200,
+          target_update_interval=100,
+          soft_update_tau=0.005,
           n_steps=1,
           gamma=gamma,
           model_name='AIM_model')
@@ -238,7 +238,7 @@ while not finished:
         
         if nodes != {}:
             aim.store_transition(nodes, edges, edges_type, actions, reward, nodes_, edges_, edges_type_, done)
-            aim.learn()
+        aim.learn()
         st += 1
         ep_steps += 1
         
@@ -251,7 +251,7 @@ while not finished:
         
         ret += reward
         
-        if st == 5000000:
+        if st == 1025000:
             finished = True
             break
         if st % 5000 == 0 and st > 25000:
@@ -262,7 +262,7 @@ while not finished:
                 best_eval_return = eval_ret
             print('END EVALUATION')
             eval_returns.append(eval_ret)
-            np.save('returns.npy', eval_returns)
+            np.save('returns_more_updates.npy', eval_returns)
             break
         if done:
             break

@@ -1,6 +1,11 @@
 import torch
-from torch_geometric.nn import RGCNConv
-from torch_geometric.data import Data
+#from torch_geometric.nn import RGCNConv
+#from torch_geometric.data import Data
+import numpy as np
+
+ret = np.load('returns_more_updates.npy')
+print(ret)
+raise KeyboardInterrupt
 
 # Define a graph with edge types
 edge_index = torch.tensor([[0, 1, 1, 2], [1, 0, 2, 1]], dtype=torch.long)

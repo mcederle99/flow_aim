@@ -133,6 +133,10 @@ class Critic(nn.Module):
                 h = torch.sum(h, dim=0)/g.num_nodes()
             else:
                 h = torch.sum(h, dim=0)
+        elif self.aggr_func == 'max':
+            if g.num_nodes() > 0:
+                h, _ = torch.max(h, dim=0)
+
         out = self.n_dec(h)
         
         return out

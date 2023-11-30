@@ -165,11 +165,11 @@ class myEnv(Env):
             pos = -42
             old_pos = -12
             raw_pos = self.k.vehicle.get_position(q)
-            if self.k.vehicle.get_route(q) == '':
+            if self.k.vehicle.get_route(q) == '': # just to fix a simulator bug
                 i = 0
             else:
                 i = routes_dict[self.k.vehicle.get_route(q)]
-            if self.k.vehicle.get_edge(q) == '':
+            if self.k.vehicle.get_edge(q) == '': # just to fix a simulator bug
                 j = 5
             else:
                 j = edges_dict[self.k.vehicle.get_edge(q)]
@@ -217,13 +217,13 @@ class myEnv(Env):
             angle = self.k.vehicle.get_orientation(q)[2]
             
             # EDGE
-            if self.k.vehicle.get_edge(q) == '':
+            if self.k.vehicle.get_edge(q) == '': # just to fix a simulator bug
                 edge = 5
             else:
                 edge = edges_dict[self.k.vehicle.get_edge(q)]
                               
             # ROUTE
-            if self.k.vehicle.get_route(q) == '':
+            if self.k.vehicle.get_route(q) == '': # just to fix a simulator bug
                 route = 0
             else:
                 route = routes_dict[self.k.vehicle.get_route(q)]
@@ -237,7 +237,7 @@ class myEnv(Env):
         speed_limit = 25
         w_v = 0.03
         w_a = 0.01
-        w_i = 0.5
+        w_i = 0.5 # before it was 0.5
         w_c = 1
         
         # the get_ids() method is used to get the names of all vehicles in the network
@@ -252,9 +252,9 @@ class myEnv(Env):
             mean_speed = np.mean(speeds)
         """
         rel_speed = mean_speed/speed_limit
-        if rel_speed <= 0.5:
-            Rv = 2*rel_speed
-        elif 0.5 < rel_speed <= 1:
+        if rel_speed <= 0.8:
+            Rv = 1.25*rel_speed
+        elif 0.8 < rel_speed <= 1:
             Rv = 1
         else:
             Rv = 6-5*rel_speed
