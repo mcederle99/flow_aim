@@ -43,12 +43,12 @@ inflow.add(veh_type="rl",
           )
 inflow.add(veh_type="rl",
            edge="l_c",
-           probability=0.1,
+           probability=0.15,
            depart_speed="random",
           )
 inflow.add(veh_type="rl",
            edge="r_c",
-           probability=0.1,
+           probability=0.15,
            depart_speed="random",
           )
 
@@ -258,11 +258,11 @@ while not finished:
             print('EVALUATION RUN')
             eval_ret = evaluate(aim, env, st)
             if eval_ret > best_eval_return:
-                aim.save_model('../TrainedModels/TD3_more_vehicles')
+                aim.save_model('../TrainedModels/TD3_more_more_vehicles')
                 best_eval_return = eval_ret
             print('END EVALUATION')
             eval_returns.append(eval_ret)
-            np.save('returns_more_vehicles.npy', eval_returns)
+            np.save('returns_more_more_vehicles.npy', eval_returns)
             break
         if done:
             break

@@ -33,22 +33,22 @@ inflow = InFlows()
 
 inflow.add(veh_type="rl",
            edge="b_c",
-           probability=0.05,
+           probability=0.1,
            #depart_speed="random",
           )
 inflow.add(veh_type="rl",
            edge="t_c",
-           probability=0.1,
+           probability=0.05,
            #depart_speed="random",
           )
 inflow.add(veh_type="rl",
            edge="l_c",
-           probability=0.1,
+           probability=0.05,
            #depart_speed="random",
           )
 inflow.add(veh_type="rl",
            edge="r_c",
-           probability=0.05,
+           probability=0.1,
            #depart_speed="random",
           )
 
@@ -151,7 +151,7 @@ aim = AIM(actor,
           gamma=gamma,
           model_name='AIM_model')
 
-aim.load_model('../TrainedModels/TD3')
+aim.load_model('../TrainedModels/TD3_more_vehicles')
 
 st = 0
 good_eps = 0
