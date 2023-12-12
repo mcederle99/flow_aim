@@ -24,9 +24,9 @@ from memory import ReplayBuffer
 def eval_policy(policy, params, eval_episodes=1):
 	avg_reward = 0.
 	for _ in range(eval_episodes):
-	        create_env, _ = make_create_env(params)
-	        env = create_env()
-	        state = env.reset()
+		create_env, _ = make_create_env(params)
+		env = create_env()
+		state = env.reset()
 		done = False
 		while not done:
 			connections = compute_connections(env, state)
@@ -274,10 +274,10 @@ if __name__ == "__main__":
 		if done: 
 			# +1 to account for 0 indexing. +0 on ep_timesteps since it will increment +1 even if done=True
 			print(f"Total T: {t+1} Episode Num: {episode_num+1} Episode T: {episode_timesteps} Reward: {episode_reward:.3f}")
-                        env.terminate()
-                        create_env, _ = make_create_env(flow_params)
-	                env = create_env()
-		        # Reset environment
+			env.terminate()
+			create_env, _ = make_create_env(flow_params)
+			env = create_env()
+			# Reset environment
 			state = env.reset()
 			episode_reward = 0
 			episode_timesteps = 0
