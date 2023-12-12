@@ -233,7 +233,7 @@ class myEnv(Env):
                                 
         return state
                                 
-    def compute_reward(self, rl_actions, state=None, **kwargs):
+    def compute_reward(self, rl_actions, state, **kwargs):
         #speed_limit = 25
         w_v = 0.5
         #w_a = 0.01
@@ -245,37 +245,34 @@ class myEnv(Env):
         crash = self.k.simulation.check_collision()
        
         rewards = []
-        for i in ids:
+        for i in list(state.keys()):
+            if i in ids:
 
-            # VELOCITY TERM
-            speed = self.k.vehicle.get_speed(i)
-        """
-        rel_speed = mean_speed/speed_limit
-        if rel_speed <= 0.8:
-            Rv = 1.25*rel_speed
-        elif 0.8 < rel_speed <= 1:
-            Rv = 1
-        else:
-            Rv = 6-5*rel_speed
-        """
-            if crash:
-                Rv = 0
-            else:
-                Rv = speed
+                # VELOCITY TERM
+                speed = self.k.vehicle.get_speed(i)
+
+                if crash:
+                    Rv = 0
+                else:
+                    Rv = speed
             
-        ## ACTION TERM
-        #if speeds == [] or len(rl_actions) == 0:
-        #    Ra = 0
-        #else:
-        #    Ra = -np.mean(np.abs(rl_actions))
+                ## ACTION TERM
+                #if speeds == [] or len(rl_actions) == 0:
+                #    Ra = 0
+                #else:
+                #    Ra = -np.mean(np.abs(rl_actions))
 
-            # IDLE TERM
-            if speed < 0.3:
-                Ri = -1
-            else:
-                Ri = 0
+                # IDLE TERM
+                if speed < 0.3:
+                    Ri = -1
+                else:
+                    Ri = 0
         
-            R = w_v*Rv + w_i*Ri
+                R = w_v*Rv + w_i*Ri
+
+            else:
+                R = 0
+
             rewards.append(R)
 
         return rewards
