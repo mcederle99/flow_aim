@@ -167,11 +167,14 @@ for i in range(100):
         nodes[node] = state[node][:3]
     
     for j in range(num_steps):
+        print(state.keys())
         actions = aim.test_action(nodes, edges, edges_type)
         
         t0 = time.time()
         state_, reward, done, _ = env.step(rl_actions=actions.cpu().detach().numpy())
 
+        print(state_.keys())
+        print('---------------------------')
         veh_ids = env.k.vehicle.get_ids()
         edges_, edges_type_ = compute_edges(env, state_)
         nodes_ = {}

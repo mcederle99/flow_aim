@@ -1,6 +1,6 @@
 from flow.core.params import VehicleParams
 from flow.controllers import IDMController, ContinuousRouter
-from flow.core.params import SumoParams, EnvParams, InitialConfig, NetParams
+from flow.core.params import SumoParams, EnvParams, InitialConfig, NetParams, SumoCarFollowingParams
 from flow.controllers import RLController
 from flow.utils.registry import make_create_env
 from datetime import datetime
@@ -24,6 +24,7 @@ vehicles = VehicleParams()
 vehicles.add(veh_id="rl",
              acceleration_controller=(RLController, {}),
              routing_controller=(ContinuousRouter, {}),
+             #car_following_params=SumoCarFollowingParams(speed_mode="obey_safe_speed"),
              num_vehicles=0,
              color='green')
 
@@ -33,12 +34,12 @@ inflow = InFlows()
 
 inflow.add(veh_type="rl",
            edge="b_c",
-           probability=0.1,
+           probability=0.05,
            depart_speed="random",
           )
 inflow.add(veh_type="rl",
            edge="t_c",
-           probability=0.1,
+           probability=0.05,
            depart_speed="random",
           )
 inflow.add(veh_type="rl",
@@ -91,7 +92,7 @@ def evaluate(aim, env, st):
             for node in list(state_.keys()):
                 nodes_[node] = state_[node][:3]
         
-            proximity_reward = compute_rp(edges)
+            proximity_reward = compute_rp(edges_)
             w_p = 0.2
             reward += proximity_reward*w_p
         
@@ -185,7 +186,7 @@ replay_buffer = ReplayBuffer(size=10**6)
 
 gamma = 0.9
 
-warmup = 25000
+warmup = 500
 # RL agent initialization - fine
 
 aim = AIM(actor,
@@ -197,11 +198,11 @@ aim = AIM(actor,
           explore_noise,
           warmup,
           replay_buffer,
-          batch_size=256,
+          batch_size=32,
           update_interval=100,
-          update_interval_actor=200,
-          target_update_interval=100,
-          soft_update_tau=0.005,
+          update_interval_actor=500,
+          target_update_interval=5000,
+          soft_update_tau=0.01,
           n_steps=1,
           gamma=gamma,
           model_name='AIM_model')
@@ -232,7 +233,7 @@ while not finished:
         for node in list(state_.keys()):
             nodes_[node] = state_[node][:3]
         
-        Rp = compute_rp(edges)
+        Rp = compute_rp(edges_)
         w_p = 0.2
         reward += Rp*w_p
         
@@ -254,15 +255,15 @@ while not finished:
         if st == 1025000:
             finished = True
             break
-        if st % 5000 == 0 and st > 25000:
+        if st % 5000 == 0 and st > 500:
             print('EVALUATION RUN')
             eval_ret = evaluate(aim, env, st)
             if eval_ret > best_eval_return:
-                aim.save_model('../TrainedModels/TD3_more_vehicles')
+                aim.save_model('../TrainedModels/TD3')
                 best_eval_return = eval_ret
             print('END EVALUATION')
             eval_returns.append(eval_ret)
-            np.save('returns_more_vehicles.npy', eval_returns)
+            np.save('returns_last.npy', eval_returns)
             break
         if done:
             break

@@ -112,8 +112,8 @@ import numpy as np
 from numpy.linalg import inv
 
 ADDITIONAL_ENV_PARAMS = {
-    "max_accel": 5,
-    "max_decel": -5,
+    "max_accel": 3,
+    "max_decel": -3,
 }
 
 class myEnv(Env):

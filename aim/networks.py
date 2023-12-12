@@ -12,7 +12,7 @@ from utils import Graph
 device = torch.device('cuda')
 
 class Actor(nn.Module):
-    def __init__(self, node_dim=3, edge_dim=2, action_dim=1, max_action=5):
+    def __init__(self, node_dim=3, edge_dim=2, action_dim=1, max_action=3):
         super(Actor, self).__init__()
         
         # node encoder
@@ -72,7 +72,7 @@ class Actor(nn.Module):
         return out
     
 class Critic(nn.Module):
-    def __init__(self, node_dim=3, edge_dim=2, action_dim=1, max_action=5, aggr_func='mean'):
+    def __init__(self, node_dim=3, edge_dim=2, action_dim=1, max_action=3, aggr_func='mean'):
         super(Critic, self).__init__()
         
         # node encoder
