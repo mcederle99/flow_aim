@@ -119,7 +119,8 @@ def find_value_index(matrix, value):
 
 basta_dizionari = {(4,0): 'f', (4,2): 'l', (4,6): 'r',
                    (0,4): 'f', (0,6): 'l', (0,2): 'r',
-                   (6,2): 'f', (6,4): 'l', (6,0): 'r'}
+                   (6,2): 'f', (6,4): 'l', (6,0): 'r',
+                   (2,6): 'f', (2,0): 'l', (2,4): 'r'}
 
 def compute_connections(env, state):
     ids = env.k.vehicle.get_ids()
@@ -136,7 +137,7 @@ def compute_connections(env, state):
     for i in interesting_ids:
         route = state[i][7]
         edge = state[i][6]
-        conflicting_routes = confl_routes_dict[i]
+        conflicting_routes = confl_routes_dict[route]
         
         opposite_lane = []
         left_lane = []
@@ -146,10 +147,10 @@ def compute_connections(env, state):
             route_j = state[j][7]
             edge_j = state[j][6]
             if j != i:
-                if conflicting_routes_matrix[i][j] == 1:
+                if conflicting_routes_matrix[route][route_j] == 1:
                     start_edge = find_value_index(routes_edges_matrix[route], 1)
                     start_edge_j = find_value_index(routes_edges_matrix[route_j], 1)
-                    direction = basta_dizionari[(start_edge, start_edge_j)]
+                    direction = basta_dizionari[(start_edge,start_edge_j)]
                     if direction == 'f':
                         opposite_lane.append(j)
                     elif direction == 'l':
