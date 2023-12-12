@@ -104,7 +104,7 @@ for i in range(12):
         routes_edges_matrix[i][3] = 3
 
 
-from flow.envs.base import Env
+from flow.envs.base_marl import Env
 from gym.spaces.box import Box
 from gym.spaces import Tuple
 from gym.spaces import Discrete
@@ -235,10 +235,10 @@ class myEnv(Env):
                                 
     def compute_reward(self, rl_actions, state, **kwargs):
         #speed_limit = 25
-        w_v = 0.5
+        w_v = 0.1
         #w_a = 0.01
-        w_i = 0.5 # before it was 0.5
-        #w_c = 1
+        w_i = 1 # before it was 0.5
+        w_c = 1
         
         # the get_ids() method is used to get the names of all vehicles in the network
         ids = self.k.vehicle.get_ids()
@@ -268,7 +268,12 @@ class myEnv(Env):
                 else:
                     Ri = 0
         
-                R = w_v*Rv + w_i*Ri
+                if crash:
+                    Rc = -1
+                else:
+                    Rc = 0
+
+                R = w_v*Rv + w_i*Ri + w_c*Rc
 
             else:
                 R = 0
