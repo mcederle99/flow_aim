@@ -69,7 +69,7 @@ if __name__ == "__main__":
 	parser.add_argument("--policy_noise", default=0.2)              # Noise added to target policy during critic update
 	parser.add_argument("--noise_clip", default=0.5)                # Range to clip target policy noise
 	parser.add_argument("--policy_freq", default=2, type=int)       # Frequency of delayed policy updates
-	parser.add_argument("--save_model", action="store_true")        # Save model and optimizer parameters
+	parser.add_argument("--save_model", default=True, type=bool)        # Save model and optimizer parameters
 	parser.add_argument("--load_model", default="")                 # Model load file name, "" doesn't load, "default" uses file_name
 	parser.add_argument("--env", default="intersection")
 	args = parser.parse_args()
@@ -125,7 +125,7 @@ if __name__ == "__main__":
 	net_params = NetParams(additional_params=additional_net_params)
 
 	flow_params = dict(
-                exp_tag='test_network',
+                exp_tag='train_network',
                 env_name=myEnv,
                 network=IntersectionNetwork,
                 simulator='traci',
