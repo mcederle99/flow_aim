@@ -69,7 +69,7 @@ class IntersectionNetwork(Network):
             "id": "center",
             "x": 0,
             "y": 0,
-            #"radius": 10,
+            #"radius": 7.5,
             "radius": (2.9 + 3.3 * net_params.additional_params["lanes"])/2,
             "type": "priority"
         }, {
@@ -102,6 +102,7 @@ class IntersectionNetwork(Network):
         resolution = net_params.additional_params["resolution"]
         ring_edgelen = 3 * r * pi / 2.
         intersection_edgelen = 2 * r
+        #intersection_edgelen = 40
 
         # intersection edges
         edges = [{

@@ -46,6 +46,7 @@ def eval_policy(policy, params, eval_episodes=1):
 				avg_reward += sum(reward_list)
 			else:
 				state, reward_list, done, _ = env.step([], state)
+
 		avg_reward /= eval_episodes
 
 	print("---------------------------------------")
@@ -62,7 +63,7 @@ if __name__ == "__main__":
 	parser.add_argument("--start_timesteps", default=25e3, type=int)# Time steps initial random policy is used
 	parser.add_argument("--eval_freq", default=5e3, type=int)       # How often (time steps) we evaluate
 	parser.add_argument("--max_timesteps", default=1e6, type=int)   # Max time steps to run environment
-	parser.add_argument("--expl_noise", default=0.1, type=float)    # Std of Gaussian exploration noise
+	parser.add_argument("--expl_noise", default=0.2, type=float)    # Std of Gaussian exploration noise
 	parser.add_argument("--batch_size", default=256, type=int)      # Batch size for both actor and critic
 	parser.add_argument("--discount", default=0.99, type=float)     # Discount factor
 	parser.add_argument("--tau", default=0.005, type=float)         # Target network update rate
@@ -222,11 +223,6 @@ if __name__ == "__main__":
 			actions_for_env.append(action)
 
 		state_, reward_list, done, _ = env.step(actions_for_env, state)
-		
-		#if len(reward_list) < len(list(state.keys())):
-		#	d = -len(reward_list) + len(list(state.keys()))
-		#	for _ in range(d):
-		#		reward_list.append(0)
 
 		connections_ = compute_connections(env, state_)
 		aug_states_ = [[], [], [], []]
@@ -239,8 +235,8 @@ if __name__ == "__main__":
 				num_conn_[i] = ((len(aug_state)-3)/4 - 1)
 				if num_conn[i] != -1:
 					if num_conn_[i] > num_conn[i]:
-						diff = num_conn_[i] - num_conn[i]
-						aug_state = aug_state[:-4]
+						diff = int(4*(num_conn_[i] - num_conn[i]))
+						aug_state = aug_state[:-diff]
 					elif num_conn_[i] < num_conn[i]:
 						diff = num_conn[i] - num_conn_[i]
 						for j in range(4*int(diff)):
@@ -249,11 +245,11 @@ if __name__ == "__main__":
 					rewards[int(num_conn[i])].append(reward_list[i])
 			else:
 				if num_conn[i] != -1:
-					aug_state = list(np.zeros(int(num_conn[i])))
+					aug_state = list(np.zeros(3+4*int(num_conn[i])))
 					aug_states_[int(num_conn[i])].append(aug_state)
 					rewards[int(num_conn[i])].append(reward_list[i])
 
-		done_bool = float(done) if episode_timesteps < 5000 else 0
+		done_bool = float(done) if episode_timesteps < 500 else 0
 
 		# Store data in replay buffer
 		train_models = [False, False, False, False]
@@ -264,7 +260,7 @@ if __name__ == "__main__":
 
 		state = state_
 		episode_reward += sum(reward_list)
-
+		
 		# Train agent after collecting sufficient data
 		if t >= args.start_timesteps:
 			for i in range(4):

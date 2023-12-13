@@ -123,11 +123,11 @@ basta_dizionari = {(4,0): 'f', (4,2): 'l', (4,6): 'r',
                    (2,6): 'f', (2,0): 'l', (2,4): 'r'}
 
 def compute_connections(env, state):
-    ids = env.k.vehicle.get_ids()
+    #ids = env.k.vehicle.get_ids()
     interesting_ids = []
     boring_ids = []
     out = {}
-    for i in ids:
+    for i in list(state.keys()):
         out[i] = []
         if routes_edges_matrix[state[i][7]][state[i][6]] == 3:
             boring_ids.append(i)
@@ -148,9 +148,9 @@ def compute_connections(env, state):
             edge_j = state[j][6]
             if j != i:
                 if conflicting_routes_matrix[route][route_j] == 1:
-                    start_edge = find_value_index(routes_edges_matrix[route], 1)
-                    start_edge_j = find_value_index(routes_edges_matrix[route_j], 1)
-                    direction = basta_dizionari[(start_edge,start_edge_j)]
+                    start_edge = find_value_index(routes_edges_matrix[route], 1) # primo edge del percorso
+                    start_edge_j = find_value_index(routes_edges_matrix[route_j], 1) # primo edge del percorso
+                    direction = basta_dizionari[(start_edge,start_edge_j)] # vediamo se il veicolo j è di fronte a noi, alla ns dx o alla ns sx
                     if direction == 'f':
                         opposite_lane.append(j)
                     elif direction == 'l':
@@ -161,6 +161,13 @@ def compute_connections(env, state):
                 elif edge == edge_j or route == route_j:
                     if state[j][0] > state[i][0]:
                         same_lane.append(j)
+        # new part
+        for k in boring_ids:
+            final_edge = find_value_index(routes_edges_matrix[route], 3) # ultimo edge del percorso
+            edge_k = state[k][6]
+            if final_edge == edge_k:
+                same_lane.append(k)
+        # 
 
         if len(opposite_lane) > 0:
             closest = opposite_lane[0]
@@ -184,7 +191,7 @@ def compute_connections(env, state):
         if len(same_lane) > 0:
             closest = same_lane[0]
             for j in same_lane:
-                if state[j][0] > state[closest][0]:
+                if state[j][0] < state[closest][0]:
                     closest = j
             out[i].append(closest)
 
@@ -200,7 +207,7 @@ def compute_connections(env, state):
         if len(same_lane) > 0:
             closest = same_lane[0]
             for j in same_lane:
-                if state[j][0] > state[closest][0]:
+                if state[j][0] < state[closest][0]:
                     closest = j
             out[i].append(closest)
 
