@@ -160,8 +160,8 @@ class myEnv(Env):
             
             # POSITION
             if q not in all_vehicles.keys():
-                all_vehicles[q] = False
-            
+                all_vehicles[q] = 0.5
+
             pos = -42
             old_pos = -12
             raw_pos = self.k.vehicle.get_position(q)
@@ -176,26 +176,22 @@ class myEnv(Env):
             if routes_edges_matrix[i][j] == 1:
                 pos = raw_pos - 42
             elif routes_edges_matrix[i][j] == 2:
-                if i in (1,4,7,10):
+                if i in (1,4,7,10): # straight paths
                     pos = raw_pos - 12
-                elif i in (2,5,8,11):
-                    if not all_vehicles[q]:
-                        if abs(pos+12-raw_pos) > 3:
-                            all_vehicles[q] = True
-                            pos = pos + raw_pos
-                        else:
-                            pos = raw_pos - 12
-                    else:
+                elif i in (2,8): # left turns part I
+                    if np.abs(raw_pos-all_vehicles[q]) > 2.5:
                         pos = raw_pos + 4 - 12
-                else:
-                    old_pos = pos
+                        all_vehicles[q] = 50
+                    else:
+                        pos = raw_pos - 12
+                        all_vehicles[q] = raw_pos
+                elif i in (5,11): # left turns part II
                     pos = raw_pos - 12
-                    ang_coeff = 12/7
-                    rel_displ = ang_coeff*(pos-old_pos)
-                    pos = old_pos + rel_displ
+                else: # right turns
+                    pos = 12/7*raw_pos - 12
             else:
                 pos = raw_pos
-                
+
             # VELOCITY
             vel = self.k.vehicle.get_speed(q)
             

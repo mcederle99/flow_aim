@@ -186,7 +186,7 @@ replay_buffer = ReplayBuffer(size=10**6)
 
 gamma = 0.9
 
-warmup = 500
+warmup = 25000
 # RL agent initialization - fine
 
 aim = AIM(actor,
@@ -198,10 +198,10 @@ aim = AIM(actor,
           explore_noise,
           warmup,
           replay_buffer,
-          batch_size=32,
+          batch_size=256,
           update_interval=100,
-          update_interval_actor=500,
-          target_update_interval=5000,
+          update_interval_actor=200,
+          target_update_interval=200,
           soft_update_tau=0.01,
           n_steps=1,
           gamma=gamma,
@@ -255,15 +255,15 @@ while not finished:
         if st == 1025000:
             finished = True
             break
-        if st % 5000 == 0 and st > 500:
+        if st % 5000 == 0 and st > 25000:
             print('EVALUATION RUN')
             eval_ret = evaluate(aim, env, st)
             if eval_ret > best_eval_return:
-                aim.save_model('../TrainedModels/TD3')
+                aim.save_model('../TrainedModels/TD3_fixed_posbug')
                 best_eval_return = eval_ret
             print('END EVALUATION')
             eval_returns.append(eval_ret)
-            np.save('returns_last.npy', eval_returns)
+            np.save('returns_fixed_pos_bug.npy', eval_returns)
             break
         if done:
             break

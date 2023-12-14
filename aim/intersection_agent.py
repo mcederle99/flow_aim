@@ -59,7 +59,7 @@ class AIM():
     def choose_action(self, nodes, edges, edges_type):
         
         if self.time_counter < self.warmup:
-            action = np.random.normal(scale=1.5,
+            action = np.random.normal(scale=1.7,
                                       size=(len(list(nodes.keys())),1))
             action = torch.as_tensor(action, dtype=torch.float32).to(self.device)
         else:
