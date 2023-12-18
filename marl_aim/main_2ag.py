@@ -190,6 +190,7 @@ if __name__ == "__main__":
 	
 	# Evaluate untrained policy
 	evaluations = [eval_policy(policy, flow_params_eval)]
+	best_res = evaluations[0]
 
 	state = env.reset()
 	episode_reward = 0
@@ -283,7 +284,8 @@ if __name__ == "__main__":
 		if (t + 1) % args.eval_freq == 0:
 			evaluations.append(eval_policy(policy, flow_params_eval))
 			np.save(f"./results/{file_name}", evaluations)
-			if args.save_model:
+			if args.save_model and (evaluations[-1] > best_res):
+				best_res = evaluations[-1]
 				for i in range(4):
 					policy[i].save(f"./models/{file_name}_{i}")
 

@@ -228,8 +228,8 @@ def compute_augmented_state(env, state, idx, connections):
         cartesian_dist = np.array(state[veh][4]) - np.array(state[idx][4])
         d_ij = np.matmul(np.matmul(cartesian_dist.transpose(), inv(sigma_matrix)),
                         cartesian_dist)
-        d_ij = 1/np.sqrt(d_ij)
-        out.append(d_ij)
+        #d_ij = 1/np.sqrt(d_ij)
+        out.append(np.sqrt(d_ij))
                 
         # BEARING
         coord_j = np.array(state[veh][4])

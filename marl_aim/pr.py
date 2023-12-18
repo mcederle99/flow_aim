@@ -1,4 +1,5 @@
 import numpy as np
 
-a = np.random.normal(0, 0.3, size=100)
-print(a)
+ret = np.load('results/TD3_intersection_0.npy')
+
+print(ret)
