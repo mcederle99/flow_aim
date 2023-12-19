@@ -15,7 +15,7 @@ import utils
 from td3 import TD3
 
 from intersection_network import IntersectionNetwork, ADDITIONAL_NET_PARAMS
-from intersection_env import myEnv, ADDITIONAL_ENV_PARAMS
+from intersection_env_new import myEnv, ADDITIONAL_ENV_PARAMS
 from utils import compute_edges, compute_rp, compute_connections, compute_augmented_state
 from memory import ReplayBuffer
 
@@ -115,7 +115,7 @@ if __name__ == "__main__":
                    probability=0.1,
                    depart_speed="random")
         
-	sim_params = SumoParams(sim_step=0.1, render=False, seed=args.seed)
+	sim_params = SumoParams(sim_step=0.1, render=True, seed=args.seed)
 	sim_params_eval = SumoParams(sim_step=0.1, render=False, seed=args.seed+100)
 
 	initial_config = InitialConfig()
@@ -224,6 +224,7 @@ if __name__ == "__main__":
 			actions_for_env.append(action)
 
 		state_, reward_list, done, _ = env.step(actions_for_env, state)
+		print(reward_list)
 
 		connections_ = compute_connections(env, state_)
 		aug_states_ = [[], [], [], []]
