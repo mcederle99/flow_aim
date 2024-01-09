@@ -142,21 +142,24 @@ class Experiment:
             state = self.env.reset()
             for j in range(num_steps):
                 t0 = time.time()
-                state, reward, done, _ = self.env.step(rl_actions(state))
+                state, reward, done, _ = self.env.step(rl_actions(state), list(state.keys()))
+                print(state)
+                print(reward)
+                print(done)
+                print('--------------------')
                 t1 = time.time()
                 times.append(1 / (t1 - t0))
 
                 # Compute the velocity speeds and cumulative returns.
                 veh_ids = self.env.k.vehicle.get_ids()
-                print(veh_ids)
                 vel.append(np.mean(self.env.k.vehicle.get_speed(veh_ids)))
-                ret += reward
+                #ret += reward
 
                 # Compute the results for the custom callables.
                 for (key, lambda_func) in self.custom_callables.items():
                     custom_vals[key].append(lambda_func(self.env))
 
-                if done:
+                if bool(done[veh_ids[0]]):
                     break
 
             # Store the information from the run in info_dict.

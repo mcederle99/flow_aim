@@ -970,6 +970,18 @@ class TraCIVehicle(KernelVehicle):
                 else:
                     self.kernel_api.vehicle.setSpeed(vid, next_vel)
 
+    # THIS LINE
+    def apply_velocity(self, veh_ids, vel, smooth=True):
+        if type(veh_ids) == str:
+            veh_ids = [veh_ids]
+            vel = [vel]
+
+        for i, vid in enumerate(veh_ids):
+            if smooth:
+                self.kernel_api.vehicle.slowDown(vid, vel[i], 1e-3)
+            else:
+                self.kernel_api.vehicle.slowDown(vid, vel[i])
+
     def apply_lane_change(self, veh_ids, direction):
         """See parent class."""
         # to hand the case of a single vehicle

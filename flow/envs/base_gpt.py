@@ -26,7 +26,6 @@ from flow.core.util import ensure_dir
 from flow.core.kernel import Kernel
 from flow.utils.exceptions import FatalFlowError
 
-
 class Env(gym.Env, metaclass=ABCMeta):
     """Base environment class.
 
@@ -322,6 +321,9 @@ class Env(gym.Env, metaclass=ABCMeta):
         info : dict
             contains other diagnostic information from the previous action
         """
+        
+        _, ordered_vehicles = self.get_state()
+
         for _ in range(self.env_params.sims_per_step):
             self.time_counter += 1
             self.step_counter += 1
@@ -361,7 +363,7 @@ class Env(gym.Env, metaclass=ABCMeta):
 
             self.k.vehicle.choose_routes(routing_ids, routing_actions)
             
-            self.apply_rl_actions(rl_actions)
+            self.apply_rl_actions(rl_actions, ordered_vehicles)
 
             self.additional_command()
 
@@ -385,32 +387,16 @@ class Env(gym.Env, metaclass=ABCMeta):
             # render a frame
             self.render()
 
-        states = self.get_state()
-
-        # collect information of the state of the network based on the
-        # environment class used
-        #self.state = np.asarray(states).T	THIS LINE
-
-        # collect observation new state associated with action
-        #next_observation = np.copy(states)	THIS LINE
-        next_observation = states	# THIS LINE
-
-        # test if the environment should terminate due to a collision or the
-        # time horizon being met
-        done = (self.time_counter >= self.env_params.sims_per_step *
-                (self.env_params.warmup_steps + self.env_params.horizon)
-                or crash)
-
+        next_observation, _ = self.get_state()
 
         # compute the info for each agent
-        infos = {}
+        infos = crash
 
         # compute the reward
         if self.env_params.clip_actions:
-            #rl_clipped = self.clip_actions(rl_actions)
-            reward = self.compute_reward(rl_actions, state=next_observation, fail=crash)	# THIS LINE
+            reward, done = self.compute_reward(ordered_vehicles)	# THIS LINE
         else:
-            reward = self.compute_reward(rl_actions, state=next_observation, fail=crash)	# THIS LINE
+            reward, done = self.compute_reward(ordered_vehicles)	# THIS LINE
 
         return next_observation, reward, done, infos
 
@@ -544,14 +530,7 @@ class Env(gym.Env, metaclass=ABCMeta):
                 msg += '- {}: {}\n'.format(veh_id, self.initial_state[veh_id])
             raise FatalFlowError(msg=msg)
 
-        states = self.get_state()
-
-        # collect information of the state of the network based on the
-        # environment class used
-        #self.state = np.asarray(states).T	# THIS LINE
-
-        # observation associated with the reset (no warm-up steps)
-        #observation = np.copy(states)	# THIS LINE
+        states, _ = self.get_state()
 
         # perform (optional) warm-up steps before training
         for _ in range(self.env_params.warmup_steps):
@@ -561,7 +540,6 @@ class Env(gym.Env, metaclass=ABCMeta):
         self.render(reset=True)
         
         return states
-        #return observation	THIS LINE
 
     def additional_command(self):
         """Additional commands that may be performed by the step method."""
@@ -600,7 +578,7 @@ class Env(gym.Env, metaclass=ABCMeta):
                         a_max=subspace.high)
         return rl_actions
 
-    def apply_rl_actions(self, rl_actions=None):
+    def apply_rl_actions(self, rl_actions, vehs):
         """Specify the actions to be performed by the rl agent(s).
 
         If no actions are provided at any given step, the rl agents default to
@@ -615,11 +593,10 @@ class Env(gym.Env, metaclass=ABCMeta):
         if rl_actions is None:
             return
         
-        #rl_clipped = self.clip_actions(rl_actions) # this line
-        self._apply_rl_actions(rl_actions) # this line
+        self._apply_rl_actions(rl_actions, vehs) # this line
 
     @abstractmethod
-    def _apply_rl_actions(self, rl_actions):
+    def _apply_rl_actions(self, rl_actions, vehs):
         pass
 
     @abstractmethod
@@ -665,7 +642,7 @@ class Env(gym.Env, metaclass=ABCMeta):
         """
         pass
 
-    def compute_reward(self, rl_actions, state=None, **kwargs):	# THIS LINE
+    def compute_reward(self, vehs, **kwargs):	# THIS LINE
         """Reward function for the RL agent(s).
 
         MUST BE implemented in new environments.
