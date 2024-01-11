@@ -10,7 +10,7 @@ create_env, _ = make_create_env(flow_params)
 # Create the environment.
 env = create_env()
 
-num_eps = 1000000
+num_eps = 8000 
 max_ep_steps = env.env_params.horizon
 total_steps = 0
 returns_list = []
@@ -47,7 +47,7 @@ for i in range(num_eps):
     for j in range(max_ep_steps):    
 
         # actions: (V,) ordered tensor
-        if i > 0:
+        if total_steps > 25000:
             actions = aim.select_action(state)
             noise = (
                 torch.randn_like(actions) * 0.1).clamp(-0.5, 0.5)
@@ -61,19 +61,19 @@ for i in range(num_eps):
         # crash: boolean
         
         next_state, reward, done, crash = env.step(actions*max_action + max_action)
-        
+         
         if state.shape[0] > 0:
-            for k in range(state.shape[0]):
+           total_steps += 1
+           for k in range(state.shape[0]):
                 memory.add(state[k,:], actions[k], reward[k], next_state[k,:], done[k])
-        if total_steps % 400 == 0 and i > 0:
+        if total_steps % 20 == 0 and total_steps > 25000:
             aim.train(memory)
-
+        
         state = next_state
         state = trim(state)
         
         returns += sum(reward.tolist())
         ep_steps += 1
-        total_steps += 1
         
         if crash:
             break
@@ -84,6 +84,6 @@ for i in range(num_eps):
     np.save('results/returns.npy', returns_list)
     np.save('results/ep_steps.npy', ep_steps_list)
     
-np.save('results/num_eps.npy', np.arange(num_eps))
-aim.save()
+#np.save('results/num_eps2.npy', np.arange(num_eps))
+#aim.save()
 env.terminate()

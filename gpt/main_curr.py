@@ -3,7 +3,7 @@ import numpy as np
 import torch
 from utils import trim, order_vehicles, variance
 from per import PrioritizedReplayBuffer
-from agent2 import TD3
+from agent import TD3
 
 from environment import ADDITIONAL_ENV_PARAMS
 from scenario import ADDITIONAL_NET_PARAMS

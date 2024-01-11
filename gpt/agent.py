@@ -50,7 +50,7 @@ class TD3(object):
     def train(self, replay_buffer, batch_size=128):
         self.total_it += 1
         
-        for i in range(200):
+        for i in range(1, 11):
             # Sample replay buffer 
             batch = replay_buffer.sample(batch_size)
             state, action, next_state, reward, not_done = batch['obs'], batch['action'], batch['next_obs'], batch['reward'], batch['not_done']
@@ -84,13 +84,14 @@ class TD3(object):
             # Optimize the critic
             self.critic_optimizer.zero_grad()
             critic_loss.backward()
+            nn.utils.clip_grad_norm_(self.critic.parameters(), 1)
             self.critic_optimizer.step()
 
             errors1 = np.abs((current_Q1 - target_Q).detach().cpu().numpy())
             replay_buffer.update_priorities(batch['indexes'], errors1)
 
             # Delayed policy updates
-            if i % self.policy_freq == 0 and i > 0:
+            if i % self.policy_freq == 0:
 
                 # Compute actor losse
                 actor_loss = -self.critic.Q1(state, self.actor.forward_train(state)).mean()
