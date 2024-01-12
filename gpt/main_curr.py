@@ -35,28 +35,28 @@ inflow.add(veh_type="rl",
            depart_lane="best",
            #vehs_per_hour=200,
            #period=18,
-           probability=1/18
+           probability=1/36
           )
 inflow.add(veh_type="rl",
            edge="b_c",
            depart_lane="best",
            #vehs_per_hour=200,
            #period=18,
-           probability=1/18
+           probability=1/36
           )
 inflow.add(veh_type="rl",
            edge="r_c",
            depart_lane="best",
            #vehs_per_hour=200
            #period=18,
-           probability=1/18
+           probability=1/36
           )
 inflow.add(veh_type="rl",
            edge="l_c",
            depart_lane="best",
            #vehs_per_hour=200
            #period=18,
-           probability=1/18
+           probability=1/36
           )
 
 net_params = NetParams(inflows=inflow, additional_params=ADDITIONAL_NET_PARAMS)
@@ -78,12 +78,13 @@ flow_params = dict(
 flow_params['env'].horizon = 1200
 
 ep = 0
-flow_hour = 200
+flow_hour = 100
 
 max_ep_steps = flow_params['env'].horizon
 total_steps = 0
 returns_list = []
 ep_steps_list = []
+returns_per_veh_list = []
 
 state_dim = 14
 action_dim = 1
@@ -164,7 +165,7 @@ while ep < 8000:
         for j in range(max_ep_steps):    
 
             # actions: (V,) ordered tensor
-            if total_steps > 25000:
+            if total_steps > 10000:
                 actions = aim.select_action(state)
                 noise = (
                     torch.randn_like(actions) * 0.1).clamp(-0.5, 0.5)
@@ -183,7 +184,7 @@ while ep < 8000:
                total_steps += 1
                for k in range(state.shape[0]):
                     memory.add(state[k,:], actions[k], reward[k], next_state[k,:], done[k])
-            if total_steps % 20 == 0 and total_steps > 25000:
+            if total_steps % 20 == 0 and total_steps > 10000:
                 aim.train(memory)
 
             state = next_state
@@ -197,15 +198,21 @@ while ep < 8000:
             
         returns_list.append(returns)
         ep_steps_list.append(ep_steps)
-        print('Episode number: {}, Episode steps: {}, Episode return: {}, Current flow: {}'.format(i, ep_steps, returns, flow_hour))
-        np.save('results/returns_curr.npy', returns_list)
-        np.save('results/ep_steps_curr.npy', ep_steps_list)
+        returns_per_veh = returns/sum(env.k.vehicle._num_departed)
+        returns_per_veh_list.append(returns_per_veh)
+        ret_var = -1
+        if i >= 50:
+            ret_var = variance(returns_per_veh_list[-50:])
+        print('Episode number: {}, Episode steps: {}, Episode return: {}, Current flow: {}, Returns variance: {}, ReturnxVeh: {}'.format(i, ep_steps, returns, flow_hour, ret_var, returns_per_veh))
+        np.save('results/returns_curr_100.npy', returns_list)
+        np.save('results/ep_steps_curr_100.npy', ep_steps_list)
+        np.save('results/returns_per_veh_curr_100.npy', returns_per_veh_list)
 
-        if i >= 150:
-            ret_var = variance(returns_list[-150:])
-            if ret_var <= 0.005*flow_hour:
-                flow_hour += 150
-                break
+        if i >= 50 and ret_var <= 0.01*flow_hour:
+            flow_hour += 50
+            break
+
+        aim.save()
 
     aim.save()
     env.terminate()
