@@ -16,7 +16,7 @@ from scenario import IntersectionNetwork
 
 env_params = EnvParams(additional_params=ADDITIONAL_ENV_PARAMS)
 random_seed = np.random.choice(1000)
-sim_params = SumoParams(sim_step=0.25, render=False, seed=random_seed)
+sim_params = SumoParams(sim_step=0.25, render=True, seed=random_seed)
 traffic_lights = TrafficLightParams()
 initial_config = InitialConfig()
 vehicles = VehicleParams()
@@ -104,7 +104,7 @@ aim = TD3(
 
 aim.load()
 
-while ep < 8000:
+while ep < 10:
     
     random_seed = np.random.choice(1000) 
     sim_params = SumoParams(sim_step=0.25, render=False, seed=random_seed)
@@ -149,7 +149,8 @@ while ep < 8000:
     # Create the environment.
     env = create_env()
 
-    num_eps = 8000 - ep
+    num_eps = 100
+    n_crashes = 0
 
     for i in range(num_eps):
         returns = 0
@@ -177,6 +178,7 @@ while ep < 8000:
             ep_steps += 1
             
             if crash:
+                n_crashes += 1
                 break
             
         returns_list.append(returns)
@@ -184,9 +186,11 @@ while ep < 8000:
         returns_per_veh = returns/sum(env.k.vehicle._num_departed)
         returns_per_veh_list.append(returns_per_veh)
         ret_var = variance(returns_per_veh_list[-50:])
-        print('Episode number: {}, Episode steps: {}, Episode return: {}, Current flow: {}, Returns variance: {}, ReturnxVeh: {}'.format(i, ep_steps, returns, flow_hour, ret_var, returns_per_veh))
+        #print('Episode number: {}, Episode steps: {}, Episode return: {}, Current flow: {}, Returns variance: {}, ReturnxVeh: {}'.format(i, ep_steps, returns, flow_hour, ret_var, returns_per_veh))
         #np.save('results/returns_curr_100.npy', returns_list)
         #np.save('results/ep_steps_curr_100.npy', ep_steps_list)
         #np.save('results/returns_per_veh_curr_100.npy', returns_per_veh_list)
 
+    print('Collision rate: {}%'.format(n_crashes/100*100))
     env.terminate()
+    ep += 1
