@@ -69,7 +69,7 @@ vehicles.add("rl",
              routing_controller=(ContinuousRouter, {}),
              car_following_params=SumoCarFollowingParams(
                 speed_mode="aggressive"),
-             num_vehicles=2)
+             num_vehicles=3)
 
 from flow.core.params import InFlows
 
