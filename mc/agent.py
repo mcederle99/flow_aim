@@ -84,7 +84,7 @@ class TD3(object):
             # Optimize the critic
             self.critic_optimizer.zero_grad()
             critic_loss.backward()
-#            nn.utils.clip_grad_norm_(self.critic.parameters(), 1)
+            nn.utils.clip_grad_norm_(self.critic.parameters(), 1)
             self.critic_optimizer.step()
 
             errors1 = np.abs((current_Q1 - target_Q).detach().cpu().numpy())

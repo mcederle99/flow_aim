@@ -137,26 +137,26 @@ class SpeedEnv(Env):
         for i in vehs:
             if i in ids:
 
-                pos = self.k.vehicle.get_2d_position(i)
-                xpos = np.clip((pos[0]-100)/100, -1, 1)
-                ypos = np.clip((pos[1]-100)/100, -1, 1)
-                way = ways[self.k.vehicle.get_route(i)]
-                lane = [way[2], way[1], way[0]]
-                queue = queues[self.k.vehicle.get_route(i)[0]]
-                xdes, ydes = goal_position(way, lane, queue)
-                dist = np.sqrt((xpos-xdes)**2 + (ypos-ydes)**2)
+#                pos = self.k.vehicle.get_2d_position(i)
+#                xpos = np.clip((pos[0]-100)/100, -1, 1)
+#                ypos = np.clip((pos[1]-100)/100, -1, 1)
+#                way = ways[self.k.vehicle.get_route(i)]
+#                lane = [way[2], way[1], way[0]]
+#                queue = queues[self.k.vehicle.get_route(i)[0]]
+#                xdes, ydes = goal_position(way, lane, queue)
+#                dist = np.sqrt((xpos-xdes)**2 + (ypos-ydes)**2)
 
                 if i in coll_veh:
                     reward = torch.tensor([-100.0])
                     done = torch.tensor([1.0])
                 elif i in succ_veh:
-                    reward = torch.tensor([0.0])
+                    reward = torch.tensor([100.0])
                     done = torch.tensor([1.0])
                 else:
-                    reward = torch.tensor([-dist])
+                    reward = torch.tensor([-0.25])
                     done = torch.tensor([0.0])
             else:
-                reward = torch.tensor([0.0])
+                reward = torch.tensor([100.0])
                 done = torch.tensor([1.0])
             
             rewards = torch.cat((rewards, reward))

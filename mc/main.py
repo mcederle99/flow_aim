@@ -16,8 +16,11 @@ state_dim = 15
 action_dim = 1
 max_action = 1.5
 
-memory = PrioritizedReplayBuffer(2**20)
-aim = TD3(
+memory_straight = PrioritizedReplayBuffer(2**20)
+memory_left = PrioritizedReplayBuffer(2**20)
+memory_right = PrioritizedReplayBuffer(2**20)
+
+aim_straight = TD3(
         state_dim,
         action_dim,
         max_action,
@@ -26,12 +29,46 @@ aim = TD3(
         policy_noise=0.2,
         noise_clip=0.5,
         policy_freq=2,
-        filename='LSTM_AIM')
+        filename='LSTM_AIM_straight')
+aim_left = TD3(
+        state_dim,
+        action_dim,
+        max_action,
+        discount=0.99,
+        tau=4e-3,
+        policy_noise=0.2,
+        noise_clip=0.5,
+        policy_freq=2,
+        filename='LSTM_AIM_left')
+aim_right = TD3(
+        state_dim,
+        action_dim,
+        max_action,
+        discount=0.99,
+        tau=4e-3,
+        policy_noise=0.2,
+        noise_clip=0.5,
+        policy_freq=2,
+        filename='LSTM_AIM_right')
 
 def rl_actions(state):
     num = state.shape[0]
     actions = torch.randn((num,), device="cuda").clamp(-1, 1)
     return actions.detach().cpu()
+
+# 8: right, 9: straight, 10: left
+def choose_actions(state, aim_straight, aim_left, aim_right):
+    actions = torch.tensor([])
+    for i in range(state.shape[0]):
+        if state[i][8] == 1.0:
+            action = aim_right.select_action(state[i,:])
+        elif state[i][9] == 1.0:
+            action = aim_straight.select_action(state[i,:])
+        elif state[i][10] == 1.0:
+            action = aim_left.select_action(state[i,:])
+        actions = torch.cat((actions, action))
+
+    return actions
 
 for i in range(num_eps):
 
@@ -51,10 +88,9 @@ for i in range(num_eps):
     state = env.reset() # (V, F*V) where V: number of vehicles and F: number of features of each vehicle 
 
     for j in range(max_ep_steps):    
-
         # actions: (V,) ordered tensor
         if total_steps > 5000:
-            actions = aim.select_action(state)
+            actions = choose_actions(state, aim_straight, aim_left, aim_right)
             noise = (
                 torch.randn_like(actions) * 0.1).clamp(-0.5, 0.5)
             actions = (actions + noise).clamp(-1, 1)
@@ -71,9 +107,16 @@ for i in range(num_eps):
         if state.shape[0] > 0:
            total_steps += 1
            for k in range(state.shape[0]):
-                memory.add(state[k,:], actions[k], reward[k], next_state[k,:], done[k])
+                if state[k][8] == 1.0:
+                    memory_right.add(state[k,:], actions[k], reward[k], next_state[k,:], done[k])
+                elif state[k][9] == 1.0:
+                    memory_straight.add(state[k,:], actions[k], reward[k], next_state[k,:], done[k])
+                elif state[k][10] == 1.0:
+                    memory_left.add(state[k,:], actions[k], reward[k], next_state[k,:], done[k])
         if total_steps % 20 == 0 and total_steps > 5000:
-            aim.train(memory)
+            aim_straight.train(memory_straight)
+            aim_left.train(memory_left)
+            aim_right.train(memory_right)
         
         state = next_state
         state = trim(state)
@@ -93,5 +136,7 @@ for i in range(num_eps):
     np.save('results/ep_steps.npy', ep_steps_list)
     np.save('results/returns_per_veh.npy', returns_per_veh_list)
     
-    aim.save()
+    aim_straight.save()
+    aim_left.save()
+    aim_right.save()
     env.terminate()

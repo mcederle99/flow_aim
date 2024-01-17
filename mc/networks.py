@@ -52,19 +52,19 @@ class Actor(nn.Module):
         """
         state is a (V, F*V) tensor
         """
-        num_vehs = state.shape[1] // 15 # compute the number of vehicles in that instant
+        num_vehs = state.shape[0] // 15 # compute the number of vehicles in that instant
         if num_vehs == 0:
             return torch.tensor([], device=self.device)
         
         rnn_out = []
-        for i in range(state.shape[0]): # for every vehicle
-            current_state = state[i].view(num_vehs, 15) # reshape (Num_Veh, 15)
-            hx = torch.zeros(256, device=self.device, dtype=torch.float32) # initialize
-            cx = torch.zeros(256, device=self.device, dtype=torch.float32) # initialize
-            for j in range(num_vehs): # for every vehicle present in that instant
-                hx, cx = self.lstm(current_state[j], (hx, cx)) # iterate in the LSTM cell
-            hx = torch.cat((current_state[0], hx)) # concatenate the ego_state with the final LSTM output
-            rnn_out.append(hx) # compose the final list
+        #for i in range(state.shape[0]): # for every vehicle
+        current_state = state.view(num_vehs, 15) # reshape (Num_Veh, 15)
+        hx = torch.zeros(256, device=self.device, dtype=torch.float32) # initialize
+        cx = torch.zeros(256, device=self.device, dtype=torch.float32) # initialize
+        for j in range(num_vehs): # for every vehicle present in that instant
+            hx, cx = self.lstm(current_state[j], (hx, cx)) # iterate in the LSTM cell
+        hx = torch.cat((current_state[0], hx)) # concatenate the ego_state with the final LSTM output
+        rnn_out.append(hx) # compose the final list
         x = torch.stack(rnn_out, dim=0) # transform it into a tensor
 
         # MLP part
