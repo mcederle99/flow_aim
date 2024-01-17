@@ -69,7 +69,7 @@ vehicles.add("rl",
              routing_controller=(ContinuousRouter, {}),
              car_following_params=SumoCarFollowingParams(
                 speed_mode="aggressive"),
-             num_vehicles=0)
+             num_vehicles=2)
 
 from flow.core.params import InFlows
 
@@ -108,7 +108,7 @@ from flow.core.params import NetParams
 from environment import SpeedEnv
 from scenario import IntersectionNetwork
 
-net_params = NetParams(inflows=inflow, additional_params=ADDITIONAL_NET_PARAMS)
+net_params = NetParams(additional_params=ADDITIONAL_NET_PARAMS)
 
 flow_params = dict(
     exp_tag='test',

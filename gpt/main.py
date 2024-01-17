@@ -10,7 +10,7 @@ create_env, _ = make_create_env(flow_params)
 # Create the environment.
 env = create_env()
 
-num_eps = 8000 
+num_eps = 1000 
 max_ep_steps = env.env_params.horizon
 total_steps = 0
 returns_list = []
@@ -30,7 +30,7 @@ aim = TD3(
         policy_noise=0.2,
         noise_clip=0.5,
         policy_freq=2,
-        filename='LSTM_AIM')
+        filename='LSTM_AIM_easy')
 
 def rl_actions(state):
     num = state.shape[0]
@@ -47,7 +47,7 @@ for i in range(num_eps):
     for j in range(max_ep_steps):    
 
         # actions: (V,) ordered tensor
-        if total_steps > 25000:
+        if total_steps > 500:
             actions = aim.select_action(state)
             noise = (
                 torch.randn_like(actions) * 0.1).clamp(-0.5, 0.5)
@@ -66,7 +66,10 @@ for i in range(num_eps):
            total_steps += 1
            for k in range(state.shape[0]):
                 memory.add(state[k,:], actions[k], reward[k], next_state[k,:], done[k])
-        if total_steps % 20 == 0 and total_steps > 25000:
+        else:
+            returns += sum(reward.tolist())
+            break
+        if total_steps % 20 == 0 and total_steps > 500:
             aim.train(memory)
         
         state = next_state
@@ -81,9 +84,9 @@ for i in range(num_eps):
     returns_list.append(returns)
     ep_steps_list.append(ep_steps)
     print('Episode number: {}, Episode steps: {}, Episode return: {}'.format(i, ep_steps, returns))
-    np.save('results/returns.npy', returns_list)
-    np.save('results/ep_steps.npy', ep_steps_list)
+    np.save('results/returns_easy.npy', returns_list)
+    np.save('results/ep_steps_easy.npy', ep_steps_list)
     
 #np.save('results/num_eps2.npy', np.arange(num_eps))
-#aim.save()
+aim.save()
 env.terminate()
