@@ -50,63 +50,62 @@ class TD3(object):
     def train(self, replay_buffer, batch_size=128):
         self.total_it += 1
         
-        for i in range(1, 11):
-            # Sample replay buffer 
-            batch = replay_buffer.sample(batch_size)
-            state, action, next_state, reward, not_done = batch['obs'], batch['action'], batch['next_obs'], batch['reward'], batch['not_done']
-            action = torch.tensor(action, device=self.actor.device, dtype=torch.float32)
-            reward = torch.tensor(reward, device=self.actor.device, dtype=torch.float32)
-            not_done = torch.tensor(not_done, device=self.actor.device)
+        # Sample replay buffer 
+        batch = replay_buffer.sample(batch_size)
+        state, action, next_state, reward, not_done = batch['obs'], batch['action'], batch['next_obs'], batch['reward'], batch['not_done']
+        action = torch.tensor(action, device=self.actor.device, dtype=torch.float32)
+        reward = torch.tensor(reward, device=self.actor.device, dtype=torch.float32)
+        not_done = torch.tensor(not_done, device=self.actor.device)
 
-            weights = torch.tensor(batch['weights'], device=self.actor.device, dtype=torch.float32)
+        weights = torch.tensor(batch['weights'], device=self.actor.device, dtype=torch.float32)
 
-            with torch.no_grad():
-                # Select action according to policy and add clipped noise
-                noise = (
-                    torch.randn_like(action) * self.policy_noise
-                ).clamp(-self.noise_clip, self.noise_clip)
+        with torch.no_grad():
+            # Select action according to policy and add clipped noise
+            noise = (
+                torch.randn_like(action) * self.policy_noise
+            ).clamp(-self.noise_clip, self.noise_clip)
 
-                next_action = (
-                    self.actor_target.forward_train(next_state) + noise
-                ).clamp(-1, 1)
+            next_action = (
+                self.actor_target.forward_train(next_state) + noise
+            ).clamp(-1, 1)
 
-                # Compute the target Q value
-                target_Q1, target_Q2 = self.critic_target(next_state, next_action)
-                target_Q = torch.min(target_Q1, target_Q2)
-                target_Q = reward + not_done * self.discount * target_Q
+            # Compute the target Q value
+            target_Q1, target_Q2 = self.critic_target(next_state, next_action)
+            target_Q = torch.min(target_Q1, target_Q2)
+            target_Q = reward + not_done * self.discount * target_Q
 
-            # Get current Q estimates
-            current_Q1, current_Q2 = self.critic(state, action)
+        # Get current Q estimates
+        current_Q1, current_Q2 = self.critic(state, action)
 
-            # Compute critic loss
-            critic_loss = self.mse(current_Q1, target_Q, weights) + self.mse(current_Q2, target_Q, weights)
+        # Compute critic loss
+        critic_loss = self.mse(current_Q1, target_Q, weights) + self.mse(current_Q2, target_Q, weights)
 
-            # Optimize the critic
-            self.critic_optimizer.zero_grad()
-            critic_loss.backward()
-            nn.utils.clip_grad_norm_(self.critic.parameters(), 1)
-            self.critic_optimizer.step()
+        # Optimize the critic
+        self.critic_optimizer.zero_grad()
+        critic_loss.backward()
+        nn.utils.clip_grad_norm_(self.critic.parameters(), 1)
+        self.critic_optimizer.step()
 
-            errors1 = np.abs((current_Q1 - target_Q).detach().cpu().numpy())
-            replay_buffer.update_priorities(batch['indexes'], errors1)
+        errors1 = np.abs((current_Q1 - target_Q).detach().cpu().numpy())
+        replay_buffer.update_priorities(batch['indexes'], errors1)
 
-            # Delayed policy updates
-            if i % self.policy_freq == 0:
+        # Delayed policy updates
+        if self.total_it % self.policy_freq == 0:
 
-                # Compute actor losse
-                actor_loss = -self.critic.Q1(state, self.actor.forward_train(state)).mean()
+            # Compute actor losse
+            actor_loss = -self.critic.Q1(state, self.actor.forward_train(state)).mean()
 
-                # Optimize the actor 
-                self.actor_optimizer.zero_grad()
-                actor_loss.backward()
-                self.actor_optimizer.step()
+            # Optimize the actor 
+            self.actor_optimizer.zero_grad()
+            actor_loss.backward()
+            self.actor_optimizer.step()
 
-                # Update the frozen target models
-                for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
-                    target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
+            # Update the frozen target models
+            for param, target_param in zip(self.critic.parameters(), self.critic_target.parameters()):
+                target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 
-                for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
-                    target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
+            for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
+                target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 
 
     def save(self):

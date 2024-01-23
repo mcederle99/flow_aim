@@ -46,7 +46,7 @@ env_params = EnvParams(additional_params=ADDITIONAL_ENV_PARAMS)
 from flow.core.params import SumoParams
 
 random_seed = np.random.choice(1000)
-sim_params = SumoParams(sim_step=0.25, render=False, seed=random_seed)
+sim_params = SumoParams(sim_step=0.1, render=False, seed=random_seed)
 
 from flow.core.params import TrafficLightParams
 

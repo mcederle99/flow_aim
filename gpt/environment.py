@@ -112,13 +112,13 @@ class SpeedEnv(Env):
                     reward = torch.tensor([-100.0])
                     done = torch.tensor([1.0])
                 elif i in succ_veh:
-                    reward = torch.tensor([100.0])
+                    reward = torch.tensor([0.0])
                     done = torch.tensor([1.0])
                 else:
-                    reward = torch.tensor([-0.25])
+                    reward = torch.tensor([-0.1])
                     done = torch.tensor([0.0])
             else:
-                reward = torch.tensor([100.0])
+                reward = torch.tensor([0.0])
                 done = torch.tensor([1.0])
             
             rewards = torch.cat((rewards, reward))

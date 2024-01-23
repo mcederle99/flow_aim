@@ -69,7 +69,7 @@ for i in range(num_eps):
         else:
             returns += sum(reward.tolist())
             break
-        if total_steps % 20 == 0 and total_steps > 500:
+        if total_steps > 500:
             aim.train(memory)
         
         state = next_state
