@@ -14,7 +14,7 @@ ep_steps_list = []
 
 state_dim = 15
 action_dim = 1
-max_action = 1.5
+max_action = 3
 
 memory_straight = PrioritizedReplayBuffer(2**20)
 memory_left = PrioritizedReplayBuffer(2**20)
@@ -102,7 +102,7 @@ for i in range(num_eps):
         # done: (V,) ordered tensor
         # crash: boolean
         
-        next_state, reward, done, crash = env.step(actions*max_action + max_action)
+        next_state, reward, done, crash = env.step(actions*max_action)
          
         if state.shape[0] > 0:
            total_steps += 1
@@ -132,9 +132,9 @@ for i in range(num_eps):
     returns_per_veh = returns/sum(env.k.vehicle._num_departed)
     returns_per_veh_list.append(returns_per_veh)
     print('Episode number: {}, Episode steps: {}, Episode total return: {}, Returns per vehicle: {}'.format(i, ep_steps, returns, returns_per_veh))
-    np.save('results/returns.npy', returns_list)
-    np.save('results/ep_steps.npy', ep_steps_list)
-    np.save('results/returns_per_veh.npy', returns_per_veh_list)
+    np.save('results/returns_fb.npy', returns_list)
+    np.save('results/ep_steps_fb.npy', ep_steps_list)
+    np.save('results/returns_per_veh_fb.npy', returns_per_veh_list)
     
     aim_straight.save()
     aim_left.save()

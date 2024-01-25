@@ -14,7 +14,7 @@ total_steps = 0
 
 state_dim = 15
 action_dim = 1
-max_action = 1.5
+max_action = 3
 
 aim_straight = TD3(
         state_dim,
@@ -87,13 +87,12 @@ for i in range(num_eps):
     for j in range(max_ep_steps):    
         # actions: (V,) ordered tensor
         actions = choose_actions(state, aim_straight, aim_left, aim_right)
-        
         # next_state: (V, F*V) ordered tensor
         # reward: (V,) ordered tensor
         # done: (V,) ordered tensor
         # crash: boolean
         
-        next_state, reward, done, crash = env.step(actions*max_action + max_action)
+        next_state, reward, done, crash = env.step(actions*max_action)
          
         state = next_state
         state = trim(state)
