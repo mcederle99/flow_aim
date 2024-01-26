@@ -49,6 +49,10 @@ class ReplayBuffer(object):
             next_state = self.next_state[ind[i]]
             not_done = self.not_done[ind[i]]
             
+            if next_state.shape[0] > state.shape[0]:
+                diff = next_state.shape[0] - state.shape[0]
+                next_state = next_state[:-diff]
+
             num_padding = max_num_vehs - (state.shape[0] // 15)
             for j in range(num_padding):
                 state = torch.cat((state, torch.zeros(15, dtype=torch.float32)))

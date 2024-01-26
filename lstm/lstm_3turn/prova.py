@@ -3,6 +3,28 @@ import torch.nn as nn
 import torch.nn.functional as F
 import numpy as np
 
+def order_vehicles(state):
+    distances = {}
+    ordered_vehicles = []
+
+    for veh in list(state.keys()):
+        perturbation = 1e-10*np.random.randn()
+        dist = np.sqrt(state[veh][0]**2 + state[veh][1]**2) + perturbation
+        distances[dist] = veh
+
+    for _ in list(state.keys()):
+        min_dist = min(list(distances.keys()))
+        ordered_vehicles.append(distances[min_dist])
+        distances.pop(min_dist)
+
+    return ordered_vehicles
+
+print(order_vehicles({'veh1': [1,1,1,1,1,1,1,1]}))
+
+raise KeyboardInterrupt
+
+
+
 class Actor(nn.Module):
     def __init__(self, ego_state_dim, action_dim, max_action):
         super(Actor, self).__init__()

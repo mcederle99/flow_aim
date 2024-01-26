@@ -24,7 +24,7 @@ aim = TD3(
         policy_freq=2,
         filename='models/LSTM_AIM')
 
-#aim.load()
+aim.load()
 
 crash_counter = 0
 for i in range(num_eps):
@@ -57,12 +57,7 @@ for i in range(num_eps):
          
         state = next_state
         state = trim(state)
-        #print(state)
-        #print(actions)
-        #print(reward)
-        #print(done)
-        #print('----------------------------')
-        #input('')
+        
         returns += sum(reward.tolist())
         ep_steps += 1
         

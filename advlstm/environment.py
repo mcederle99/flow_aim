@@ -131,7 +131,7 @@ class SpeedEnv(Env):
         # successful_vehicles
         succ_veh = self.k.simulation.successful_vehicles()
         
-        rewards = torch.tensor([])
+        rewards = torch.tensor([], dtype=torch.float32)
         dones = torch.tensor([])
         
         for i in vehs:

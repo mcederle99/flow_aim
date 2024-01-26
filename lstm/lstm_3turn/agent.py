@@ -25,7 +25,7 @@ class TD3(object):
 
         self.critic = Critic(state_dim, action_dim)
         self.critic_target = copy.deepcopy(self.critic)
-        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=1e-4, weight_decay=1e-6)
+        self.critic_optimizer = torch.optim.Adam(self.critic.parameters(), lr=1e-5)
 
         self.max_action = max_action
         self.discount = discount

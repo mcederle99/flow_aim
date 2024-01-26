@@ -27,15 +27,6 @@ def trim(state):
     else:
         return state
 
-def variance(data):
-    n = len(data)
-    mean = sum(data) / n
-    # Calculate the sum of squared differences from the mean
-    squared_diff = sum((x - mean) ** 2 for x in data)
-    # Calculate the variance
-    variance = squared_diff / n
-    return variance
-
 from environment import ADDITIONAL_ENV_PARAMS
 from scenario import ADDITIONAL_NET_PARAMS
 from flow.core.params import EnvParams
