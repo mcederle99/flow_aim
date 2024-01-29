@@ -83,7 +83,10 @@ for i in range(num_eps):
     
     returns = 0
     ep_steps = 0
-    
+    learn_steps_right = 0
+    learn_steps_left = 0
+    learn_steps_straight = 0
+
     # state is a 2-dim tensor
     state = env.reset() # (V, F*V) where V: number of vehicles and F: number of features of each vehicle 
 
@@ -109,15 +112,14 @@ for i in range(num_eps):
            for k in range(state.shape[0]):
                 if state[k][8] == 1.0:
                     memory_right.add(state[k,:], actions[k], reward[k], next_state[k,:], done[k])
+                    learn_steps_right += 1
                 elif state[k][9] == 1.0:
                     memory_straight.add(state[k,:], actions[k], reward[k], next_state[k,:], done[k])
+                    learn_steps_straight += 1
                 elif state[k][10] == 1.0:
                     memory_left.add(state[k,:], actions[k], reward[k], next_state[k,:], done[k])
-        if total_steps % 20 == 0 and total_steps > 5000:
-            aim_straight.train(memory_straight)
-            aim_left.train(memory_left)
-            aim_right.train(memory_right)
-        
+                    learn_steps_left += 1
+                    
         state = next_state
         state = trim(state)
         
@@ -126,6 +128,11 @@ for i in range(num_eps):
         
         if crash:
             break
+    
+    if total_steps > 5000:
+        aim_straight.train(memory_straight, learn_steps_straight)
+        aim_left.train(memory_left, learn_steps_left)
+        aim_right.train(memory_right, learn_steps_right)
         
     returns_list.append(returns)
     ep_steps_list.append(ep_steps)

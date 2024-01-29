@@ -16,7 +16,7 @@ class TD3(object):
         policy_noise=0.2,
         noise_clip=0.3,
         policy_freq=2,
-        filename='LSTM_AIM'
+        filename='GRU_AIM'
     ):
 
         self.actor = Actor(state_dim, action_dim, max_action)
@@ -47,10 +47,10 @@ class TD3(object):
         weighted_squared_error = weights * td_error * td_error
         return torch.sum(weighted_squared_error) / torch.numel(weighted_squared_error)
 
-    def train(self, replay_buffer, batch_size=128):
-        self.total_it += 1
+    def train(self, replay_buffer, learn_steps, batch_size=128):
         
-        for i in range(1, 11):
+        for _ in range(learn_steps):
+            self.total_it += 1
             # Sample replay buffer 
             batch = replay_buffer.sample(batch_size)
             state, action, next_state, reward, not_done = batch['obs'], batch['action'], batch['next_obs'], batch['reward'], batch['not_done']
@@ -91,7 +91,7 @@ class TD3(object):
             replay_buffer.update_priorities(batch['indexes'], errors1)
 
             # Delayed policy updates
-            if i % self.policy_freq == 0:
+            if self.total_it % self.policy_freq == 0:
 
                 # Compute actor losse
                 actor_loss = -self.critic.Q1(state, self.actor.forward_train(state)).mean()

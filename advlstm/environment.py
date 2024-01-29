@@ -147,7 +147,7 @@ class SpeedEnv(Env):
 #                dist = np.sqrt((xpos-xdes)**2 + (ypos-ydes)**2)
 
                 if i in coll_veh:
-                    reward = torch.tensor([-50.0])
+                    reward = torch.tensor([-100.0])
                     done = torch.tensor([1.0])
                 else:
                     vel = np.clip(self.k.vehicle.get_speed(i)/13.9, 0, 1)
