@@ -12,7 +12,7 @@ ep_steps_list = []
 
 state_dim = 15
 action_dim = 1
-max_action = 1.5
+max_action = 3
 
 def rl_actions(state):
     num = state.shape[0]
@@ -45,7 +45,7 @@ for i in range(num_eps):
         # done: (V,) ordered tensor
         # crash: boolean
         
-        next_state, reward, done, crash = env.step(actions*max_action + max_action)
+        next_state, reward, done, crash = env.step(actions*max_action)
          
         state = next_state
         state = trim(state)
@@ -61,8 +61,8 @@ for i in range(num_eps):
     returns_per_veh = returns/sum(env.k.vehicle._num_departed)
     returns_per_veh_list.append(returns_per_veh)
     print('Episode number: {}, Episode steps: {}, Episode total return: {}, Returns per vehicle: {}'.format(i, ep_steps, returns, returns_per_veh))
-    np.save('results/returns_random_bigr.npy', returns_list)
-    np.save('results/ep_steps_random_bigr.npy', ep_steps_list)
-    np.save('results/returns_per_veh_random_bigr.npy', returns_per_veh_list)
+    np.save('results/returns_random.npy', returns_list)
+    np.save('results/ep_steps_random.npy', ep_steps_list)
+    np.save('results/returns_per_veh_random.npy', returns_per_veh_list)
     
     env.terminate()

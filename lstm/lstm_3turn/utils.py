@@ -27,16 +27,26 @@ def trim(state):
     else:
         return state
 
-def variance(data):
-    n = len(data)
-    mean = sum(data) / n
-    # Calculate the sum of squared differences from the mean
-    squared_diff = sum((x - mean) ** 2 for x in data)
-    # Calculate the variance
-    variance = squared_diff / n
-    return variance
+def rl_actions(state):
+    num = state.shape[0]
+    actions = torch.randn((num,), device="cuda").clamp(-1, 1)
+    return actions.detach().cpu()
 
-from environment import ADDITIONAL_ENV_PARAMS
+# 8: right, 9: straight, 10: left
+def choose_actions(state, aim_straight, aim_left, aim_right):
+    actions = torch.tensor([])
+    for i in range(state.shape[0]):
+        if state[i][8] == 1.0:
+            action = aim_right.select_action(state[i,:].unsqueeze(dim=0))
+        elif state[i][9] == 1.0:
+            action = aim_straight.select_action(state[i,:].unsqueeze(dim=0))
+        elif state[i][10] == 1.0:
+            action = aim_left.select_action(state[i,:].unsqueeze(dim=0))
+        actions = torch.cat((actions, action))
+
+    return actions
+
+from environment_batch import ADDITIONAL_ENV_PARAMS
 from scenario import ADDITIONAL_NET_PARAMS
 from flow.core.params import EnvParams
 
@@ -56,7 +66,8 @@ vehicles = VehicleParams()
 
 from flow.controllers.rlcontroller import RLController
 from flow.controllers.routing_controllers import ContinuousRouter
-from flow.core.params import SumoCarFollowingParams
+from flow.core.params import SumoCarFollowingParams, SumoParams
+from flow.utils.registry import make_create_env
 
 vehicles.add("rl",
              acceleration_controller=(RLController, {}),
@@ -67,6 +78,8 @@ vehicles.add("rl",
 
 from flow.core.params import InFlows
 
+inflow_prob = 1/18
+
 inflow = InFlows()
 
 inflow.add(veh_type="rl",
@@ -74,32 +87,33 @@ inflow.add(veh_type="rl",
            depart_lane="best",
            #vehs_per_hour=200,
            #period=18,
-           probability=1/18
+           probability=inflow_prob
           )
 inflow.add(veh_type="rl",
            edge="b_c",
            depart_lane="best",
            #vehs_per_hour=200,
            #period=18,
-           probability=1/18
+           probability=inflow_prob
           )
 inflow.add(veh_type="rl",
            edge="r_c",
            depart_lane="best",
            #vehs_per_hour=200
            #period=18,
-           probability=1/18
+           probability=inflow_prob
           )
 inflow.add(veh_type="rl",
            edge="l_c",
            depart_lane="best",
            #vehs_per_hour=200
            #period=18,
-           probability=1/18
+           probability=inflow_prob
           )
 
 from flow.core.params import NetParams
-from environment import SpeedEnv
+from environment_batch import SpeedEnv
+#from environment import SpeedEnv
 from scenario import IntersectionNetwork
 
 net_params = NetParams(inflows=inflow, additional_params=ADDITIONAL_NET_PARAMS)
@@ -118,3 +132,51 @@ flow_params = dict(
 
 # number of time steps
 flow_params['env'].horizon = 1200
+
+def evaluate(aim_straight, aim_left, aim_right, flow_params, num_eps=10):
+    
+    returns_list = []
+    ep_steps_list = []
+    returns_per_veh_list = []
+    
+    for i in range(num_eps):
+
+        random_seed = np.random.choice(1000)
+        sim_params = SumoParams(sim_step=0.25, render=False, seed=random_seed)
+        flow_params['sim'] = sim_params
+        # Get the env name and a creator for the environment.
+        create_env, _ = make_create_env(flow_params)
+        # Create the environment.
+        env = create_env()
+        max_ep_steps = env.env_params.horizon
+
+        returns = 0
+        ep_steps = 0
+
+        # state is a 2-dim tensor
+        state = env.reset() # (V, F*V) where V: number of vehicles and F: number of features of each vehicle 
+
+        for j in range(max_ep_steps):
+            # actions: (V,) ordered tensor
+            actions = choose_actions(state, aim_straight, aim_left, aim_right)
+
+            # next_state: (V, F*V) ordered tensor
+            # reward: (V,) ordered tensor
+            # done: (V,) ordered tensor
+            # crash: boolean
+
+            state, reward, done, crash = env.step(actions*3)
+            state = trim(state)
+
+            returns += sum(reward.tolist())
+            ep_steps += 1
+
+            if crash:
+                break
+
+        returns_list.append(returns)
+        ep_steps_list.append(ep_steps)
+        returns_per_veh = returns/sum(env.k.vehicle._num_departed)
+        returns_per_veh_list.append(returns_per_veh)
+        
+    return np.mean(ep_steps_list), np.mean(returns_list), np.mean(returns_per_veh_list)  

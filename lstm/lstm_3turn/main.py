@@ -2,12 +2,13 @@ from flow.core.params import SumoParams
 from flow.utils.registry import make_create_env
 import numpy as np
 import torch
-from utils import flow_params, trim, order_vehicles
+from utils import flow_params, trim, order_vehicles, evaluate
 from per import PrioritizedReplayBuffer
 from agent import TD3
 
-num_eps = 1000 
+num_eps = 100 
 total_steps = 0
+best_ep_steps = 0
 returns_list = []
 returns_per_veh_list = []
 ep_steps_list = []
@@ -29,7 +30,7 @@ aim_straight = TD3(
         policy_noise=0.2,
         noise_clip=0.5,
         policy_freq=2,
-        filename='LSTM_AIM_straight')
+        filename='models/newrf/LSTM_AIM_straight')
 aim_left = TD3(
         state_dim,
         action_dim,
@@ -39,7 +40,7 @@ aim_left = TD3(
         policy_noise=0.2,
         noise_clip=0.5,
         policy_freq=2,
-        filename='LSTM_AIM_left')
+        filename='models/newrf/LSTM_AIM_left')
 aim_right = TD3(
         state_dim,
         action_dim,
@@ -49,7 +50,7 @@ aim_right = TD3(
         policy_noise=0.2,
         noise_clip=0.5,
         policy_freq=2,
-        filename='LSTM_AIM_right')
+        filename='models/newrf/LSTM_AIM_right')
 
 def rl_actions(state):
     num = state.shape[0]
@@ -70,6 +71,16 @@ def choose_actions(state, aim_straight, aim_left, aim_right):
 
     return actions
 
+ep_steps, returns, returns_per_veh = evaluate(aim_straight, aim_left, aim_right, flow_params)
+returns_list.append(returns)
+ep_steps_list.append(ep_steps)
+returns_per_veh_list.append(returns_per_veh)
+np.save('results/returns_fb.npy', returns_list)
+np.save('results/ep_steps_fb.npy', ep_steps_list)
+np.save('results/returns_per_veh_fb.npy', returns_per_veh_list)
+
+print('Training ep. number: {}, Avg. Ev. steps: {}, Avg. Ev. total return: {}, Avg. Ev. returns per vehicle: {}, Best ep. steps: {}'.format(0, ep_steps, returns, returns_per_veh, best_ep_steps))
+
 for i in range(num_eps):
 
     random_seed = np.random.choice(1000)
@@ -81,8 +92,8 @@ for i in range(num_eps):
     env = create_env()
     max_ep_steps = env.env_params.horizon
     
-    returns = 0
-    ep_steps = 0
+    #returns = 0
+    #ep_steps = 0
     learn_steps_right = 0
     learn_steps_left = 0
     learn_steps_straight = 0
@@ -123,8 +134,8 @@ for i in range(num_eps):
         state = next_state
         state = trim(state)
         
-        returns += sum(reward.tolist())
-        ep_steps += 1
+        #returns += sum(reward.tolist())
+        #ep_steps += 1
         
         if crash:
             break
@@ -133,17 +144,20 @@ for i in range(num_eps):
         aim_straight.train(memory_straight, learn_steps_straight)
         aim_left.train(memory_left, learn_steps_left)
         aim_right.train(memory_right, learn_steps_right)
-        
+    
+    ep_steps, returns, returns_per_veh = evaluate(aim_straight, aim_left, aim_right, flow_params)
     returns_list.append(returns)
     ep_steps_list.append(ep_steps)
-    returns_per_veh = returns/sum(env.k.vehicle._num_departed)
+    #returns_per_veh = returns/sum(env.k.vehicle._num_departed)
     returns_per_veh_list.append(returns_per_veh)
-    print('Episode number: {}, Episode steps: {}, Episode total return: {}, Returns per vehicle: {}'.format(i, ep_steps, returns, returns_per_veh))
-    np.save('results/returns_fb.npy', returns_list)
-    np.save('results/ep_steps_fb.npy', ep_steps_list)
-    np.save('results/returns_per_veh_fb.npy', returns_per_veh_list)
-    
-    aim_straight.save()
-    aim_left.save()
-    aim_right.save()
+    np.save('results/newrf/returns.npy', returns_list)
+    np.save('results/newrf/ep_steps.npy', ep_steps_list)
+    np.save('results/newrf/returns_per_veh.npy', returns_per_veh_list)
+    if ep_steps >= best_ep_steps:
+        aim_straight.save()
+        aim_left.save()
+        aim_right.save()
+        best_ep_steps = ep_steps
+
+    print('Training ep. number: {}, Avg. Ev. steps: {}, Avg. Ev. total return: {}, Avg. Ev. returns per vehicle: {}, Best ep. steps: {}'.format(i, ep_steps, returns, returns_per_veh, best_ep_steps))
     env.terminate()
