@@ -6,7 +6,7 @@ def order_vehicles(state):
     ordered_vehicles = []
     
     for veh in list(state.keys()):
-        perturbation = 1e-10*np.random.randn()
+        perturbation = 1e-8*np.random.randn()
         dist = np.sqrt(state[veh][0]**2 + state[veh][1]**2) + perturbation
         distances[dist] = veh
 
