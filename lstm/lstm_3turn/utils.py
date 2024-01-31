@@ -37,16 +37,16 @@ def choose_actions(state, aim_straight, aim_left, aim_right):
     actions = torch.tensor([])
     for i in range(state.shape[0]):
         if state[i][8] == 1.0:
-            action = aim_right.select_action(state[i,:].unsqueeze(dim=0))
+            action = aim_right.select_action(state[i,:])
         elif state[i][9] == 1.0:
-            action = aim_straight.select_action(state[i,:].unsqueeze(dim=0))
+            action = aim_straight.select_action(state[i,:])
         elif state[i][10] == 1.0:
-            action = aim_left.select_action(state[i,:].unsqueeze(dim=0))
+            action = aim_left.select_action(state[i,:])
         actions = torch.cat((actions, action))
 
     return actions
 
-from environment_batch import ADDITIONAL_ENV_PARAMS
+from environment import ADDITIONAL_ENV_PARAMS
 from scenario import ADDITIONAL_NET_PARAMS
 from flow.core.params import EnvParams
 
@@ -112,8 +112,7 @@ inflow.add(veh_type="rl",
           )
 
 from flow.core.params import NetParams
-from environment_batch import SpeedEnv
-#from environment import SpeedEnv
+from environment import SpeedEnv
 from scenario import IntersectionNetwork
 
 net_params = NetParams(inflows=inflow, additional_params=ADDITIONAL_NET_PARAMS)

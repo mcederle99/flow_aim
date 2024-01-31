@@ -114,6 +114,8 @@ class PrioritizedReplayBuffer(object):
         max_num_vehs = max_num_vehs // 15
 
         prob_min = self._min() / self._sum()
+        if prob_min == 0:
+            prob_min += 1e-10
         max_weight = (prob_min * self.size) ** (-self.beta)
 
         batch_state = torch.zeros((batch_size, 15*max_num_vehs), dtype=torch.float32)

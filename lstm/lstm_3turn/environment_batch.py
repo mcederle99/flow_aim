@@ -2,7 +2,7 @@ from flow.envs.base_gpt import Env
 import torch
 from gym.spaces.box import Box
 from gym.spaces import MultiBinary
-from utils import order_vehicles
+from utils_batch import order_vehicles
 
 import numpy as np
 
@@ -139,32 +139,18 @@ class SpeedEnv(Env):
                 if i in coll_veh:
                     reward = torch.tensor([-100.0])
                     done = torch.tensor([1.0])
+                elif i in succ_veh:
+                    reward = torch.tensor([100.0])
+                    done = torch.tensor([1.0])
                 else:
-                    vel = np.clip(self.k.vehicle.get_speed(i)/13.9, 0, 1)
-                    reward = torch.tensor([-0.1 + vel])
+                    reward = torch.tensor([-0.25])
                     done = torch.tensor([0.0])
             else:
-                reward = torch.tensor([0.0])
+                reward = torch.tensor([100.0])
                 done = torch.tensor([1.0])
-
+            
             rewards = torch.cat((rewards, reward))
             dones = torch.cat((dones, done))
-
-#                if i in coll_veh:
-#                    reward = torch.tensor([-100.0])
-#                    done = torch.tensor([1.0])
-#                elif i in succ_veh:
-#                    reward = torch.tensor([100.0])
-#                    done = torch.tensor([1.0])
-#                else:
-#                    reward = torch.tensor([-0.25])
-#                    done = torch.tensor([0.0])
-#            else:
-#                reward = torch.tensor([100.0])
-#                done = torch.tensor([1.0])
-#            
-#            rewards = torch.cat((rewards, reward))
-#            dones = torch.cat((dones, done))
 
         return rewards, dones
 

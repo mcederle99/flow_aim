@@ -2,15 +2,15 @@ from flow.core.params import SumoParams
 from flow.utils.registry import make_create_env
 import numpy as np
 import torch
-from utils import flow_params, trim, order_vehicles
-from per import PrioritizedReplayBuffer
-from agent import TD3
+from utils_batch import flow_params, trim, order_vehicles, choose_actions
+from per_batch import PrioritizedReplayBuffer
+from agent_batch import TD3
 
 num_eps = 1000 
 total_steps = 0
-#returns_list = []
-#returns_per_veh_list = []
-#ep_steps_list = []
+returns_list = []
+returns_per_veh_list = []
+ep_steps_list = []
 
 state_dim = 15
 action_dim = 1
@@ -25,7 +25,7 @@ aim_straight = TD3(
         policy_noise=0.2,
         noise_clip=0.5,
         policy_freq=2,
-        filename='LSTM_AIM_straight')
+        filename='models/batch/LSTM_AIM_straight')
 aim_left = TD3(
         state_dim,
         action_dim,
@@ -35,7 +35,7 @@ aim_left = TD3(
         policy_noise=0.2,
         noise_clip=0.5,
         policy_freq=2,
-        filename='LSTM_AIM_left')
+        filename='models/batch/LSTM_AIM_left')
 aim_right = TD3(
         state_dim,
         action_dim,
@@ -45,25 +45,11 @@ aim_right = TD3(
         policy_noise=0.2,
         noise_clip=0.5,
         policy_freq=2,
-        filename='LSTM_AIM_right')
+        filename='models/batch/LSTM_AIM_right')
 
 aim_straight.load()
 aim_left.load()
 aim_right.load()
-
-# 8: right, 9: straight, 10: left
-def choose_actions(state, aim_straight, aim_left, aim_right):
-    actions = torch.tensor([])
-    for i in range(state.shape[0]):
-        if state[i][8] == 1.0:
-            action = aim_right.select_action(state[i,:])
-        elif state[i][9] == 1.0:
-            action = aim_straight.select_action(state[i,:])
-        elif state[i][10] == 1.0:
-            action = aim_left.select_action(state[i,:])
-        actions = torch.cat((actions, action))
-
-    return actions
 
 crash_counter = 0
 
@@ -104,10 +90,10 @@ for i in range(num_eps):
             crash_counter += 1
             break
         
-#    returns_list.append(returns)
-#    ep_steps_list.append(ep_steps)
+    returns_list.append(returns)
+    ep_steps_list.append(ep_steps)
     returns_per_veh = returns/sum(env.k.vehicle._num_departed)
-#    returns_per_veh_list.append(returns_per_veh)
+    returns_per_veh_list.append(returns_per_veh)
     print('Episode number: {}, Episode steps: {}, Episode total return: {}, Returns per vehicle: {}'.format(i, ep_steps, returns, returns_per_veh))
 #    np.save('results/returns.npy', returns_list)
 #    np.save('results/ep_steps.npy', ep_steps_list)

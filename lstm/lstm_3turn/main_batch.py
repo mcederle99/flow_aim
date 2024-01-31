@@ -2,7 +2,7 @@ from flow.core.params import SumoParams
 from flow.utils.registry import make_create_env
 import numpy as np
 import torch
-from utils import flow_params, trim, order_vehicles, evaluate, choose_actions, rl_actions
+from utils_batch import flow_params, trim, order_vehicles, evaluate, choose_actions, rl_actions
 from per_batch import PrioritizedReplayBuffer
 from agent_batch import TD3
 
@@ -30,7 +30,7 @@ aim_straight = TD3(
         policy_noise=0.2,
         noise_clip=0.5,
         policy_freq=2,
-        filename='models/newrf/LSTM_AIM_straight')
+        filename='models/batch/LSTM_AIM_straight')
 aim_left = TD3(
         state_dim,
         action_dim,
@@ -40,7 +40,7 @@ aim_left = TD3(
         policy_noise=0.2,
         noise_clip=0.5,
         policy_freq=2,
-        filename='models/newrf/LSTM_AIM_left')
+        filename='models/batch/LSTM_AIM_left')
 aim_right = TD3(
         state_dim,
         action_dim,
@@ -50,17 +50,17 @@ aim_right = TD3(
         policy_noise=0.2,
         noise_clip=0.5,
         policy_freq=2,
-        filename='models/newrf/LSTM_AIM_right')
+        filename='models/batch/LSTM_AIM_right')
 
-#ep_steps, returns, returns_per_veh = evaluate(aim_straight, aim_left, aim_right, flow_params)
-#returns_list.append(returns)
-#ep_steps_list.append(ep_steps)
-#returns_per_veh_list.append(returns_per_veh)
-#np.save('results/returns_fb.npy', returns_list)
-#np.save('results/ep_steps_fb.npy', ep_steps_list)
-#np.save('results/returns_per_veh_fb.npy', returns_per_veh_list)
+ep_steps, returns, returns_per_veh = evaluate(aim_straight, aim_left, aim_right, flow_params)
+returns_list.append(returns)
+ep_steps_list.append(ep_steps)
+returns_per_veh_list.append(returns_per_veh)
+np.save('results/batch/returns.npy', returns_list)
+np.save('results/batch/ep_steps.npy', ep_steps_list)
+np.save('results/batch/returns_per_veh.npy', returns_per_veh_list)
 
-#print('Training ep. number: {}, Avg. Ev. steps: {}, Avg. Ev. total return: {}, Avg. Ev. returns per vehicle: {}, Best ep. steps: {}'.format(0, ep_steps, returns, returns_per_veh, best_ep_steps))
+print('Training ep. number: {}, Avg. Ev. steps: {}, Avg. Ev. total return: {}, Avg. Ev. returns per vehicle: {}, Best ep. steps: {}'.format(0, ep_steps, returns, returns_per_veh, best_ep_steps))
 
 for i in range(num_eps):
 
@@ -84,7 +84,7 @@ for i in range(num_eps):
 
     for j in range(max_ep_steps):    
         # actions: (V,) ordered tensor
-        if total_steps > 500:
+        if total_steps > 5000:
             actions = choose_actions(state, aim_straight, aim_left, aim_right)
             noise = (
                 torch.randn_like(actions) * 0.1).clamp(-0.5, 0.5)
@@ -121,7 +121,7 @@ for i in range(num_eps):
         if crash:
             break
     
-    if total_steps > 500:
+    if total_steps > 5000:
         aim_straight.train(memory_straight, learn_steps_straight)
         aim_left.train(memory_left, learn_steps_left)
         aim_right.train(memory_right, learn_steps_right)
@@ -131,9 +131,9 @@ for i in range(num_eps):
         ep_steps_list.append(ep_steps)
         #returns_per_veh = returns/sum(env.k.vehicle._num_departed)
         returns_per_veh_list.append(returns_per_veh)
-        np.save('results/newrf/returns.npy', returns_list)
-        np.save('results/newrf/ep_steps.npy', ep_steps_list)
-        np.save('results/newrf/returns_per_veh.npy', returns_per_veh_list)
+        np.save('results/batch/returns.npy', returns_list)
+        np.save('results/batch/ep_steps.npy', ep_steps_list)
+        np.save('results/batch/returns_per_veh.npy', returns_per_veh_list)
         if ep_steps >= best_ep_steps:
             aim_straight.save()
             aim_left.save()
