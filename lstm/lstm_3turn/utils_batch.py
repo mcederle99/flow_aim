@@ -182,5 +182,6 @@ def evaluate(aim_straight, aim_left, aim_right, flow_params, num_eps=10):
         ep_steps_list.append(ep_steps)
         returns_per_veh = returns/sum(env.k.vehicle._num_departed)
         returns_per_veh_list.append(returns_per_veh)
+        env.terminate()
         
     return np.mean(ep_steps_list), np.mean(returns_list), np.mean(returns_per_veh_list)  
