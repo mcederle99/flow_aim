@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from utils_batch import flow_params, trim, order_vehicles, choose_actions
 from per_batch import PrioritizedReplayBuffer
-from agent_batch import TD3
+from agent_batch_2 import TD3
 
 num_eps = 1000 
 total_steps = 0
@@ -25,7 +25,7 @@ aim_straight = TD3(
         policy_noise=0.2,
         noise_clip=0.5,
         policy_freq=2,
-        filename='models/batch/LSTM_AIM_straight')
+        filename='models/batch_2/LSTM_AIM_straight')
 aim_left = TD3(
         state_dim,
         action_dim,
@@ -35,7 +35,7 @@ aim_left = TD3(
         policy_noise=0.2,
         noise_clip=0.5,
         policy_freq=2,
-        filename='models/batch/LSTM_AIM_left')
+        filename='models/batch_2/LSTM_AIM_left')
 aim_right = TD3(
         state_dim,
         action_dim,
@@ -45,7 +45,7 @@ aim_right = TD3(
         policy_noise=0.2,
         noise_clip=0.5,
         policy_freq=2,
-        filename='models/batch/LSTM_AIM_right')
+        filename='models/batch_2/LSTM_AIM_right')
 
 aim_straight.load()
 aim_left.load()

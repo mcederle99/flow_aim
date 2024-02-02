@@ -51,7 +51,7 @@ class TD3(object):
 
     def train(self, replay_buffer, learn_steps, batch_size=128):
         
-        for _ in range(learn_steps):
+        for _ in range(learn_steps//2):
             self.total_it += 1
 
             # Sample replay buffer 
