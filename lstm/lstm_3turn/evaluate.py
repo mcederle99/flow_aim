@@ -77,7 +77,9 @@ for i in range(num_eps):
         # reward: (V,) ordered tensor
         # done: (V,) ordered tensor
         # crash: boolean
-        
+        for q in env.k.vehicle.get_ids():
+            print(env.k.vehicle.get_route(q)[0] == env.k.vehicle.get_edge(q))
+            raise KeyboardInterrupt
         next_state, reward, done, crash = env.step(actions*max_action)
          
         state = next_state

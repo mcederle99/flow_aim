@@ -6,7 +6,7 @@ def order_vehicles(state):
     ordered_vehicles = []
     
     for veh in list(state.keys()):
-        perturbation = 1e-10*np.random.randn()
+        perturbation = 1e-8*np.random.randn()
         dist = np.sqrt(state[veh][0]**2 + state[veh][1]**2) + perturbation
         distances[dist] = veh
     
@@ -26,6 +26,19 @@ def trim(state):
         return state
     else:
         return state
+
+def choose_actions(state, aim_straight, aim_left, aim_right):
+    actions = torch.tensor([])
+    for i in range(state.shape[0]):
+        if state[i][8] == 1.0:
+            action = aim_right.select_action(state[i,:].unsqueeze(dim=0))
+        elif state[i][9] == 1.0:
+            action = aim_straight.select_action(state[i,:].unsqueeze(dim=0))
+        elif state[i][10] == 1.0:
+            action = aim_left.select_action(state[i,:].unsqueeze(dim=0))
+        actions = torch.cat((actions, action))
+
+    return actions
 
 from environment import ADDITIONAL_ENV_PARAMS
 from scenario import ADDITIONAL_NET_PARAMS
@@ -65,33 +78,38 @@ inflow = InFlows()
 inflow.add(veh_type="rl",
            edge="t_c",
            depart_lane="best",
-           #vehs_per_hour=200,
+           depart_speed="random",
+           vehs_per_hour=200,
            #period=18,
-           probability=inflow_prob
+           #probability=inflow_prob
           )
 inflow.add(veh_type="rl",
            edge="b_c",
            depart_lane="best",
-           #vehs_per_hour=200,
+           depart_speed="random",
+           vehs_per_hour=200,
            #period=18,
-           probability=inflow_prob
+           #probability=inflow_prob
           )
 inflow.add(veh_type="rl",
            edge="r_c",
            depart_lane="best",
-           #vehs_per_hour=200
+           depart_speed="random",
+           vehs_per_hour=200,
            #period=18,
-           probability=inflow_prob
+           #probability=inflow_prob
           )
 inflow.add(veh_type="rl",
            edge="l_c",
            depart_lane="best",
-           #vehs_per_hour=200
+           depart_speed="random",
+           vehs_per_hour=200,
            #period=18,
-           probability=inflow_prob
+           #probability=inflow_prob
           )
 
-from flow.core.params import NetParams
+from flow.core.params import NetParams, SumoParams
+from flow.utils.registry import make_create_env
 from environment import SpeedEnv
 from scenario import IntersectionNetwork
 
@@ -111,3 +129,52 @@ flow_params = dict(
 
 # number of time steps
 flow_params['env'].horizon = 3000
+
+def evaluate(aim, flow_params, num_eps=10):
+
+    returns_list = []
+    ep_steps_list = []
+    returns_per_veh_list = []
+
+    for i in range(num_eps):
+
+        random_seed = np.random.choice(1000)
+        sim_params = SumoParams(sim_step=0.1, render=False, seed=random_seed)
+        flow_params['sim'] = sim_params
+        # Get the env name and a creator for the environment.
+        create_env, _ = make_create_env(flow_params)
+        # Create the environment.
+        env = create_env()
+        max_ep_steps = env.env_params.horizon
+
+        returns = 0
+        ep_steps = 0
+
+        # state is a 2-dim tensor
+        state = env.reset() # (V, F*V) where V: number of vehicles and F: number of features of each vehicle
+
+        for j in range(max_ep_steps):
+            # actions: (V,) ordered tensor
+            actions = aim.select_action(state.unsqueeze(dim=0))
+
+            # next_state: (V, F*V) ordered tensor
+            # reward: (V,) ordered tensor
+            # done: (V,) ordered tensor
+            # crash: boolean
+
+            state, reward, done, crash = env.step(actions*3)
+            state = trim(state)
+
+            returns += sum(reward.tolist())
+            ep_steps += 1
+
+            if crash:
+                break
+
+        returns_list.append(returns)
+        ep_steps_list.append(ep_steps)
+        returns_per_veh = returns/sum(env.k.vehicle._num_departed)
+        returns_per_veh_list.append(returns_per_veh)
+        env.terminate()
+
+    return np.mean(ep_steps_list), np.mean(returns_list), np.mean(returns_per_veh_list)

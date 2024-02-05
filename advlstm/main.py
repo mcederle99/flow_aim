@@ -2,12 +2,14 @@ from flow.core.params import SumoParams
 from flow.utils.registry import make_create_env
 import numpy as np
 import torch
-from utils import flow_params, trim, order_vehicles
+from utils import flow_params, trim, order_vehicles, evaluate
 from memory import ReplayBuffer
 from agent import TD3
 
 num_eps = 1000
 total_steps = 0
+best_ep_steps = 0
+best_return = -100
 returns_list = []
 returns_per_veh_list = []
 ep_steps_list = []
@@ -34,6 +36,16 @@ def rl_actions(state):
     actions = torch.randn((num,), device="cuda").clamp(-1, 1)
     return actions.detach().cpu()
 
+ep_steps, returns, returns_per_veh = evaluate(aim, flow_params)
+returns_list.append(returns)
+ep_steps_list.append(ep_steps)
+returns_per_veh_list.append(returns_per_veh)
+np.save('results/returns.npy', returns_list)
+np.save('results/ep_steps.npy', ep_steps_list)
+np.save('results/returns_per_veh.npy', returns_per_veh_list)
+
+print('Training ep. number: {}, Avg. Ev. steps: {}, Avg. Ev. total return: {}, Avg. Ev. returns per vehicle: {}, Best ep. steps: {}'.format(0, ep_steps, returns, returns_per_veh, best_ep_steps))
+
 for i in range(num_eps):
 
     random_seed = np.random.choice(1000)
@@ -45,8 +57,8 @@ for i in range(num_eps):
     env = create_env()
     max_ep_steps = env.env_params.horizon
     
-    returns = 0
-    ep_steps = 0
+    #returns = 0
+    #ep_steps = 0
     learn_steps = 0
     
     # state is a 2-dim tensor
@@ -78,23 +90,32 @@ for i in range(num_eps):
         state = next_state
         state = trim(state)
         
-        returns += sum(reward.tolist())
-        ep_steps += 1
+        #returns += sum(reward.tolist())
+        #ep_steps += 1
         
         if crash:
             break
 
     if total_steps > 5000:
         aim.train(memory, learn_steps)
-
+    
+    ep_steps, returns, returns_per_veh = evaluate(aim, flow_params)
     returns_list.append(returns)
     ep_steps_list.append(ep_steps)
-    returns_per_veh = returns/sum(env.k.vehicle._num_departed)
+    #returns_per_veh = returns/sum(env.k.vehicle._num_departed)
     returns_per_veh_list.append(returns_per_veh)
-    print('Episode number: {}, Episode steps: {}, Episode total return: {}, Returns per vehicle: {}'.format(i, ep_steps, returns, returns_per_veh))
     np.save('results/returns.npy', returns_list)
     np.save('results/ep_steps.npy', ep_steps_list)
     np.save('results/returns_per_veh.npy', returns_per_veh_list)
-    
-    aim.save()
+    if best_ep_steps < 3000:
+        if ep_steps >= best_ep_steps:
+            aim.save()
+            best_ep_steps = ep_steps
+            best_return = returns_per_veh
+    else:
+        if ep_steps == 3000 and returns_per_veh > best_return:
+            aim.save()
+            best_return = returns_per_veh
+
+    print('Training ep. number: {}, Avg. Ev. steps: {}, Avg. Ev. total return: {}, Avg. Ev. returns per vehicle: {}, Best ep. steps: {}'.format(i, ep_steps, returns, returns_per_veh, best_ep_steps))
     env.terminate()

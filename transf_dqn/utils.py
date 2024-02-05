@@ -4,14 +4,16 @@ import torch
 def map_actions(actions):
     discretization = np.linspace(-1, 1, num=21)
     if actions.shape == torch.Size([]):
-        dim = 0
+        dim = 1
+        env_actions = [discretization[actions.item()]]
+        actions = actions.unsqueeze(dim=0)
     else:
         dim = actions.shape[0]
-    env_actions = np.zeros(dim)
-    for i in range(dim):
-        env_actions[i] = discretization[actions[i]]
+        env_actions = np.zeros(dim)
+        for i in range(dim):
+            env_actions[i] = discretization[actions[i]]
 
-    return env_actions
+    return env_actions, actions
 
 def order_vehicles(state):
     distances = {}
@@ -38,6 +40,20 @@ def trim(state):
         return state
     else:
         return state
+
+# 8: right, 9: straight, 10: left
+def choose_actions(state, aim_straight, aim_left, aim_right):
+    actions = torch.tensor([])
+    for i in range(state.shape[0]):
+        if state[i][8] == 1.0:
+            action = aim_right.select_action(state[i,:])
+        elif state[i][9] == 1.0:
+            action = aim_straight.select_action(state[i,:])
+        elif state[i][10] == 1.0:
+            action = aim_left.select_action(state[i,:])
+        actions = torch.cat((actions, action))
+
+    return actions
 
 from environment import ADDITIONAL_ENV_PARAMS
 from scenario import ADDITIONAL_NET_PARAMS
@@ -77,30 +93,34 @@ inflow = InFlows()
 inflow.add(veh_type="rl",
            edge="t_c",
            depart_lane="best",
-           #vehs_per_hour=200,
+           depart_speed="random",
+           vehs_per_hour=200,
            #period=18,
-           probability=inflow_prob
+           #probability=inflow_prob
           )
 inflow.add(veh_type="rl",
            edge="b_c",
            depart_lane="best",
-           #vehs_per_hour=200,
+           depart_speed="random",
+           vehs_per_hour=200,
            #period=18,
-           probability=inflow_prob
+           #probability=inflow_prob
           )
 inflow.add(veh_type="rl",
            edge="r_c",
            depart_lane="best",
-           #vehs_per_hour=200
+           depart_speed="random",
+           vehs_per_hour=200
            #period=18,
-           probability=inflow_prob
+           #probability=inflow_prob
           )
 inflow.add(veh_type="rl",
            edge="l_c",
            depart_lane="best",
-           #vehs_per_hour=200
+           depart_speed="random",
+           vehs_per_hour=200
            #period=18,
-           probability=inflow_prob
+           #probability=inflow_prob
           )
 
 from flow.core.params import NetParams

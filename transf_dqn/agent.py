@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from network import Qfunc
 
 # hyperparameters
-batch_size = 128
+batch_size = 256
 learning_rate = 3e-4
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
 #------------
@@ -38,7 +38,6 @@ class DQN():
             actions = self.q(state)
             action = torch.argmax(actions, -1).squeeze()
         else:
-            #num_vehs = state.shape[1] // 15
             action = torch.randint(0, 21, (num_vehs,))
 
         return action.detach().cpu()
@@ -80,11 +79,13 @@ class DQN():
             for param, target_param in zip(self.q.parameters(), self.q_target.parameters()):
                 target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 
-    def save(self, filename):
-            torch.save(self.q.state_dict(), filename + "_q")
-            torch.save(self.q_optimizer.state_dict(), filename + "_q_optimizer")
+    def save(self):
+        filename = self.filename
+        torch.save(self.q.state_dict(), filename + "_q")
+        torch.save(self.q_optimizer.state_dict(), filename + "_q_optimizer")
 
-    def load(self, filename):
-            self.q.load_state_dict(torch.load(filename + "_q"))
-            self.q_optimizer.load_state_dict(torch.load(filename + "_q_optimizer"))
-            self.q_target = copy.deepcopy(self.q)
+    def load(self):
+        filename = self.filename
+        self.q.load_state_dict(torch.load(filename + "_q"))
+        self.q_optimizer.load_state_dict(torch.load(filename + "_q_optimizer"))
+        self.q_target = copy.deepcopy(self.q)

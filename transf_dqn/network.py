@@ -2,12 +2,12 @@ import torch
 import torch.nn as nn
 from torch.nn import functional as F
 
-torch.manual_seed(1337)
+#torch.manual_seed(1337)
 
 n_embd = 384
 n_head = 6
 n_layer = 6
-dropout = 0.2
+dropout = 0
 vocab_size = 21
 
 class Head(nn.Module):

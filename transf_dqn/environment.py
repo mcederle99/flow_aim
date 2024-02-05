@@ -150,12 +150,14 @@ class SpeedEnv(Env):
                     reward = torch.tensor([-100.0])
                     done = torch.tensor([1.0])
                 else:
-                    #vel = np.clip(self.k.vehicle.get_speed(i)/13.9, 0, 1)
-                    #reward = torch.tensor([-0.1 + vel])
-                    reward = torch.tensor([-0.1])
+                    if self.k.vehicle.get_route(i)[1] == self.k.vehicle.get_edge(i):
+                        vel = np.clip(self.k.vehicle.get_speed(i)/13.9, 0, 1)
+                        reward = torch.tensor([vel])
+                    else:
+                        reward = torch.tensor([-1])
                     done = torch.tensor([0.0])
             else:
-                reward = torch.tensor([100.0])
+                reward = torch.tensor([1.0])
                 done = torch.tensor([1.0])
             
             rewards = torch.cat((rewards, reward))
