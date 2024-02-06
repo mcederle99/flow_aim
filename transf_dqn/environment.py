@@ -2,9 +2,24 @@ from flow.envs.base_gpt import Env
 import torch
 from gym.spaces.box import Box
 from gym.spaces import MultiBinary
-from utils import order_vehicles
 
 import numpy as np
+
+def order_vehicles(state):
+    distances = {}
+    ordered_vehicles = []
+
+    for veh in list(state.keys()):
+        perturbation = 1e-8*np.random.randn()
+        dist = np.sqrt(state[veh][0]**2 + state[veh][1]**2) + perturbation
+        distances[dist] = veh
+
+    for _ in list(state.keys()):
+        min_dist = min(list(distances.keys()))
+        ordered_vehicles.append(distances[min_dist])
+        distances.pop(min_dist)
+
+    return ordered_vehicles
 
 lanes = { 0: [0.0, 0.0, 1.0],
           1: [0.0, 1.0, 0.0],

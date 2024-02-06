@@ -66,7 +66,7 @@ class DQN():
             q_next = self.q_target(next_state).max(dim=2)[0]
             q_next = reward + self.discount * q_next * not_done
             q_next = q_next.masked_fill(mask == 0, 0.0)
-
+        
         loss = F.mse_loss(q_pred, q_next)
         self.q_optimizer.zero_grad()
         loss.backward()
