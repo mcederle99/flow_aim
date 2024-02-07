@@ -7,7 +7,7 @@ from torch.nn import functional as F
 n_embd = 384
 n_head = 6
 n_layer = 6
-dropout = 0.2
+dropout = 0
 vocab_size = 21
 
 class Head(nn.Module):

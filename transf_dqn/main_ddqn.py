@@ -6,10 +6,6 @@ from utils_ddqn import flow_params, trim, order_vehicles, map_actions
 from memory import ReplayBuffer
 from agent_ddqn import DQN
 
-# add dropout
-# less training steps
-# DDQN
-
 num_eps = 5000
 total_steps = 0
 returns_list = []
@@ -21,7 +17,7 @@ action_dim = 1
 
 memory = ReplayBuffer(15, 1)
 
-aim = DQN(15, 1, eps_dec=9e-7, filename='models/ddqn/aim')
+aim = DQN(15, 1, eps_dec=1e-6, filename='models/ddqn/aim')
 
 for i in range(num_eps):
 

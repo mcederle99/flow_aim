@@ -27,7 +27,7 @@ class DQN():
 
         self.q = Qfunc().to(device)
         self.q_target = copy.deepcopy(self.q)
-        self.q_optimizer = torch.optim.Adam(self.q.parameters(), lr=learning_rate)
+        self.q_optimizer = torch.optim.RMSprop(self.q.parameters(), lr=learning_rate)
 
         self.total_it = 0
 
@@ -44,6 +44,10 @@ class DQN():
 
     def decrement_epsilon(self):
         self.epsilon = self.epsilon - self.eps_dec if self.epsilon > self.eps_min else self.eps_min
+
+    def replace_target_network(self):
+        if self.total_it % self.replace == 0:
+            self.q_target.load_state_dict(self.q.state_dict())
 
     def train(self, replay_buffer, batch_size=batch_size):
         if replay_buffer.size < batch_size:
@@ -75,11 +79,12 @@ class DQN():
         self.q_optimizer.step()
 
         self.decrement_epsilon()
-
+        
+        self.replace_target_network()
         # Update the frozen target models
-        if self.total_it % 2 == 0:
-            for param, target_param in zip(self.q.parameters(), self.q_target.parameters()):
-                target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
+#        if self.total_it % 2 == 0:
+#            for param, target_param in zip(self.q.parameters(), self.q_target.parameters()):
+#                target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
 
     def save(self):
         filename = self.filename
