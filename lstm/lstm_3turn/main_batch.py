@@ -31,7 +31,7 @@ aim_straight = TD3(
         policy_noise=0.2,
         noise_clip=0.5,
         policy_freq=2,
-        filename='models/batch/LSTM_AIM_straight2')
+        filename='models/batch/LSTM_AIM_straight_morecol')
 aim_left = TD3(
         state_dim,
         action_dim,
@@ -41,7 +41,7 @@ aim_left = TD3(
         policy_noise=0.2,
         noise_clip=0.5,
         policy_freq=2,
-        filename='models/batch/LSTM_AIM_left2')
+        filename='models/batch/LSTM_AIM_left_morecol')
 aim_right = TD3(
         state_dim,
         action_dim,
@@ -51,15 +51,15 @@ aim_right = TD3(
         policy_noise=0.2,
         noise_clip=0.5,
         policy_freq=2,
-        filename='models/batch/LSTM_AIM_right2')
+        filename='models/batch/LSTM_AIM_right_morecol')
 
 ep_steps, returns, returns_per_veh = evaluate(aim_straight, aim_left, aim_right, flow_params)
 returns_list.append(returns)
 ep_steps_list.append(ep_steps)
 returns_per_veh_list.append(returns_per_veh)
-np.save('results/batch/returns2.npy', returns_list)
-np.save('results/batch/ep_steps2.npy', ep_steps_list)
-np.save('results/batch/returns_per_veh2.npy', returns_per_veh_list)
+np.save('results/batch/returns_morecol.npy', returns_list)
+np.save('results/batch/ep_steps_morecol.npy', ep_steps_list)
+np.save('results/batch/returns_per_veh_morecol.npy', returns_per_veh_list)
 
 print('Training ep. number: {}, Avg. Ev. steps: {}, Avg. Ev. total return: {}, Avg. Ev. returns per vehicle: {}, Best ep. steps: {}'.format(0, ep_steps, returns, returns_per_veh, best_ep_steps))
 
@@ -132,9 +132,9 @@ for i in range(num_eps):
         ep_steps_list.append(ep_steps)
         #returns_per_veh = returns/sum(env.k.vehicle._num_departed)
         returns_per_veh_list.append(returns_per_veh)
-        np.save('results/batch/returns2.npy', returns_list)
-        np.save('results/batch/ep_steps2.npy', ep_steps_list)
-        np.save('results/batch/returns_per_veh2.npy', returns_per_veh_list)
+        np.save('results/batch/returns_morecol.npy', returns_list)
+        np.save('results/batch/ep_steps_morecol.npy', ep_steps_list)
+        np.save('results/batch/returns_per_veh_morecol.npy', returns_per_veh_list)
         if best_ep_steps < 1200:
             if ep_steps >= best_ep_steps:
                 aim_straight.save()

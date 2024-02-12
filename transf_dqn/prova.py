@@ -1,13 +1,12 @@
 import numpy as np
 import torch
-from network import Qfunc
-from utils import map_actions
+import torch.nn as nn
 
-state = torch.ones(15)
-state = state.view(1,-1,15)
+transformer_model = nn.Transformer(nhead=16, num_encoder_layers=12, batch_first=True)
+src = torch.rand((1, 10, 512))
+tgt = torch.rand((1, 1, 512))
 
-q = Qfunc()
-actions = q(state)
-action = torch.argmax(actions, -1).squeeze()
-
-print(action.unsqueeze(dim=0))
+for i in range(src.shape[1]):
+    out = transformer_model(src, tgt)
+    tgt = torch.cat((tgt, out), dim=1)
+print(tgt.shape)

@@ -89,30 +89,30 @@ inflow = InFlows()
 inflow.add(veh_type="rl",
            edge="t_c",
            depart_lane="best",
-           #vehs_per_hour=200,
+           vehs_per_hour=200,
            #period=18,
-           probability=inflow_prob
+           #probability=inflow_prob
           )
 inflow.add(veh_type="rl",
            edge="b_c",
            depart_lane="best",
-           #vehs_per_hour=200,
+           vehs_per_hour=200,
            #period=18,
-           probability=inflow_prob
+           #probability=inflow_prob
           )
 inflow.add(veh_type="rl",
            edge="r_c",
            depart_lane="best",
-           #vehs_per_hour=200
+           vehs_per_hour=200
            #period=18,
-           probability=inflow_prob
+           #probability=inflow_prob
           )
 inflow.add(veh_type="rl",
            edge="l_c",
            depart_lane="best",
-           #vehs_per_hour=200
+           vehs_per_hour=200
            #period=18,
-           probability=inflow_prob
+           #probability=inflow_prob
           )
 
 from flow.core.params import NetParams
