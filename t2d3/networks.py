@@ -15,10 +15,10 @@ class Actor(nn.Module):
         self.decoder_emb = nn.Linear(state_dim+action_dim, 256)
 
         self.encoder_layer = nn.TransformerEncoderLayer(d_model=256, nhead=4, dim_feedforward=1024, batch_first=True)
-        self.encoder = nn.TransformerEncoder(self.encoder_layer, num_layers=4)
+        self.encoder = nn.TransformerEncoder(self.encoder_layer, num_layers=2)
 
         self.decoder_layer = nn.TransformerDecoderLayer(d_model=256, nhead=4, dim_feedforward=1024, batch_first=True)
-        self.decoder = nn.TransformerDecoder(self.decoder_layer, num_layers=4)
+        self.decoder = nn.TransformerDecoder(self.decoder_layer, num_layers=2)
 
         self.out_layer1 = nn.Linear(256, 128)
         self.out_layer2 = nn.Linear(128, 1)
@@ -66,7 +66,7 @@ class Critic(nn.Module):
         self.encoder_emb1 = nn.Linear(state_dim+action_dim, 256)
 
         self.encoder_layer1 = nn.TransformerEncoderLayer(d_model=256, nhead=4, dim_feedforward=1024, batch_first=True)
-        self.encoder1 = nn.TransformerEncoder(self.encoder_layer1, num_layers=4)
+        self.encoder1 = nn.TransformerEncoder(self.encoder_layer1, num_layers=2)
 
         self.fc1 = nn.Linear(256, 128)
         self.out1 = nn.Linear(128, 1)
@@ -75,7 +75,7 @@ class Critic(nn.Module):
         self.encoder_emb2 = nn.Linear(state_dim+action_dim, 256)
 
         self.encoder_layer2 = nn.TransformerEncoderLayer(d_model=256, nhead=4, dim_feedforward=1024, batch_first=True)
-        self.encoder2 = nn.TransformerEncoder(self.encoder_layer2, num_layers=4)
+        self.encoder2 = nn.TransformerEncoder(self.encoder_layer2, num_layers=2)
 
         self.fc2 = nn.Linear(256, 128)
         self.out2 = nn.Linear(128, 1)
