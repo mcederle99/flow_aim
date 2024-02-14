@@ -41,8 +41,22 @@ def trim(state):
     else:
         return state
 
+# 8: right, 9: straight, 10: left
+def choose_actions(state, aim_straight, aim_left, aim_right):
+    actions = torch.tensor([])
+    for i in range(state.shape[0]):
+        if state[i][8] == 1.0:
+            action = aim_right.select_action(state[i,:])
+        elif state[i][9] == 1.0:
+            action = aim_straight.select_action(state[i,:])
+        elif state[i][10] == 1.0:
+            action = aim_left.select_action(state[i,:])
+        actions = torch.cat((actions, action))
+
+    return actions
+
 from environment import ADDITIONAL_ENV_PARAMS
-from scenario_easy import ADDITIONAL_NET_PARAMS
+from scenario import ADDITIONAL_NET_PARAMS
 from flow.core.params import EnvParams
 
 env_params = EnvParams(additional_params=ADDITIONAL_ENV_PARAMS)
@@ -60,14 +74,15 @@ from flow.core.params import VehicleParams
 vehicles = VehicleParams()
 
 from flow.controllers.rlcontroller import RLController
+from flow.controllers.car_following_models import IDMController
 from flow.controllers.routing_controllers import ContinuousRouter
 from flow.core.params import SumoCarFollowingParams
 
 vehicles.add("rl",
-             acceleration_controller=(RLController, {}),
+             acceleration_controller=(IDMController, {}),
              routing_controller=(ContinuousRouter, {}),
              car_following_params=SumoCarFollowingParams(
-                speed_mode="aggressive"),
+                speed_mode="right_of_way"),
              num_vehicles=0)
 
 from flow.core.params import InFlows
@@ -111,7 +126,7 @@ inflow.add(veh_type="rl",
 
 from flow.core.params import NetParams
 from environment import SpeedEnv
-from scenario_easy import IntersectionNetwork
+from scenario import IntersectionNetwork
 
 net_params = NetParams(inflows=inflow, additional_params=ADDITIONAL_NET_PARAMS)
 

@@ -142,11 +142,7 @@ class Experiment:
             state = self.env.reset()
             for j in range(num_steps):
                 t0 = time.time()
-                state, reward, done, _ = self.env.step(rl_actions(state), list(state.keys()))
-                print(state)
-                print(reward)
-                print(done)
-                print('--------------------')
+                state, reward, done, _ = self.env.step(rl_actions(state))
                 t1 = time.time()
                 times.append(1 / (t1 - t0))
 
@@ -159,7 +155,7 @@ class Experiment:
                 for (key, lambda_func) in self.custom_callables.items():
                     custom_vals[key].append(lambda_func(self.env))
 
-                if bool(done[veh_ids[0]]):
+                if done:
                     break
 
             # Store the information from the run in info_dict.

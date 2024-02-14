@@ -4,7 +4,7 @@ import numpy as np
 import torch
 from utils_batch import flow_params, trim, order_vehicles, choose_actions
 from per_batch import PrioritizedReplayBuffer
-from agent_batch_2 import TD3
+from agent_batch import TD3
 
 num_eps = 1000 
 total_steps = 0
@@ -25,7 +25,7 @@ aim_straight = TD3(
         policy_noise=0.2,
         noise_clip=0.5,
         policy_freq=2,
-        filename='models/batch_2/LSTM_AIM_straight')
+        filename='models/batch/LSTM_AIM_straight_morecol')
 aim_left = TD3(
         state_dim,
         action_dim,
@@ -35,7 +35,7 @@ aim_left = TD3(
         policy_noise=0.2,
         noise_clip=0.5,
         policy_freq=2,
-        filename='models/batch_2/LSTM_AIM_left')
+        filename='models/batch/LSTM_AIM_left_morecol')
 aim_right = TD3(
         state_dim,
         action_dim,
@@ -45,7 +45,7 @@ aim_right = TD3(
         policy_noise=0.2,
         noise_clip=0.5,
         policy_freq=2,
-        filename='models/batch_2/LSTM_AIM_right')
+        filename='models/batch/LSTM_AIM_right_morecol')
 
 aim_straight.load()
 aim_left.load()
@@ -56,7 +56,7 @@ crash_counter = 0
 for i in range(num_eps):
 
     random_seed = np.random.choice(1000)
-    sim_params = SumoParams(sim_step=0.25, render=False, seed=random_seed)
+    sim_params = SumoParams(sim_step=0.25, render=True, seed=random_seed)
     flow_params['sim'] = sim_params
     # Get the env name and a creator for the environment.
     create_env, _ = make_create_env(flow_params)
@@ -77,9 +77,6 @@ for i in range(num_eps):
         # reward: (V,) ordered tensor
         # done: (V,) ordered tensor
         # crash: boolean
-        for q in env.k.vehicle.get_ids():
-            print(env.k.vehicle.get_route(q)[0] == env.k.vehicle.get_edge(q))
-            raise KeyboardInterrupt
         next_state, reward, done, crash = env.step(actions*max_action)
          
         state = next_state
