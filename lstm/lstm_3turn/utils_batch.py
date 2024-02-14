@@ -90,6 +90,7 @@ inflow.add(veh_type="rl",
            edge="t_c",
            depart_lane="best",
            vehs_per_hour=200,
+           depart_speed="random",
            #period=18,
            #probability=inflow_prob
           )
@@ -97,27 +98,29 @@ inflow.add(veh_type="rl",
            edge="b_c",
            depart_lane="best",
            vehs_per_hour=200,
+           depart_speed="random",
            #period=18,
            #probability=inflow_prob
           )
 inflow.add(veh_type="rl",
            edge="r_c",
            depart_lane="best",
-           vehs_per_hour=200
+           vehs_per_hour=200,
+           depart_speed="random",
            #period=18,
            #probability=inflow_prob
           )
 inflow.add(veh_type="rl",
            edge="l_c",
            depart_lane="best",
-           vehs_per_hour=200
+           vehs_per_hour=200,
+           depart_speed="random",
            #period=18,
            #probability=inflow_prob
           )
 
 from flow.core.params import NetParams
 from environment_batch import SpeedEnv
-#from environment import SpeedEnv
 from scenario import IntersectionNetwork
 
 net_params = NetParams(inflows=inflow, additional_params=ADDITIONAL_NET_PARAMS)

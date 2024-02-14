@@ -6,7 +6,7 @@ from utils_batch import flow_params, trim, order_vehicles, evaluate, choose_acti
 from per_batch import PrioritizedReplayBuffer
 from agent_batch import TD3
 
-num_eps = 1000 
+num_eps = 5000 
 total_steps = 0
 best_ep_steps = 0
 best_return = -100
@@ -115,13 +115,13 @@ for i in range(num_eps):
                     
         state = next_state
         state = trim(state)
+
+        if crash:
+            break
         
         #returns += sum(reward.tolist())
         #ep_steps += 1
         
-        if crash:
-            break
-    
     if total_steps > 5000:
         aim_straight.train(memory_straight, learn_steps_straight)
         aim_left.train(memory_left, learn_steps_left)
@@ -135,19 +135,11 @@ for i in range(num_eps):
         np.save('results/batch/returns_morecol.npy', returns_list)
         np.save('results/batch/ep_steps_morecol.npy', ep_steps_list)
         np.save('results/batch/returns_per_veh_morecol.npy', returns_per_veh_list)
-        if best_ep_steps < 1200:
-            if ep_steps >= best_ep_steps:
-                aim_straight.save()
-                aim_left.save()
-                aim_right.save()
-                best_ep_steps = ep_steps
-                best_return = returns_per_veh
-        else:
-            if ep_steps == 1200 and returns_per_veh > best_return:
-                aim_straight.save()
-                aim_left.save()
-                aim_right.save()
-                best_return = returns_per_veh
+        if returns_per_veh > best_return:
+            aim_straight.save()
+            aim_left.save()
+            aim_right.save()
+            best_return = returns_per_veh
  
         print('Training ep. number: {}, Avg. Ev. steps: {}, Avg. Ev. total return: {}, Avg. Ev. returns per vehicle: {}, Best ep. steps: {}'.format(i, ep_steps, returns, returns_per_veh, best_ep_steps))
     env.terminate()

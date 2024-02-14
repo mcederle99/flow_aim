@@ -13,6 +13,7 @@ from flow.controllers.lane_change_controllers import SimLaneChangeController
 from bisect import bisect_left
 import itertools
 from copy import deepcopy
+import torch
 
 # colors for vehicles
 WHITE = (255, 255, 255)
@@ -956,9 +957,12 @@ class TraCIVehicle(KernelVehicle):
     def apply_acceleration(self, veh_ids, acc, smooth=True):
         """See parent class."""
         # to handle the case of a single vehicle
-        if type(veh_ids) == str:
-            veh_ids = [veh_ids]
-            acc = [acc]
+        if len(veh_ids) == 1 and acc.shape == torch.Size():
+            acc = [acc.item()]
+
+        #if type(veh_ids) == str:
+        #    veh_ids = [veh_ids]
+        #    acc = [acc]
 
         for i, vid in enumerate(veh_ids):
             if acc[i] is not None and vid in self.get_ids():
