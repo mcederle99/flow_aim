@@ -6,10 +6,6 @@ from utils_simp import flow_params, trim, order_vehicles, evaluate, rl_actions
 from agent import TD3
 
 num_eps = 10 
-total_steps = 0
-best_return = -100
-returns_list = []
-ep_steps_list = []
 
 state_dim = 15
 action_dim = 1
@@ -54,7 +50,7 @@ for i in range(num_eps):
         # crash: boolean
         
         state, reward, not_done, crash = env.step(actions)
-        
+        print(actions)
         state = trim(state)
           
         ep_steps += 1
