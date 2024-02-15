@@ -55,7 +55,7 @@ class IntersectionNetwork(Network):
             if p not in net_params.additional_params:
                 raise KeyError('Network parameter "{}" not supplied'.format(p))
 
-        self.intersection_len = 80
+        self.intersection_len = 100
 
         super().__init__(name, vehicles, net_params, initial_config,
                          traffic_lights)

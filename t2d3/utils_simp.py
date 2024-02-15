@@ -21,8 +21,8 @@ def order_vehicles(state):
 
 def trim(state):
     if state.shape[0] > 0:
-        while torch.sum(state[-15]) == 0:
-            state = state[:-15]
+        while torch.sum(state[-12]) == 0:
+            state = state[:-12]
             if state.shape[0] == 0:
                 break
         return state
@@ -30,7 +30,7 @@ def trim(state):
         return state
     
 def rl_actions(state):
-    num = state.shape[0] // 15
+    num = state.shape[0] // 12
     actions = torch.randn((num,), device="cuda").clamp(-1, 1)
     return actions.detach().cpu()
 
@@ -58,7 +58,7 @@ def evaluate(aim, flow_params, num_eps=10):
         for j in range(max_ep_steps):
 
             # actions: (V,) ordered tensor
-            actions = aim.select_action(state.view(-1, 15).unsqueeze(dim=0))
+            actions = aim.select_action(state.view(-1, 12).unsqueeze(dim=0))
             
             # next_state: (V, F*V) ordered tensor
             # reward: (V,) ordered tensor
@@ -81,7 +81,7 @@ def evaluate(aim, flow_params, num_eps=10):
     return np.mean(ep_steps_list), np.mean(returns_list)
 
 from environment import ADDITIONAL_ENV_PARAMS
-from scenario import ADDITIONAL_NET_PARAMS
+from scenario_simp import ADDITIONAL_NET_PARAMS
 from flow.core.params import EnvParams
 
 env_params = EnvParams(additional_params=ADDITIONAL_ENV_PARAMS)
@@ -116,40 +116,40 @@ inflow = InFlows()
 
 inflow.add(veh_type="rl",
            edge="t_c",
-           depart_lane="best",
-           #depart_speed="random",
-           vehs_per_hour=200,
-           #period=18,
+           #depart_lane="best",
+           depart_speed="random",
+           #vehs_per_hour=200,
+           period=1200,
            #probability=inflow_prob
           )
 inflow.add(veh_type="rl",
            edge="b_c",
-           depart_lane="best",
-           #depart_speed="random",
-           vehs_per_hour=200,
-           #period=18,
+           #depart_lane="best",
+           depart_speed="random",
+           #vehs_per_hour=200,
+           period=1200,
            #probability=inflow_prob
           )
 inflow.add(veh_type="rl",
            edge="r_c",
-           depart_lane="best",
-           #depart_speed="random",
-           vehs_per_hour=200
-           #period=18,
+           #depart_lane="best",
+           depart_speed="random",
+           #vehs_per_hour=200
+           period=1200,
            #probability=inflow_prob
           )
 inflow.add(veh_type="rl",
            edge="l_c",
-           depart_lane="best",
-           #depart_speed="random",
-           vehs_per_hour=200
-           #period=18,
+           #depart_lane="best",
+           depart_speed="random",
+           #vehs_per_hour=200
+           period=1200,
            #probability=inflow_prob
           )
 
 from flow.core.params import NetParams
 from environment import SpeedEnv
-from scenario import IntersectionNetwork
+from scenario_simp import IntersectionNetwork
 
 net_params = NetParams(inflows=inflow, additional_params=ADDITIONAL_NET_PARAMS)
 

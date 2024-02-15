@@ -121,7 +121,7 @@ class SpeedEnv(Env):
         """See class definition."""
         num_vehicles = len(self.k.vehicle.get_ids())
         return Box(
-            low=-self.env_params.additional_params['max_decel'],
+            low=-abs(self.env_params.additional_params['max_decel']),
             high=self.env_params.additional_params['max_accel'],
             shape=(num_vehicles, ),
             dtype=np.float32)
@@ -182,7 +182,7 @@ class SpeedEnv(Env):
             obs.append(np.clip((pos[1]-100)/100, -1, 1))
             
             # VELOCITY
-            vel = np.clip(self.k.vehicle.get_speed(q)/13.9, 0, 1)
+            vel = np.clip((self.k.vehicle.get_speed(q)-6.95)/6.95, -1, 1)
             obs.append(vel)
             
             # ACCELERATION
@@ -190,7 +190,7 @@ class SpeedEnv(Env):
             if acc is None:
                 acc = 0
             else:
-                acc = np.clip((acc-1.5)/1.5, -1, 1)
+                acc = np.clip(acc, -1, 1)
             obs.append(acc)
 
             # HEADING ANGLE
@@ -199,15 +199,15 @@ class SpeedEnv(Env):
             
             # LANE, WAY AND QUEUE
             if self.k.vehicle.get_route(q) == '': # just to fix a simulator bug
-                lane = [0.0, 0.0, 0.0]
+                #lane = [0.0, 0.0, 0.0]
                 way = [0.0, 0.0, 0.0]
                 queue = [0.0, 0.0, 0.0, 0.0]
             else:
                 way = ways[self.k.vehicle.get_route(q)]
-                lane = [way[2], way[1], way[0]]
+                #lane = [way[2], way[1], way[0]]
                 queue = queues[self.k.vehicle.get_route(q)[0]]
             
-            obs = obs + lane + way + queue
+            obs = obs + way + queue
             
             state_dict[q] = obs
             
@@ -220,9 +220,9 @@ class SpeedEnv(Env):
         num_arrived = self.k.vehicle.get_num_arrived()
         if num_arrived > 0:
             if len(ids) > 0:
-                aug_col = torch.zeros(15*num_arrived, dtype=torch.float32)
+                aug_col = torch.zeros(12*num_arrived, dtype=torch.float32)
                 state = torch.cat((state, aug_col))
             else:
-                state = torch.zeros(15*num_arrived, dtype=torch.float32)
+                state = torch.zeros(12*num_arrived, dtype=torch.float32)
                         
         return state, ord_vehs
