@@ -121,6 +121,7 @@ inflow.add(veh_type="rl",
            #vehs_per_hour=200,
            period=1200,
            #probability=inflow_prob
+           end=5
           )
 inflow.add(veh_type="rl",
            edge="b_c",
@@ -129,6 +130,7 @@ inflow.add(veh_type="rl",
            #vehs_per_hour=200,
            period=1200,
            #probability=inflow_prob
+           end=5
           )
 inflow.add(veh_type="rl",
            edge="r_c",
@@ -137,6 +139,7 @@ inflow.add(veh_type="rl",
            #vehs_per_hour=200
            period=1200,
            #probability=inflow_prob
+           end=5
           )
 inflow.add(veh_type="rl",
            edge="l_c",
@@ -145,6 +148,7 @@ inflow.add(veh_type="rl",
            #vehs_per_hour=200
            period=1200,
            #probability=inflow_prob
+           end=5
           )
 
 from flow.core.params import NetParams

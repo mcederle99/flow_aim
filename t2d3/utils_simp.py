@@ -100,13 +100,15 @@ vehicles = VehicleParams()
 
 from flow.controllers.rlcontroller import RLController
 from flow.controllers.routing_controllers import ContinuousRouter
+from flow.controllers.car_following_models import IDMController
 
 vehicles.add("rl",
              acceleration_controller=(RLController, {}),
              routing_controller=(ContinuousRouter, {}),
              car_following_params=SumoCarFollowingParams(
                 speed_mode="aggressive"),
-             num_vehicles=0)
+             num_vehicles=0,
+             )
 
 from flow.core.params import InFlows
 
@@ -120,7 +122,8 @@ inflow.add(veh_type="rl",
            depart_speed="random",
            #vehs_per_hour=200,
            period=1200,
-           #probability=inflow_prob
+           #probability=inflow_prob,
+           end=5
           )
 inflow.add(veh_type="rl",
            edge="b_c",
@@ -129,6 +132,7 @@ inflow.add(veh_type="rl",
            #vehs_per_hour=200,
            period=1200,
            #probability=inflow_prob
+           end=5
           )
 inflow.add(veh_type="rl",
            edge="r_c",
@@ -137,6 +141,7 @@ inflow.add(veh_type="rl",
            #vehs_per_hour=200
            period=1200,
            #probability=inflow_prob
+           end=5
           )
 inflow.add(veh_type="rl",
            edge="l_c",
@@ -145,6 +150,7 @@ inflow.add(veh_type="rl",
            #vehs_per_hour=200
            period=1200,
            #probability=inflow_prob
+           end=5
           )
 
 from flow.core.params import NetParams
