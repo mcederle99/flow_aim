@@ -41,6 +41,10 @@ aim = TD3(
 aim.load()
 aim.actor.eval()
 
+print(args.random_speed)
+print(args.scenario)
+print(args.memories)
+
 for i in range(num_eps):
 
     random_seed = np.random.choice(1000)
@@ -69,9 +73,10 @@ for i in range(num_eps):
         state, reward, not_done, crash = env.step(actions)
         state = trim(state)
         
+        returns += reward
+
         if state.shape[0] > 0:
             ep_steps += 1
-            returns += reward
         else:
             if ep_steps > 0:
                 break

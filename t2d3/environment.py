@@ -130,7 +130,7 @@ class SpeedEnv(Env):
     def observation_space(self):
         """See class definition."""
         vehs = len(self.k.vehicle.get_ids())
-        obs_space = Box(low=-1, high=1, shape=(vehs,15*vehs))
+        obs_space = Box(low=-1, high=1, shape=(vehs,12*vehs))
             
         return obs_space
 
@@ -152,17 +152,18 @@ class SpeedEnv(Env):
         not_done = torch.tensor([1])
 
         if crash:
-            reward = torch.tensor([-100.0])
+            reward += torch.tensor([-100.0])
             not_done = torch.tensor([0])
             return reward, not_done
 
         for i in vehs:
             if i in ids:
-                reward = torch.tensor([-0.25])
-                not_done = torch.tensor([1])
+                if self.k.vehicle.get_route(i)[1] == self.k.vehicle.get_edge(i):
+                    reward += torch.tensor([1.0])
+                else:
+                    reward += torch.tensor([-0.25])
             else:
-                reward = torch.tensor([100.0])
-                not_done = torch.tensor([1])
+                reward += torch.tensor([100.0])
                 return reward, not_done
             
         return reward, not_done
@@ -182,7 +183,7 @@ class SpeedEnv(Env):
             obs.append(np.clip((pos[1]-100)/100, -1, 1))
             
             # VELOCITY
-            vel = np.clip((self.k.vehicle.get_speed(q)-6.95)/6.95, -1, 1)
+            vel = np.clip((self.k.vehicle.get_speed(q)-11)/11, -1, 1)
             obs.append(vel)
             
             # ACCELERATION

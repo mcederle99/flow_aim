@@ -33,7 +33,7 @@ else:
 
 num_eps = args.max_eps 
 total_steps = 0
-best_return = -100
+best_return = -2000
 returns_list = []
 ep_steps_list = []
 
@@ -57,12 +57,12 @@ aim = TD3(
 total_params = sum(p.numel() for p in aim.actor.parameters())
 print(total_params)
 
-#ep_steps, returns = evaluate(aim, flow_params)
-#returns_list.append(returns)
-#ep_steps_list.append(ep_steps)
-#np.save(f'results/returns_{args.random_speed}_{args.scenario}_{args.memories}.npy', returns_list)
-#np.save(f'results/ep_steps_{args.random_speed}_{args.scenario}_{args.memories}.npy', ep_steps_list)
-#print('Training ep. number: {}, Avg. Ev. steps: {}, Avg. Ev. total return: {}'.format(0, ep_steps, returns))
+ep_steps, returns = evaluate(aim, flow_params)
+returns_list.append(returns)
+ep_steps_list.append(ep_steps)
+np.save(f'results/returns_{args.random_speed}_{args.scenario}_{args.memories}.npy', returns_list)
+np.save(f'results/ep_steps_{args.random_speed}_{args.scenario}_{args.memories}.npy', ep_steps_list)
+print('Training ep. number: {}, Avg. Ev. steps: {}, Avg. Ev. total return: {}'.format(0, ep_steps, returns))
 
 for i in range(num_eps):
 
