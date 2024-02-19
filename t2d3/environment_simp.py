@@ -142,6 +142,7 @@ class SpeedEnv(Env):
 
     def compute_reward(self, vehs, **kwargs):
         """See class definition."""
+
         ids = self.k.vehicle.get_ids()
         # collided_vehicles
         coll_veh = self.k.simulation.collided_vehicles()
@@ -170,7 +171,7 @@ class SpeedEnv(Env):
                 reward += torch.tensor([displ - 1])
             else:
                 reward += torch.tensor([10.0])
-                return reward, not_done
+                #return reward, not_done
             
         return reward, not_done
 

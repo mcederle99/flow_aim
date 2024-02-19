@@ -194,7 +194,7 @@ class IntersectionNetwork(Network):
             "c_b":
                 ["c_b"],
             "rl_0":
-                ["r_c", "c_b"],
+                ["r_c", "c_t"],
             "rl_1":
                 ["t_c", "c_r"],
             "rl_2":
