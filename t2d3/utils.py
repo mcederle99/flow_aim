@@ -31,8 +31,17 @@ def trim(state):
     
 def rl_actions(state):
     num = state.shape[0] // 12
-    actions = torch.randn((num,), device="cuda").clamp(-1, 1)
+    actions = torch.randint(0, 21, (num,), device="cuda")
     return actions.detach().cpu()
+
+def map_actions(actions):
+    discretization = np.linspace(-1, 1, num=21)
+    dim = actions.shape[0]
+    env_actions = np.zeros(dim)
+    for i in range(dim):
+        env_actions[i] = discretization[actions[i]]
+
+    return env_actions
 
 def evaluate(aim, flow_params, num_eps=10):
     aim.actor.eval()
@@ -59,14 +68,15 @@ def evaluate(aim, flow_params, num_eps=10):
 
             # actions: (V,) ordered tensor
             actions = aim.select_action(state.view(-1, 12).unsqueeze(dim=0))
-            
+            env_actions = map_actions(actions)
+
             # next_state: (V, F*V) ordered tensor
             # reward: (V,) ordered tensor
             # done: (V,) ordered tensor
             # crash: boolean
-            state, reward, not_done, crash = env.step(actions)
+            state, reward, not_done, crash = env.step(env_actions)
             state = trim(state)
-
+            
             returns += sum(reward.tolist())
             ep_steps += 1
 

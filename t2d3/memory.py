@@ -35,7 +35,7 @@ class ReplayBuffer(object):
         max_num_vehs = max_num_vehs // 12
         
         batch_state = torch.zeros((batch_size, 12*max_num_vehs), dtype=torch.float32)
-        batch_action = torch.zeros((batch_size, max_num_vehs), dtype=torch.float32)
+        batch_action = torch.zeros((batch_size, max_num_vehs), dtype=torch.long)
         batch_reward = torch.zeros(batch_size, dtype=torch.float32)
         batch_next_state = torch.zeros((batch_size, 12*max_num_vehs), dtype=torch.float32)
         batch_not_done = torch.zeros(batch_size)
@@ -53,7 +53,7 @@ class ReplayBuffer(object):
             num_padding = max_num_vehs - (state.shape[0] // 12)
             for j in range(num_padding):
                 state = torch.cat((state, torch.zeros(12, dtype=torch.float32)))
-                action = torch.cat((action, torch.tensor([0.0])))
+                action = torch.cat((action, torch.tensor([0])))
                 next_state = torch.cat((next_state, torch.zeros(12, dtype=torch.float32)))
                 
                 mask[i, -(j+1)] = 0

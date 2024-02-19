@@ -1,7 +1,7 @@
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--random_speed", default=True, type=bool)      # Random speed for entering vehicles
+parser.add_argument("--initial_speed", default="random")      # Random speed for entering vehicles
 parser.add_argument("--scenario", default="simple")                 # Intersection scenario considered
 parser.add_argument("--memories", default=1, type=int)              # Number of replay buffers
 parser.add_argument("--max_eps", default=10, type=int)             # Max episodes to run environment
@@ -12,12 +12,12 @@ from flow.utils.registry import make_create_env
 import numpy as np
 import torch
 if args.scenario == "simple":
-    if args.random_speed:
+    if args.initial_speed == "random":
         from utils_simp import flow_params, trim, order_vehicles, evaluate, rl_actions
     else:
         from utils_simp_noran import flow_params, trim, order_vehicles, evaluate, rl_actions
 else:
-    if args.random_speed:
+    if args.initial_speed == "random":
         from utils import flow_params, trim, order_vehicles, evaluate, rl_actions
     else:
         from utils_noran import flow_params, trim, order_vehicles, evaluate, rl_actions
@@ -36,12 +36,12 @@ aim = TD3(
         policy_noise=0.2,
         noise_clip=0.5,
         policy_freq=2,
-        filename=f'models/AIM_T2D3_{args.random_speed}_{args.scenario}_{args.memories}')
+        filename=f'models/AIM_T2D3_{args.initial_speed}_{args.scenario}_{args.memories}')
 
 aim.load()
 aim.actor.eval()
 
-print(args.random_speed)
+print(args.initial_speed)
 print(args.scenario)
 print(args.memories)
 
@@ -65,11 +65,11 @@ for i in range(num_eps):
     for j in range(max_ep_steps):    
         # actions: (V,) ordered tensor
         actions = aim.select_action(state.view(-1, 12).unsqueeze(dim=0))
-        
         # next_state: (V, F) ordered tensor
         # reward: (1,) ordered tensor
         # done: (1,) ordered tensor
         # crash: boolean
+        print(actions) 
         state, reward, not_done, crash = env.step(actions)
         state = trim(state)
         

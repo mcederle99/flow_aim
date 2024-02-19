@@ -3,7 +3,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from networks import Actor, Critic
+from networks_discrete import Actor, Critic
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -63,13 +63,17 @@ class TD3(object):
 
         with torch.no_grad():
             # Select action according to policy and add clipped noise
-            noise = (
-                torch.randn_like(action) * self.policy_noise
-            ).clamp(-self.noise_clip, self.noise_clip).squeeze()
-            next_action = (
-                self.actor_target(next_state) + noise
-            ).clamp(-1, 1)
-            next_action = next_action.masked_fill(mask == 0, 0.0)
+#            noise = (
+#                torch.randn_like(action) * self.policy_noise
+#            ).clamp(-self.noise_clip, self.noise_clip).squeeze()
+#            next_action = (
+#                self.actor_target(next_state) + noise
+#            ).clamp(-1, 1)
+#            next_action = next_action.masked_fill(mask == 0, 0.0)
+            
+            noise = torch.randint_like(action, -2, 2, dtype=torch.long)
+            next_action = (self.actor_target(next_state) + noise).clamp(0, 20)
+            next_action = next_action.masked_fill(mask == 0, 0)
 
             # Compute the target Q value
             target_Q1, target_Q2 = self.critic_target(next_state, next_action)
@@ -97,7 +101,6 @@ class TD3(object):
             # Optimize the actor 
             self.actor_optimizer.zero_grad()
             actor_loss.backward()
-            nn.utils.clip_grad_norm_(self.actor.parameters(), 1) # da vedere
             self.actor_optimizer.step()
 
             # Update the frozen target models
@@ -106,6 +109,12 @@ class TD3(object):
 
             for param, target_param in zip(self.actor.parameters(), self.actor_target.parameters()):
                 target_param.data.copy_(self.tau * param.data + (1 - self.tau) * target_param.data)
+
+#            for name, param in self.actor.named_parameters():
+#                if param.requires_grad:
+#                    print(f'Parameter name: {name}, Mean: {param.mean()}, Std: {param.std()}')
+
+
 
 
     def save(self):
