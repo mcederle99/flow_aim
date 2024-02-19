@@ -70,7 +70,6 @@ for i in range(num_eps):
         # done: (1,) ordered tensor
         # crash: boolean
         next_state, reward, not_done, crash = env.step(env_actions)
-       
         returns += reward
 
         if state.shape[0] > 0:

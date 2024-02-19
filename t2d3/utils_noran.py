@@ -68,12 +68,13 @@ def evaluate(aim, flow_params, num_eps=10):
 
             # actions: (V,) ordered tensor
             actions = aim.select_action(state.view(-1, 12).unsqueeze(dim=0))
-            
+            env_actions = map_actions(actions)    
+
             # next_state: (V, F*V) ordered tensor
             # reward: (V,) ordered tensor
             # done: (V,) ordered tensor
             # crash: boolean
-            state, reward, not_done, crash = env.step(actions)
+            state, reward, not_done, crash = env.step(env_actions)
             state = trim(state)
             
             returns += sum(reward.tolist())

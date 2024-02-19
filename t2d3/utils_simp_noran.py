@@ -68,12 +68,12 @@ def evaluate(aim, flow_params, num_eps=10):
 
             # actions: (V,) ordered tensor
             actions = aim.select_action(state.view(-1, 12).unsqueeze(dim=0))
-            
+            env_actions = map_actions(actions) 
             # next_state: (V, F*V) ordered tensor
             # reward: (V,) ordered tensor
             # done: (V,) ordered tensor
             # crash: boolean
-            state, reward, not_done, crash = env.step(actions)
+            state, reward, not_done, crash = env.step(env_actions)
             state = trim(state)
 
             returns += sum(reward.tolist())
@@ -115,7 +115,7 @@ vehicles.add("rl",
              routing_controller=(ContinuousRouter, {}),
              car_following_params=SumoCarFollowingParams(
                 speed_mode="aggressive"),
-             num_vehicles=0)
+             num_vehicles=4)
 
 from flow.core.params import InFlows
 
@@ -164,7 +164,7 @@ from flow.core.params import NetParams
 from environment import SpeedEnv
 from scenario_simp import IntersectionNetwork
 
-net_params = NetParams(inflows=inflow, additional_params=ADDITIONAL_NET_PARAMS)
+net_params = NetParams(additional_params=ADDITIONAL_NET_PARAMS)
 
 flow_params = dict(
     exp_tag='test',

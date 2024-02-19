@@ -38,6 +38,9 @@ class TD3(object):
         self.filename = filename
 
         self.total_it = 0
+#        self.mean_list = []
+#        self.std_list = []
+
 
     def select_action(self, state):
         state = state.to(device)
@@ -112,9 +115,10 @@ class TD3(object):
 
 #            for name, param in self.actor.named_parameters():
 #                if param.requires_grad:
-#                    print(f'Parameter name: {name}, Mean: {param.mean()}, Std: {param.std()}')
-
-
+#                    self.mean_list.append(param.mean())
+#                    self.std_list.append(param.std())
+#            np.save('mean_list2.npy', self.mean_list)
+#            np.save('std_list2.npy', self.std_list)
 
 
     def save(self):
