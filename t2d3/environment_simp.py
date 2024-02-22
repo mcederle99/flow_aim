@@ -10,7 +10,7 @@ def order_vehicles(state):
     ordered_vehicles = []
 
     for veh in list(state.keys()):
-        perturbation = 1e-8*np.random.randn()
+        perturbation = 1e-6*np.random.randn()
         dist = np.sqrt(state[veh][0]**2 + state[veh][1]**2) + perturbation
         distances[dist] = veh
 
@@ -117,6 +117,7 @@ class SpeedEnv(Env):
         super().__init__(env_params, sim_params, network, simulator)
 
         self.last_positions = {"rl_0": 0.0, "rl_1": 0.0, "rl_2": 0.0, "rl_3": 0.0}
+        self.state_dim = 12
 
     @property
     def action_space(self):
@@ -132,7 +133,7 @@ class SpeedEnv(Env):
     def observation_space(self):
         """See class definition."""
         vehs = len(self.k.vehicle.get_ids())
-        obs_space = Box(low=-1, high=1, shape=(vehs,12*vehs))
+        obs_space = Box(low=-1, high=1, shape=(vehs,self.state_dim*vehs))
             
         return obs_space
 
@@ -142,6 +143,10 @@ class SpeedEnv(Env):
 
     def compute_reward(self, vehs, **kwargs):
         """See class definition."""
+        
+        # CURRENTLY TESTING:
+        # 1. displ - 1 + finished(10) - collision(100)
+        # 2. displ + finished(10) - collision(10)
 
         ids = self.k.vehicle.get_ids()
         # collided_vehicles
@@ -155,7 +160,7 @@ class SpeedEnv(Env):
         not_done = torch.tensor([1])
 
         if crash:
-            reward += torch.tensor([-100.0])
+            reward += torch.tensor([-10.0])
             not_done = torch.tensor([0])
             return reward, not_done
 
@@ -168,7 +173,7 @@ class SpeedEnv(Env):
                 self.last_positions[i] = pos
                 #if displ < 0:
                 #    displ = pos
-                reward += torch.tensor([displ - 1])
+                reward += torch.tensor([displ])
             else:
                 reward += torch.tensor([10.0])
                 #return reward, not_done
@@ -204,7 +209,13 @@ class SpeedEnv(Env):
             # HEADING ANGLE
             angle = np.clip((self.k.vehicle.get_orientation(q)[2]-180)/180, -1, 1)
             obs.append(angle)
-            
+
+#            if q in self.k.simulation.collided_vehicles():
+#                coll = 1
+#            else:
+#                coll = 0
+#            obs.append(coll)
+
             # LANE, WAY AND QUEUE
             if self.k.vehicle.get_route(q) == '': # just to fix a simulator bug
                 #lane = [0.0, 0.0, 0.0]
@@ -228,9 +239,9 @@ class SpeedEnv(Env):
         num_arrived = self.k.vehicle.get_num_arrived()
         if num_arrived > 0:
             if len(ids) > 0:
-                aug_col = torch.zeros(12*num_arrived, dtype=torch.float32)
+                aug_col = torch.zeros(self.state_dim*num_arrived, dtype=torch.float32)
                 state = torch.cat((state, aug_col))
             else:
-                state = torch.zeros(12*num_arrived, dtype=torch.float32)
+                state = torch.zeros(self.state_dim*num_arrived, dtype=torch.float32)
                         
         return state, ord_vehs

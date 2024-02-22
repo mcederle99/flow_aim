@@ -30,7 +30,7 @@ num_eps = args.max_eps
 total_steps = 0
 
 state_dim = 12
-action_dim = 21
+action_dim = 11
 
 aim = TD3(
         state_dim,
@@ -63,13 +63,14 @@ for i in range(num_eps):
     
     for j in range(max_ep_steps):    
         # actions: (V,) ordered tensor
-        actions = aim.select_action(state.view(-1, 12).unsqueeze(dim=0))
+        actions = aim.select_action(state.view(-1, state_dim).unsqueeze(dim=0))
         env_actions = map_actions(actions)
         # next_state: (V, F) ordered tensor
         # reward: (1,) ordered tensor
         # done: (1,) ordered tensor
         # crash: boolean
         next_state, reward, not_done, crash = env.step(env_actions)
+        
         returns += reward
 
         if state.shape[0] > 0:

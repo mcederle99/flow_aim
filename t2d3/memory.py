@@ -6,6 +6,9 @@ class ReplayBuffer(object):
         self.max_size = max_size
         self.ptr = 0
         self.size = 0
+        
+        self.state_dim = state_dim
+        self.action_dim = action_dim
 
         self.state = {}
         self.action = {}
@@ -32,12 +35,12 @@ class ReplayBuffer(object):
             num_vehs = self.state[ind[i]].shape[0]
             if num_vehs > max_num_vehs:
                 max_num_vehs = num_vehs
-        max_num_vehs = max_num_vehs // 12
+        max_num_vehs = max_num_vehs // self.state_dim
         
-        batch_state = torch.zeros((batch_size, 12*max_num_vehs), dtype=torch.float32)
+        batch_state = torch.zeros((batch_size, self.state_dim*max_num_vehs), dtype=torch.float32)
         batch_action = torch.zeros((batch_size, max_num_vehs), dtype=torch.long)
         batch_reward = torch.zeros(batch_size, dtype=torch.float32)
-        batch_next_state = torch.zeros((batch_size, 12*max_num_vehs), dtype=torch.float32)
+        batch_next_state = torch.zeros((batch_size, self.state_dim*max_num_vehs), dtype=torch.float32)
         batch_not_done = torch.zeros(batch_size)
         
         mask = torch.ones((batch_size, max_num_vehs), dtype=torch.float32)
@@ -50,11 +53,11 @@ class ReplayBuffer(object):
                 diff = next_state.shape[0] - state.shape[0]
                 next_state = next_state[:-diff]
 
-            num_padding = max_num_vehs - (state.shape[0] // 12)
+            num_padding = max_num_vehs - (state.shape[0] // self.state_dim)
             for j in range(num_padding):
-                state = torch.cat((state, torch.zeros(12, dtype=torch.float32)))
+                state = torch.cat((state, torch.zeros(self.state_dim, dtype=torch.float32)))
                 action = torch.cat((action, torch.tensor([0])))
-                next_state = torch.cat((next_state, torch.zeros(12, dtype=torch.float32)))
+                next_state = torch.cat((next_state, torch.zeros(self.state_dim, dtype=torch.float32)))
                 
                 mask[i, -(j+1)] = 0
         
@@ -64,8 +67,8 @@ class ReplayBuffer(object):
             batch_next_state[i] = next_state
             batch_not_done[i] = self.not_done[ind[i]]
         
-        batch_state = batch_state.view(batch_size, max_num_vehs, 12)
-        batch_next_state = batch_next_state.view(batch_size, max_num_vehs, 12)
+        batch_state = batch_state.view(batch_size, max_num_vehs, self.state_dim)
+        batch_next_state = batch_next_state.view(batch_size, max_num_vehs, self.state_dim)
         
         return (
             batch_state.to(self.device),

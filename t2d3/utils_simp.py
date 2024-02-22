@@ -3,12 +3,14 @@ import torch
 from flow.core.params import SumoCarFollowingParams, SumoParams
 from flow.utils.registry import make_create_env
 
+state_dim = 12
+
 def order_vehicles(state):
     distances = {}
     ordered_vehicles = []
     
     for veh in list(state.keys()):
-        perturbation = 1e-8*np.random.randn()
+        perturbation = 1e-6*np.random.randn()
         dist = np.sqrt(state[veh][0]**2 + state[veh][1]**2) + perturbation
         distances[dist] = veh
     
@@ -21,8 +23,8 @@ def order_vehicles(state):
 
 def trim(state):
     if state.shape[0] > 0:
-        while torch.sum(state[-12]) == 0:
-            state = state[:-12]
+        while torch.sum(state[-state_dim]) == 0:
+            state = state[:-state_dim]
             if state.shape[0] == 0:
                 break
         return state
@@ -30,12 +32,12 @@ def trim(state):
         return state
     
 def rl_actions(state):
-    num = state.shape[0] // 12
-    actions = torch.randint(0, 21, (num,), device="cuda")
+    num = state.shape[0] // state_dim
+    actions = torch.randint(0, 11, (num,), device="cuda")
     return actions.detach().cpu()
 
 def map_actions(actions):
-    discretization = np.linspace(-1, 1, num=21)
+    discretization = np.linspace(0, 1, num=11)
     dim = actions.shape[0]
     env_actions = np.zeros(dim)
     for i in range(dim):
@@ -67,21 +69,21 @@ def evaluate(aim, flow_params, num_eps=10):
         for j in range(max_ep_steps):
 
             # actions: (V,) ordered tensor
-            actions = aim.select_action(state.view(-1, 12).unsqueeze(dim=0))
+            actions = aim.select_action(state.view(-1, state_dim).unsqueeze(dim=0))
             env_actions = map_actions(actions) 
             # next_state: (V, F*V) ordered tensor
             # reward: (V,) ordered tensor
             # done: (V,) ordered tensor
             # crash: boolean
-            state, reward, not_done, crash = env.step(env_actions)
+            state, reward, not_done, crash = env.step(torch.tensor(env_actions))
             state = trim(state)
-
+            
             returns += reward
             ep_steps += 1
 
             if crash:
                 break
-
+        
         returns_list.append(returns)
         ep_steps_list.append(ep_steps)
         env.terminate()

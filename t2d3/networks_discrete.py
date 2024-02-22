@@ -20,7 +20,7 @@ class Actor(nn.Module):
         self.decoder_layer = nn.TransformerDecoderLayer(d_model=256, nhead=4, dim_feedforward=1024, dropout=0, batch_first=True)
         self.decoder = nn.TransformerDecoder(self.decoder_layer, num_layers=2)
 
-        self.out_layer = nn.Linear(256, 21)
+        self.out_layer = nn.Linear(256, action_dim)
         
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         

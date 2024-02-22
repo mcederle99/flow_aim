@@ -75,7 +75,7 @@ class TD3(object):
 #            next_action = next_action.masked_fill(mask == 0, 0.0)
             
             noise = torch.randint_like(action, -2, 2, dtype=torch.long)
-            next_action = (self.actor_target(next_state) + noise).clamp(0, 20)
+            next_action = (self.actor_target(next_state) + noise).clamp(0, 10)
             next_action = next_action.masked_fill(mask == 0, 0)
 
             # Compute the target Q value
