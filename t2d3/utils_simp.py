@@ -3,7 +3,7 @@ import torch
 from flow.core.params import SumoCarFollowingParams, SumoParams
 from flow.utils.registry import make_create_env
 
-state_dim = 12
+state_dim = 13
 
 def order_vehicles(state):
     distances = {}

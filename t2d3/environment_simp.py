@@ -117,7 +117,7 @@ class SpeedEnv(Env):
         super().__init__(env_params, sim_params, network, simulator)
 
         self.last_positions = {"rl_0": 0.0, "rl_1": 0.0, "rl_2": 0.0, "rl_3": 0.0}
-        self.state_dim = 12
+        self.state_dim = 13
 
     @property
     def action_space(self):
@@ -160,7 +160,7 @@ class SpeedEnv(Env):
         not_done = torch.tensor([1])
 
         if crash:
-            reward += torch.tensor([-10.0])
+            reward += torch.tensor([-100.0])
             not_done = torch.tensor([0])
             return reward, not_done
 
@@ -173,7 +173,7 @@ class SpeedEnv(Env):
                 self.last_positions[i] = pos
                 #if displ < 0:
                 #    displ = pos
-                reward += torch.tensor([displ])
+                reward += torch.tensor([displ - 1])
             else:
                 reward += torch.tensor([10.0])
                 #return reward, not_done
@@ -210,11 +210,11 @@ class SpeedEnv(Env):
             angle = np.clip((self.k.vehicle.get_orientation(q)[2]-180)/180, -1, 1)
             obs.append(angle)
 
-#            if q in self.k.simulation.collided_vehicles():
-#                coll = 1
-#            else:
-#                coll = 0
-#            obs.append(coll)
+            if q in self.k.simulation.collided_vehicles():
+                coll = 1
+            else:
+                coll = 0
+            obs.append(coll)
 
             # LANE, WAY AND QUEUE
             if self.k.vehicle.get_route(q) == '': # just to fix a simulator bug

@@ -29,7 +29,7 @@ else:
 num_eps = args.max_eps 
 total_steps = 0
 
-state_dim = 12
+state_dim = 13
 action_dim = 11
 
 aim = TD3(
@@ -48,7 +48,7 @@ aim.actor.eval()
 for i in range(num_eps):
 
     random_seed = np.random.choice(1000)
-    sim_params = SumoParams(sim_step=0.25, render=False, seed=random_seed)
+    sim_params = SumoParams(sim_step=0.25, render=True, seed=random_seed)
     flow_params['sim'] = sim_params
     # Get the env name and a creator for the environment.
     create_env, _ = make_create_env(flow_params)
