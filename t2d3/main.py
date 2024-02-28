@@ -37,7 +37,7 @@ best_return = -2000
 returns_list = []
 ep_steps_list = []
 
-state_dim = 12
+state_dim = 14
 action_dim = 11
 
 memory = ReplayBuffer(state_dim, action_dim)
@@ -52,7 +52,7 @@ aim = TD3(
         policy_noise=0.2,
         noise_clip=0.5,
         policy_freq=2,
-        filename=f'models/AIM_T2D3_12_{args.initial_speed}_{args.scenario}_{args.memories}')
+        filename=f'models/AIM_T2D3_th_{args.initial_speed}_{args.scenario}_{args.memories}')
 
 total_params = sum(p.numel() for p in aim.actor.parameters())
 print(total_params)
@@ -60,8 +60,8 @@ print(total_params)
 ep_steps, returns = evaluate(aim, flow_params)
 returns_list.append(returns)
 ep_steps_list.append(ep_steps)
-np.save(f'results/returns_12_{args.initial_speed}_{args.scenario}_{args.memories}.npy', returns_list)
-np.save(f'results/ep_steps_12_{args.initial_speed}_{args.scenario}_{args.memories}.npy', ep_steps_list)
+np.save(f'results/returns_th_{args.initial_speed}_{args.scenario}_{args.memories}.npy', returns_list)
+np.save(f'results/ep_steps_th_{args.initial_speed}_{args.scenario}_{args.memories}.npy', ep_steps_list)
 print('Training ep. number: {}, Avg. Ev. steps: {}, Avg. Ev. total return: {}, Best return: {}'.format(0, ep_steps, returns, best_return))
 
 for i in range(num_eps):
@@ -105,7 +105,7 @@ for i in range(num_eps):
         else:
             if state.shape[0] > 0:
                 ep_steps += 1
-                if reward != -10:
+                if reward != -100:
                     memory.add(state, actions, next_state, reward, not_done)
                 else:
                     memory_col.add(state, actions, next_state, reward, not_done)
@@ -127,8 +127,8 @@ for i in range(num_eps):
         ep_steps, returns = evaluate(aim, flow_params)
         returns_list.append(returns)
         ep_steps_list.append(ep_steps)
-        np.save(f'results/returns_12_{args.initial_speed}_{args.scenario}_{args.memories}.npy', returns_list)
-        np.save(f'results/ep_steps_12_{args.initial_speed}_{args.scenario}_{args.memories}.npy', ep_steps_list)
+        np.save(f'results/returns_th_{args.initial_speed}_{args.scenario}_{args.memories}.npy', returns_list)
+        np.save(f'results/ep_steps_th_{args.initial_speed}_{args.scenario}_{args.memories}.npy', ep_steps_list)
 
         if returns > best_return:
             aim.save()

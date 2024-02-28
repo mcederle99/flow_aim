@@ -3,7 +3,7 @@ import torch
 from flow.core.params import SumoCarFollowingParams, SumoParams
 from flow.utils.registry import make_create_env
 
-state_dim = 13
+state_dim = 14
 
 def order_vehicles(state):
     distances = {}
@@ -91,7 +91,7 @@ def evaluate(aim, flow_params, num_eps=10):
     aim.actor.train()
     return np.mean(ep_steps_list), np.mean(returns_list)
 
-from environment_simp import ADDITIONAL_ENV_PARAMS
+from environment_thesis import ADDITIONAL_ENV_PARAMS
 from scenario_simp import ADDITIONAL_NET_PARAMS
 from flow.core.params import EnvParams
 
@@ -165,7 +165,7 @@ inflow.add(veh_type="rl",
           )
 
 from flow.core.params import NetParams
-from environment_simp import SpeedEnv
+from environment_thesis import SpeedEnv
 from scenario_simp import IntersectionNetwork
 
 net_params = NetParams(additional_params=ADDITIONAL_NET_PARAMS)

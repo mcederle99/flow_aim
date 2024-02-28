@@ -2,25 +2,43 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-# LARGE model: input 512, nhead 8, feedforward 2048, num_layers 6
-# MEDIUM model: input 256, nhead 4, feedforward 1024, num_layers 4
+# LARGE model: input 512, nhead 8, feedforward 2048, num_layers 4
+# MEDIUM model: input 256, nhead 4, feedforward 1024, num_layers 2
 # SMALL model: input 128, nhead 2, feedforward 512, num_layers 2
+
+size = "S"
+
+if size == "S":
+    dim_model = 128
+    num_head = 2
+    ff = 512
+    num_lay = 2
+elif size == "M":
+    dim_model = 256
+    num_head = 4
+    ff = 1024
+    num_lay = 2
+else:
+    dim_model = 512
+    num_head = 8
+    ff = 2048
+    num_lay = 4
 
 class Actor(nn.Module):
 
     def __init__(self, state_dim, action_dim):
         super(Actor, self).__init__()
         
-        self.encoder_emb = nn.Linear(state_dim, 256)
-        self.decoder_emb = nn.Embedding(action_dim, 256)
+        self.encoder_emb = nn.Linear(state_dim, dim_model)
+        self.decoder_emb = nn.Embedding(action_dim, dim_model)
 
-        self.encoder_layer = nn.TransformerEncoderLayer(d_model=256, nhead=4, dim_feedforward=1024, dropout=0, batch_first=True)
-        self.encoder = nn.TransformerEncoder(self.encoder_layer, num_layers=2)
+        self.encoder_layer = nn.TransformerEncoderLayer(d_model=dim_model, nhead=num_head, dim_feedforward=ff, dropout=0, batch_first=True)
+        self.encoder = nn.TransformerEncoder(self.encoder_layer, num_layers=num_lay)
 
-        self.decoder_layer = nn.TransformerDecoderLayer(d_model=256, nhead=4, dim_feedforward=1024, dropout=0, batch_first=True)
-        self.decoder = nn.TransformerDecoder(self.decoder_layer, num_layers=2)
+        self.decoder_layer = nn.TransformerDecoderLayer(d_model=dim_model, nhead=num_head, dim_feedforward=ff, dropout=0, batch_first=True)
+        self.decoder = nn.TransformerDecoder(self.decoder_layer, num_layers=num_lay)
 
-        self.out_layer = nn.Linear(256, action_dim)
+        self.out_layer = nn.Linear(dim_model, action_dim)
         
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         
@@ -59,23 +77,23 @@ class Critic(nn.Module):
     def __init__(self, state_dim, action_dim):
         super(Critic, self).__init__()
 
-        self.action_emb1 = nn.Embedding(action_dim, 256)
-        self.encoder_emb1 = nn.Linear(state_dim, 256)
+        self.action_emb1 = nn.Embedding(action_dim, dim_model)
+        self.encoder_emb1 = nn.Linear(state_dim, dim_model)
 
-        self.encoder_layer1 = nn.TransformerEncoderLayer(d_model=512, nhead=4, dim_feedforward=1024, dropout=0, batch_first=True)
-        self.encoder1 = nn.TransformerEncoder(self.encoder_layer1, num_layers=2)
+        self.encoder_layer1 = nn.TransformerEncoderLayer(d_model=dim_model*2, nhead=num_head, dim_feedforward=ff, dropout=0, batch_first=True)
+        self.encoder1 = nn.TransformerEncoder(self.encoder_layer1, num_layers=num_lay)
 
-        self.fc1 = nn.Linear(512, 256)
-        self.out1 = nn.Linear(256, 1)
+        self.fc1 = nn.Linear(dim_model*2, dim_model)
+        self.out1 = nn.Linear(dim_model, 1)
 
-        self.action_emb2 = nn.Embedding(action_dim, 256) 
-        self.encoder_emb2 = nn.Linear(state_dim, 256)
+        self.action_emb2 = nn.Embedding(action_dim, dim_model) 
+        self.encoder_emb2 = nn.Linear(state_dim, dim_model)
 
-        self.encoder_layer2 = nn.TransformerEncoderLayer(d_model=512, nhead=4, dim_feedforward=1024, dropout=0, batch_first=True)
-        self.encoder2 = nn.TransformerEncoder(self.encoder_layer2, num_layers=2)
+        self.encoder_layer2 = nn.TransformerEncoderLayer(d_model=dim_model*2, nhead=num_head, dim_feedforward=ff, dropout=0, batch_first=True)
+        self.encoder2 = nn.TransformerEncoder(self.encoder_layer2, num_layers=num_lay)
 
-        self.fc2 = nn.Linear(512, 256)
-        self.out2 = nn.Linear(256, 1)
+        self.fc2 = nn.Linear(dim_model*2, dim_model)
+        self.out2 = nn.Linear(dim_model, 1)
 
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
         

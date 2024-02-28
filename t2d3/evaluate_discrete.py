@@ -4,7 +4,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--initial_speed", default="random")      # Random speed for entering vehicles
 parser.add_argument("--scenario", default="simple")                 # Intersection scenario considered
 parser.add_argument("--memories", default=1, type=int)              # Number of replay buffers
-parser.add_argument("--max_eps", default=10, type=int)             # Max episodes to run environment
+parser.add_argument("--max_eps", default=100, type=int)             # Max episodes to run environment
 args = parser.parse_args()
 
 from flow.core.params import SumoParams
@@ -44,11 +44,11 @@ aim = TD3(
 
 aim.load()
 aim.actor.eval()
-
+total_crashes = 0
 for i in range(num_eps):
 
     random_seed = np.random.choice(1000)
-    sim_params = SumoParams(sim_step=0.25, render=True, seed=random_seed)
+    sim_params = SumoParams(sim_step=0.25, render=False, seed=random_seed)
     flow_params['sim'] = sim_params
     # Get the env name and a creator for the environment.
     create_env, _ = make_create_env(flow_params)
@@ -85,7 +85,10 @@ for i in range(num_eps):
         total_steps += 1
         
         if crash:
+            total_crashes += 1
             break
         
-    print('Training ep. number: {}, Avg. Ev. steps: {}, Avg. Ev. total return: {}'.format(i+1, ep_steps, returns))
+    #print('Training ep. number: {}, Avg. Ev. steps: {}, Avg. Ev. total return: {}'.format(i+1, ep_steps, returns))
     env.terminate()
+
+print(total_crashes)
