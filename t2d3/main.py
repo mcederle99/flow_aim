@@ -8,6 +8,7 @@ parser.add_argument("--start_timesteps", default=25e3, type=int)    # Time steps
 parser.add_argument("--eval_freq", default=5, type=int)             # How often (episodes) we evaluate
 parser.add_argument("--max_eps", default=10000, type=int)             # Max episodes to run environment
 #parser.add_argument("--expl_noise", default=0.4, type=float)        # Std of Gaussian exploration noise
+parser.add_argument("--seed", default=0, type=int)
 args = parser.parse_args()
 
 from flow.core.params import SumoParams
@@ -31,6 +32,10 @@ else:
     from memory_2mem import ReplayBuffer
     from agent_2mem import TD3
 
+# Set seeds
+torch.manual_seed(args.seed)
+np.random.seed(args.seed)
+
 num_eps = args.max_eps 
 total_steps = 0
 best_return = -2000
@@ -52,7 +57,7 @@ aim = TD3(
         policy_noise=0.2,
         noise_clip=0.5,
         policy_freq=2,
-        filename=f'models/AIM_T2D3_th_{args.initial_speed}_{args.scenario}_{args.memories}')
+        filename=f'models/AIM_T2D3_th_{args.initial_speed}_{args.scenario}_{args.memories}_{args.seed}')
 
 total_params = sum(p.numel() for p in aim.actor.parameters())
 print(total_params)
@@ -60,8 +65,8 @@ print(total_params)
 ep_steps, returns = evaluate(aim, flow_params)
 returns_list.append(returns)
 ep_steps_list.append(ep_steps)
-np.save(f'results/returns_th_{args.initial_speed}_{args.scenario}_{args.memories}.npy', returns_list)
-np.save(f'results/ep_steps_th_{args.initial_speed}_{args.scenario}_{args.memories}.npy', ep_steps_list)
+np.save(f'results/returns_th_{args.initial_speed}_{args.scenario}_{args.memories}_{args.seed}.npy', returns_list)
+np.save(f'results/ep_steps_th_{args.initial_speed}_{args.scenario}_{args.memories}_{args.seed}.npy', ep_steps_list)
 print('Training ep. number: {}, Avg. Ev. steps: {}, Avg. Ev. total return: {}, Best return: {}'.format(0, ep_steps, returns, best_return))
 
 for i in range(num_eps):
@@ -123,14 +128,14 @@ for i in range(num_eps):
         if crash:
             break
         
-    if total_steps > args.start_timesteps and ((i+1) % args.eval_freq == 0):
+    if (i+1) % args.eval_freq == 0:
         ep_steps, returns = evaluate(aim, flow_params)
         returns_list.append(returns)
         ep_steps_list.append(ep_steps)
-        np.save(f'results/returns_th_{args.initial_speed}_{args.scenario}_{args.memories}.npy', returns_list)
-        np.save(f'results/ep_steps_th_{args.initial_speed}_{args.scenario}_{args.memories}.npy', ep_steps_list)
-
-        if returns > best_return:
+        np.save(f'results/returns_th_{args.initial_speed}_{args.scenario}_{args.memories}_{args.seed}.npy', returns_list)
+        np.save(f'results/ep_steps_th_{args.initial_speed}_{args.scenario}_{args.memories}_{args.seed}.npy', ep_steps_list)
+        
+        if total_steps > args.start_timesteps and returns > best_return:
             aim.save()
             best_return = returns
 

@@ -29,7 +29,7 @@ else:
 num_eps = args.max_eps 
 total_steps = 0
 
-state_dim = 13
+state_dim = 14
 action_dim = 11
 
 aim = TD3(
@@ -40,7 +40,7 @@ aim = TD3(
         policy_noise=0.2,
         noise_clip=0.5,
         policy_freq=2,
-        filename=f'models/AIM_T2D3_{args.initial_speed}_{args.scenario}_{args.memories}')
+        filename=f'models/AIM_T2D3_th_{args.initial_speed}_{args.scenario}_{args.memories}_{args.seed}')
 
 aim.load()
 aim.actor.eval()
