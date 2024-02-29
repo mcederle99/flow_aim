@@ -116,7 +116,8 @@ class SpeedEnv(Env):
         
         super().__init__(env_params, sim_params, network, simulator)
 
-        self.last_positions = {"rl_0": 0.0, "rl_1": 0.0, "rl_2": 0.0, "rl_3": 0.0}
+        #self.last_positions = {"rl_0": 0.0, "rl_1": 0.0, "rl_2": 0.0, "rl_3": 0.0}
+        self.last_positions = {}
         self.state_dim = 14
 
     @property
@@ -169,7 +170,10 @@ class SpeedEnv(Env):
                 #pos = self.k.vehicle.get_position(i)
                 #displ = pos - self.last_positions[i]
                 pos = self.k.vehicle.get_distance(i)
-                displ = pos - self.last_positions[i]
+                if i in list(self.last_positions.keys()):
+                    displ = pos - self.last_positions[i]
+                else:
+                    displ = pos
                 self.last_positions[i] = pos
                 #if displ < 0:
                 #    displ = pos

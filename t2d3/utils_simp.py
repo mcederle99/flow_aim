@@ -51,8 +51,8 @@ def evaluate(aim, flow_params, num_eps=10):
     ep_steps_list = []
     for i in range(num_eps):
 
-        random_seed = np.random.choice(1000)
-        sim_params = SumoParams(sim_step=0.25, render=False, seed=random_seed)
+        #random_seed = np.random.choice(1000)
+        sim_params = SumoParams(sim_step=0.25, render=False, seed=i)
         flow_params['sim'] = sim_params
         # Get the env name and a creator for the environment.
         create_env, _ = make_create_env(flow_params)
@@ -118,7 +118,7 @@ vehicles.add("rl",
              routing_controller=(ContinuousRouter, {}),
              car_following_params=SumoCarFollowingParams(
                 speed_mode="aggressive"),
-             num_vehicles=4,
+             num_vehicles=0,
              )
 
 from flow.core.params import InFlows
@@ -168,7 +168,7 @@ from flow.core.params import NetParams
 from environment_thesis import SpeedEnv
 from scenario_simp import IntersectionNetwork
 
-net_params = NetParams(additional_params=ADDITIONAL_NET_PARAMS)
+net_params = NetParams(inflows=inflow, additional_params=ADDITIONAL_NET_PARAMS)
 
 flow_params = dict(
     exp_tag='test',
