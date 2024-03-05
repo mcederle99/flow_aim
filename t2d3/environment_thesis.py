@@ -238,7 +238,7 @@ class SpeedEnv(Env):
             obs = obs + way + queue
             
             state_dict[q] = obs
-            
+        
         ord_vehs = order_vehicles(state_dict)
         state = torch.tensor([], dtype=torch.float32)
         for k in range(len(ord_vehs)):
