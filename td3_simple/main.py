@@ -1,4 +1,5 @@
 import argparse
+import time
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--initial_speed", default="random")      # Random speed for entering vehicles
@@ -52,7 +53,7 @@ memory = ReplayBuffer(state_dim, action_dim)
 aim = TD3(
         state_dim,
         action_dim,
-        discount=0.999,
+        discount=0.99,
         tau=0.005,
         policy_noise=0.2,
         noise_clip=0.5,
@@ -82,6 +83,7 @@ for i in range(int(1e6)):
     # state is a 2-dim tensor
     state = env.reset()
     ep_steps = 0
+    returns = 0
 
     for j in range(max_ep_steps):    
         # actions: (V,) ordered tensor
@@ -97,7 +99,7 @@ for i in range(int(1e6)):
         # done: (1,) ordered tensor
         # crash: boolean
         next_state, reward, not_done, crash = env.step(actions)
-       
+        print(reward)        
         if args.memories == 1:
             if len(env.k.vehicle.get_ids()) > 0:
                 ep_steps += 1
@@ -118,25 +120,30 @@ for i in range(int(1e6)):
         #state = trim(state)
           
         total_steps += 1
-        
+        returns += reward
+
         if total_steps % args.eval_freq == 0:
-            ep_steps, returns = evaluate(aim, flow_params)
-            returns_list.append(returns)
-            ep_steps_list.append(ep_steps)
+            ev_ep_steps, ev_returns = evaluate(aim, flow_params)
+            returns_list.append(ev_returns)
+            ep_steps_list.append(ev_ep_steps)
             np.save(f'results/returns_{args.initial_speed}_{args.scenario}_{args.memories}_{args.seed}.npy', returns_list)
             np.save(f'results/ep_steps_{args.initial_speed}_{args.scenario}_{args.memories}_{args.seed}.npy', ep_steps_list)
             
-            if total_steps > args.start_timesteps and returns > best_return:
+            if total_steps > args.start_timesteps and ev_returns > best_return:
                 aim.save()
-                best_return = returns
+                best_return = ev_returns
+            
+            print('---------------------------------------')
+            print(f"Total T: {total_steps} Training episodes: {i+1} Average episode T: {ev_ep_steps} Average reward: {ev_returns:.3f}")
+            print('---------------------------------------')
 
-            print(f"Total T: {total_steps} Training episodes: {i+1} Average episode T: {ep_steps} Average reward: {returns:.3f}")
-       
         if len(env.k.vehicle.get_ids()) == 0 and ep_steps > 0:
             break
         if crash:
             break
+    
 
+    print(f"Total T: {total_steps} Training episodes: {i+1} Episode T: {ep_steps} Reward: {returns.item():.3f}")
     env.terminate()
     if total_steps >= 1e6:
         break

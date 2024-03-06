@@ -51,7 +51,7 @@ def evaluate(aim, flow_params, num_eps=10):
     for i in range(num_eps):
 
         #random_seed = np.random.choice(1000)
-        sim_params = SumoParams(sim_step=0.25, render=False, seed=1)
+        sim_params = SumoParams(sim_step=0.25, render=False, seed=i)
         flow_params['sim'] = sim_params
         # Get the env name and a creator for the environment.
         create_env, _ = make_create_env(flow_params)

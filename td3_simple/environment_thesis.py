@@ -161,7 +161,7 @@ class SpeedEnv(Env):
         not_done = torch.tensor([1])
 
         if crash:
-            reward += torch.tensor([-100.0])
+            reward += torch.tensor([-1.0])
             not_done = torch.tensor([0])
             return reward, not_done
 
@@ -177,11 +177,15 @@ class SpeedEnv(Env):
                 self.last_positions[i] = pos
                 #if displ < 0:
                 #    displ = pos
-                reward += torch.tensor([displ - 1])
+                #print(displ)
+                reward += torch.tensor([displ])
             else:
-                reward += torch.tensor([10.0])
+                reward += torch.tensor([1.0])
                 #return reward, not_done
-            
+        
+        if len(vehs) > 0:
+            reward /= len(vehs)
+
         return reward, not_done
 
     def get_state(self):
@@ -195,10 +199,13 @@ class SpeedEnv(Env):
             
             # POSITION
             pos = self.k.vehicle.get_2d_position(q)
-            obs.append(pos[0])
-            obs.append(pos[1])
+            #obs.append(pos[0])
+            #obs.append(pos[1])
+            obs.append(np.clip((pos[0]-100)/100, -1, 1))
+            obs.append(np.clip((pos[1]-100)/100, -1, 1))
 
             # VELOCITY
+            #vel = np.clip((self.k.vehicle.get_speed(q)-11)/11, -1, 1)
             vel = self.k.vehicle.get_speed(q)
             obs.append(vel)
             
@@ -211,7 +218,8 @@ class SpeedEnv(Env):
             obs.append(acc)
 
             # HEADING ANGLE
-            angle = self.k.vehicle.get_orientation(q)[2]
+            #angle = self.k.vehicle.get_orientation(q)[2]
+            angle = np.clip((self.k.vehicle.get_orientation(q)[2]-180)/180, -1, 1)
             obs.append(angle)
 
             # DISTANCE TRAVELLED

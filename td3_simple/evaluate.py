@@ -37,7 +37,7 @@ action_dim = 12
 aim = TD3(
         state_dim,
         action_dim,
-        discount=0.999,
+        discount=0.99,
         tau=0.005,
         policy_noise=0.2,
         noise_clip=0.5,
@@ -83,5 +83,6 @@ for i in range(10):
     
     returns_list.append(returns)
     print(f"Average episode T: {ep_steps} Average reward: {returns.item():.3f}")
+    print(env.k.vehicle.get_ids())
     env.terminate()
 print(returns)
