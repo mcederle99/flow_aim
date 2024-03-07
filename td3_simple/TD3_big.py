@@ -131,7 +131,6 @@ class TD3(object):
 		# Optimize the critic
 		self.critic_optimizer.zero_grad()
 		critic_loss.backward()
-		nn.utils.clip_grad_norm_(self.critic.parameters(), 1)
 		self.critic_optimizer.step()
 
 		# Delayed policy updates
@@ -142,7 +141,7 @@ class TD3(object):
 			
 			# Optimize the actor 
 			self.actor_optimizer.zero_grad()
-			actor_loss.backward()
+			actor_loss.backward() 
 			self.actor_optimizer.step()
 			
 			# Update the frozen target models

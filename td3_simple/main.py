@@ -93,13 +93,17 @@ for i in range(int(1e6)):
             actions = (actions + noise).clip(-1, 1)
         else:
             actions = env.action_space.sample()
+
+        nv = len(env.k.vehicle.get_ids())
+        for q in range(12-nv):
+            actions[q+nv] = 0.0
         
         # next_state: (V, F) ordered tensor
         # reward: (1,) ordered tensor
         # done: (1,) ordered tensor
         # crash: boolean
         next_state, reward, not_done, crash = env.step(actions)
-        print(reward)        
+        
         if args.memories == 1:
             if len(env.k.vehicle.get_ids()) > 0:
                 ep_steps += 1

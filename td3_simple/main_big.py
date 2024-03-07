@@ -66,8 +66,8 @@ print(total_params)
 ep_steps, returns = evaluate(aim, flow_params)
 returns_list.append(returns)
 ep_steps_list.append(ep_steps)
-np.save(f'results/returns_{args.initial_speed}_{args.scenario}_{args.memories}_{args.seed}.npy', returns_list)
-np.save(f'results/ep_steps_{args.initial_speed}_{args.scenario}_{args.memories}_{args.seed}.npy', ep_steps_list)
+np.save(f'results/returns_big_{args.initial_speed}_{args.scenario}_{args.memories}_{args.seed}.npy', returns_list)
+np.save(f'results/ep_steps_big_{args.initial_speed}_{args.scenario}_{args.memories}_{args.seed}.npy', ep_steps_list)
 print(f"Total T: {total_steps} Training episodes: {0} Average episode T: {ep_steps} Average reward: {returns:.3f}")
 
 for i in range(int(1e6)):
@@ -126,8 +126,8 @@ for i in range(int(1e6)):
             ev_ep_steps, ev_returns = evaluate(aim, flow_params)
             returns_list.append(ev_returns)
             ep_steps_list.append(ev_ep_steps)
-            np.save(f'results/returns_{args.initial_speed}_{args.scenario}_{args.memories}_{args.seed}.npy', returns_list)
-            np.save(f'results/ep_steps_{args.initial_speed}_{args.scenario}_{args.memories}_{args.seed}.npy', ep_steps_list)
+            np.save(f'results/returns_big_{args.initial_speed}_{args.scenario}_{args.memories}_{args.seed}.npy', returns_list)
+            np.save(f'results/ep_steps_big_{args.initial_speed}_{args.scenario}_{args.memories}_{args.seed}.npy', ep_steps_list)
             
             if total_steps > args.start_timesteps and ev_returns > best_return:
                 aim.save()

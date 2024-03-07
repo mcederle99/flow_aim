@@ -1,3 +1,4 @@
+import time
 from flow.envs.base_gpt import Env
 import torch
 from gym.spaces.box import Box
@@ -39,8 +40,8 @@ queues = { 't_c': [1.0, 0.0, 0.0, 0.0],
 ADDITIONAL_ENV_PARAMS = {
     # maximum velocity for autonomous vehicles, in m/s
     'max_speed': 13.9,
-    'max_accel': 1,
-    'max_decel': 1
+    'max_accel': 3,
+    'max_decel': 3
 }
 
 def goal_position(way, lane, queue):
@@ -161,7 +162,7 @@ class SpeedEnv(Env):
         not_done = torch.tensor([1])
 
         if crash:
-            reward += torch.tensor([-1.0])
+            reward += torch.tensor([-2.0])
             not_done = torch.tensor([0])
             return reward, not_done
 
@@ -177,10 +178,9 @@ class SpeedEnv(Env):
                 self.last_positions[i] = pos
                 #if displ < 0:
                 #    displ = pos
-                #print(displ)
-                reward += torch.tensor([displ])
+                reward += torch.tensor([displ - 1.0])
             else:
-                reward += torch.tensor([1.0])
+                reward += torch.tensor([2.0])
                 #return reward, not_done
         
         if len(vehs) > 0:
@@ -206,15 +206,19 @@ class SpeedEnv(Env):
 
             # VELOCITY
             #vel = np.clip((self.k.vehicle.get_speed(q)-11)/11, -1, 1)
-            vel = self.k.vehicle.get_speed(q)
+            vel = self.k.vehicle.get_speed(q)/23.0
+            if np.abs(vel) > 50:
+                vel = 0.0
             obs.append(vel)
             
             # ACCELERATION
             acc = self.k.vehicle.get_realized_accel(q)
             if acc is None:
-                acc = 0
+                acc = 0.0
+            elif np.abs(acc) > 10:
+                acc = 0.0
             else:
-                acc = np.clip(acc, -1, 1)
+                acc = np.clip(acc, -3, 3)
             obs.append(acc)
 
             # HEADING ANGLE
@@ -223,16 +227,18 @@ class SpeedEnv(Env):
             obs.append(angle)
 
             # DISTANCE TRAVELLED
-            distance = self.k.vehicle.get_distance(q)
+            distance = self.k.vehicle.get_distance(q)/225.0
+            if np.abs(distance) > 50:
+                distance = 0.0
             obs.append(distance)
 
             # COLLISION
             if q in self.k.simulation.collided_vehicles():
-                coll = 1
+                coll = 1.0
             else:
-                coll = 0
+                coll = 0.0
             obs.append(coll)
-
+            
             # LANE, WAY AND QUEUE
             if self.k.vehicle.get_route(q) == '': # just to fix a simulator bug
                 #lane = [0.0, 0.0, 0.0]
@@ -246,7 +252,7 @@ class SpeedEnv(Env):
             obs = obs + way + queue
             
             state_dict[q] = obs
-            
+        
         ord_vehs = order_vehicles(state_dict)
         state = torch.zeros((12, 14), dtype=torch.float32)
         for k in range(len(ord_vehs)):

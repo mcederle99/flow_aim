@@ -1,3 +1,4 @@
+import time
 import argparse
 
 parser = argparse.ArgumentParser()
@@ -22,7 +23,7 @@ if args.scenario == "simple":
 #    else:
 #        from utils_noran import flow_params, trim, order_vehicles, evaluate, rl_actions, map_actions
 if args.memories == 1:
-    from TD3 import TD3
+    from TD3_big import TD3
 #else:
 #    from memory_2mem import ReplayBuffer
 #    from agent_2mem import TD3
@@ -42,10 +43,7 @@ aim = TD3(
         policy_noise=0.2,
         noise_clip=0.5,
         policy_freq=2,
-        filename=f'models/AIM_TD3_{args.initial_speed}_{args.scenario}_{args.memories}_{args.seed}')
-
-total_params = sum(p.numel() for p in aim.actor.parameters())
-print(total_params)
+        filename=f'models/AIM_TD3_big_{args.initial_speed}_{args.scenario}_{args.memories}_{args.seed}')
 
 aim.load()
 returns_list = []
@@ -68,7 +66,8 @@ for i in range(10):
     for j in range(max_ep_steps):    
         # actions: (V,) ordered tensor
         actions = aim.select_action(np.array(state))
-        
+        print(actions)
+        time.sleep(0.5)
         # next_state: (V, F) ordered tensor
         # reward: (1,) ordered tensor
         # done: (1,) ordered tensor
@@ -83,6 +82,6 @@ for i in range(10):
     
     returns_list.append(returns)
     print(f"Average episode T: {ep_steps} Average reward: {returns.item():.3f}")
-    print(env.k.vehicle.get_ids())
+    print(len(env.k.vehicle.get_ids()))
     env.terminate()
-print(returns)
+print(sum(returns_list)/10)
