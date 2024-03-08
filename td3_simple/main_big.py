@@ -43,7 +43,7 @@ best_return = -2000
 returns_list = []
 ep_steps_list = []
 
-state_dim = 14*12
+state_dim = 9*12
 action_dim = 12
 
 memory = ReplayBuffer(state_dim, action_dim)
@@ -53,7 +53,7 @@ memory = ReplayBuffer(state_dim, action_dim)
 aim = TD3(
         state_dim,
         action_dim,
-        discount=0.999,
+        discount=0.99,
         tau=0.005,
         policy_noise=0.2,
         noise_clip=0.5,
@@ -93,7 +93,11 @@ for i in range(int(1e6)):
             actions = (actions + noise).clip(-1, 1)
         else:
             actions = env.action_space.sample()
-        
+
+        nv = len(env.k.vehicle.get_ids())
+        for q in range(12-nv):
+            actions[q+nv] = 0.0
+
         # next_state: (V, F) ordered tensor
         # reward: (1,) ordered tensor
         # done: (1,) ordered tensor

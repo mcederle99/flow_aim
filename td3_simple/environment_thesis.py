@@ -119,12 +119,12 @@ class SpeedEnv(Env):
 
         #self.last_positions = {"rl_0": 0.0, "rl_1": 0.0, "rl_2": 0.0, "rl_3": 0.0}
         self.last_positions = {}
-        self.state_dim = 10*4
+        self.state_dim = 9*12
 
     @property
     def action_space(self):
         """See class definition."""
-        num_vehicles = 4 
+        num_vehicles = 12 
         return Box(
             low=-abs(self.env_params.additional_params['max_decel']),
             high=self.env_params.additional_params['max_accel'],
@@ -233,11 +233,11 @@ class SpeedEnv(Env):
             obs.append(distance)
 
             # COLLISION
-            if q in self.k.simulation.collided_vehicles():
-                coll = 1.0
-            else:
-                coll = 0.0
-            obs.append(coll)
+#            if q in self.k.simulation.collided_vehicles():
+#                coll = 1.0
+#            else:
+#                coll = 0.0
+#            obs.append(coll)
             
             # LANE, WAY AND QUEUE
             if self.k.vehicle.get_route(q) == '': # just to fix a simulator bug
@@ -254,7 +254,7 @@ class SpeedEnv(Env):
             state_dict[q] = obs
         
         ord_vehs = order_vehicles(state_dict)
-        state = torch.zeros((4, 10), dtype=torch.float32)
+        state = torch.zeros((12, 9), dtype=torch.float32)
         for k in range(len(ord_vehs)):
             ego_state = torch.as_tensor(state_dict[ord_vehs[k]], dtype=torch.float32)
             state[k] = ego_state

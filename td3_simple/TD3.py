@@ -131,7 +131,7 @@ class TD3(object):
 
 		# Compute critic loss
 		critic_loss = F.mse_loss(current_Q1, target_Q) + F.mse_loss(current_Q2, target_Q)
-                
+
                 # Optimize the critic
 		self.critic_optimizer.zero_grad()
 		critic_loss.backward()

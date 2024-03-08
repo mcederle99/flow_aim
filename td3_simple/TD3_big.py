@@ -116,6 +116,7 @@ class TD3(object):
 			next_action = (
 				self.actor_target(next_state) + noise
 			).clamp(-self.max_action, self.max_action)
+			next_action = next_action.masked_fill(action == 0.0, 0.0)
 
 			# Compute the target Q value
 			target_Q1, target_Q2 = self.critic_target(next_state, next_action)
@@ -137,7 +138,9 @@ class TD3(object):
 		if self.total_it % self.policy_freq == 0:
 
 			# Compute actor losse
-			actor_loss = -self.critic.Q1(state, self.actor(state)).mean()
+			new_action = self.actor(state)
+			new_action = new_action.masked_fill(action == 0.0, 0.0)
+			actor_loss = -self.critic.Q1(state, new_action).mean()
 			
 			# Optimize the actor 
 			self.actor_optimizer.zero_grad()
