@@ -6,7 +6,7 @@ from flow.networks.base import Network
 
 ADDITIONAL_NET_PARAMS = {
     # radius of the intersection
-    "radius_intersection": 15,
+    "radius_intersection": 7.5,#15,
     # number of lanes
     "lanes": 1,
     # speed limit for all edges
@@ -55,7 +55,7 @@ class IntersectionNetwork(Network):
             if p not in net_params.additional_params:
                 raise KeyError('Network parameter "{}" not supplied'.format(p))
 
-        self.intersection_len = 100
+        self.intersection_len = 40
 
         super().__init__(name, vehicles, net_params, initial_config,
                          traffic_lights)
