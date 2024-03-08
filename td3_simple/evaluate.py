@@ -47,7 +47,7 @@ aim = TD3(
         policy_noise=0.2,
         noise_clip=0.5,
         policy_freq=2,
-        filename=f'models/AIM_TD3_{args.initial_speed}_{args.scenario}_{args.memories}_{args.seed}')
+        filename=f'models/AIM_TD3_{args.dimension}_{args.initial_speed}_{args.scenario}_{args.memories}_{args.seed}')
 
 aim.load()
 returns_list = []
@@ -70,14 +70,12 @@ for i in range(10):
     for j in range(max_ep_steps):    
         # actions: (V,) ordered tensor
         actions = aim.select_action(np.array(state))
-        print(actions)
-        time.sleep(0.5)
         # next_state: (V, F) ordered tensor
         # reward: (1,) ordered tensor
         # done: (1,) ordered tensor
         # crash: boolean
         state, reward, not_done, crash = env.step(actions)
-        
+       
         returns += reward
         ep_steps += 1
 

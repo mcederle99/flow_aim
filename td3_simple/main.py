@@ -43,8 +43,8 @@ best_return = -2000
 returns_list = []
 ep_steps_list = []
 
-state_dim = 14*12
-action_dim = 12
+state_dim = 10*4
+action_dim = 4
 
 memory = ReplayBuffer(state_dim, action_dim)
 #if args.memories == 2:
@@ -67,7 +67,7 @@ ep_steps, returns = evaluate(aim, flow_params)
 returns_list.append(returns)
 ep_steps_list.append(ep_steps)
 np.save(f'results/returns_small_{args.initial_speed}_{args.scenario}_{args.memories}_{args.seed}.npy', returns_list)
-np.save(f'results/ep_steps__small{args.initial_speed}_{args.scenario}_{args.memories}_{args.seed}.npy', ep_steps_list)
+np.save(f'results/ep_steps_small_{args.initial_speed}_{args.scenario}_{args.memories}_{args.seed}.npy', ep_steps_list)
 print(f"Total T: {total_steps} Training episodes: {0} Average episode T: {ep_steps} Average reward: {returns:.3f}")
 
 for i in range(int(1e6)):
@@ -95,7 +95,7 @@ for i in range(int(1e6)):
             actions = env.action_space.sample()
 
         nv = len(env.k.vehicle.get_ids())
-        for q in range(12-nv):
+        for q in range(4-nv):
             actions[q+nv] = 0.0
         
         # next_state: (V, F) ordered tensor
