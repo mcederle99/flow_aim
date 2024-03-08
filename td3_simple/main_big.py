@@ -53,7 +53,7 @@ memory = ReplayBuffer(state_dim, action_dim)
 aim = TD3(
         state_dim,
         action_dim,
-        discount=0.99,
+        discount=0.999,
         tau=0.005,
         policy_noise=0.2,
         noise_clip=0.5,

@@ -6,6 +6,7 @@ parser.add_argument("--initial_speed", default="random")      # Random speed for
 parser.add_argument("--scenario", default="simple")                 # Intersection scenario considered
 parser.add_argument("--memories", default=1, type=int)              # Number of replay buffers
 parser.add_argument("--seed", default=0, type=int)
+parser.add_argument("--dimension", default="small")
 args = parser.parse_args()
 
 from flow.core.params import SumoParams
@@ -23,7 +24,10 @@ if args.scenario == "simple":
 #    else:
 #        from utils_noran import flow_params, trim, order_vehicles, evaluate, rl_actions, map_actions
 if args.memories == 1:
-    from TD3_big import TD3
+    if args.dimension == "small":
+        from TD3 import TD3
+    else:
+        from TD3_big import TD3
 #else:
 #    from memory_2mem import ReplayBuffer
 #    from agent_2mem import TD3
@@ -43,7 +47,7 @@ aim = TD3(
         policy_noise=0.2,
         noise_clip=0.5,
         policy_freq=2,
-        filename=f'models/AIM_TD3_big_{args.initial_speed}_{args.scenario}_{args.memories}_{args.seed}')
+        filename=f'models/AIM_TD3_{args.initial_speed}_{args.scenario}_{args.memories}_{args.seed}')
 
 aim.load()
 returns_list = []

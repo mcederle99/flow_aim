@@ -505,10 +505,13 @@ class TraCIKernelNetwork(BaseKernelNetwork):
         x.append(t)
         printxml(x, self.net_path + self.cfgfn)
 
+        final_net_path = "\'"+self.net_path+self.cfgfn+"\'"
+        final_cfg_path = "\'"+self.cfg_path+self.netfn+"\'"
+
         subprocess.call(
             [
-                'netconvert -c ' + self.net_path + self.cfgfn +
-                ' --output-file=' + self.cfg_path + self.netfn +
+                'netconvert -c ' + final_net_path +
+                ' --output-file=' + final_cfg_path +
                 ' --no-internal-links="false"'
             ],
             stdout=subprocess.DEVNULL,

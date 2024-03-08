@@ -70,7 +70,7 @@ class TD3(object):
 		self,
 		state_dim,
 		action_dim,
-		max_action=1,
+		max_action=3,
 		discount=0.99,
 		tau=0.005,
 		policy_noise=0.2,
