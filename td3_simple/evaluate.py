@@ -36,8 +36,8 @@ if args.memories == 1:
 torch.manual_seed(args.seed)
 np.random.seed(args.seed)
 
-state_dim = 14*12
-action_dim = 12
+state_dim = 9*4
+action_dim = 4
 
 aim = TD3(
         state_dim,
@@ -49,12 +49,19 @@ aim = TD3(
         policy_freq=2,
         filename=f'models/AIM_TD3_{args.dimension}_{args.initial_speed}_{args.scenario}_{args.memories}_{args.seed}')
 
-aim.load()
+#aim.load()
 returns_list = []
+
+north_routes = np.array([('t_c', 'c_b'), ('t_c', 'c_l'), ('t_c', 'c_r')])
+south_routes = np.array([('b_c', 'c_t'), ('b_c', 'c_l'), ('b_c', 'c_r')])
+east_routes = np.array([('r_c', 'c_l'), ('r_c', 'c_t'), ('r_c', 'c_b')])
+west_routes = np.array([('l_c', 'c_r'), ('l_c', 'c_t'), ('l_c', 'c_b')])
 
 for i in range(10):
 
-    sim_params = SumoParams(sim_step=0.25, render=False, seed=i)
+    routes_chosen = False
+
+    sim_params = SumoParams(sim_step=0.25, render=True, seed=i)
     flow_params['sim'] = sim_params
     # Get the env name and a creator for the environment.
     create_env, _ = make_create_env(flow_params)
@@ -75,7 +82,14 @@ for i in range(10):
         # done: (1,) ordered tensor
         # crash: boolean
         state, reward, not_done, crash = env.step(actions)
-       
+        
+        if len(env.k.vehicle.get_ids()) > 0 and not routes_chosen:
+            env.k.vehicle.choose_routes("rl_0", north_routes[np.random.randint(0, high=3)])
+            env.k.vehicle.choose_routes("rl_1", south_routes[np.random.randint(0, high=3)])
+            env.k.vehicle.choose_routes("rl_2", east_routes[np.random.randint(0, high=3)])
+            env.k.vehicle.choose_routes("rl_3", west_routes[np.random.randint(0, high=3)])
+            routes_chosen = True
+
         returns += reward
         ep_steps += 1
 
