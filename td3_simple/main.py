@@ -43,8 +43,8 @@ best_return = -2000
 returns_list = []
 ep_steps_list = []
 
-state_dim = 9*12
-action_dim = 12
+state_dim = 9*4
+action_dim = 4
 
 memory = ReplayBuffer(state_dim, action_dim)
 #if args.memories == 2:
@@ -70,6 +70,11 @@ np.save(f'results/returns_small_{args.initial_speed}_{args.scenario}_{args.memor
 np.save(f'results/ep_steps_small_{args.initial_speed}_{args.scenario}_{args.memories}_{args.seed}.npy', ep_steps_list)
 print(f"Total T: {total_steps} Training episodes: {0} Average episode T: {ep_steps} Average reward: {returns:.3f}")
 
+north_routes = [('t_c', 'c_b'), ('t_c', 'c_l'), ('t_c', 'c_r')]
+south_routes = [('b_c', 'c_t'), ('b_c', 'c_l'), ('b_c', 'c_r')]
+east_routes = [('r_c', 'c_l'), ('r_c', 'c_t'), ('r_c', 'c_b')]
+west_routes = [('l_c', 'c_r'), ('l_c', 'c_t'), ('l_c', 'c_b')]
+
 for i in range(int(1e6)):
 
     sim_params = SumoParams(sim_step=0.25, render=False, seed=10+i)
@@ -79,11 +84,17 @@ for i in range(int(1e6)):
     # Create the environment.
     env = create_env()
     max_ep_steps = env.env_params.horizon
+    
+    np.random.shuffle(north_routes)
+    np.random.shuffle(south_routes)
+    np.random.shuffle(east_routes)
+    np.random.shuffle(west_routes)
 
     # state is a 2-dim tensor
     state = env.reset()
     ep_steps = 0
     returns = 0
+    routes_chosen = False
 
     for j in range(max_ep_steps):    
         # actions: (V,) ordered tensor
@@ -95,7 +106,7 @@ for i in range(int(1e6)):
             actions = env.action_space.sample()
 
         nv = len(env.k.vehicle.get_ids())
-        for q in range(12-nv):
+        for q in range(4-nv):
             actions[q+nv] = 0.0
         
         # next_state: (V, F) ordered tensor
@@ -106,6 +117,13 @@ for i in range(int(1e6)):
         
         if args.memories == 1:
             if len(env.k.vehicle.get_ids()) > 0:
+                if not routes_chosen:
+                    env.k.vehicle.choose_routes(["rl_0"], north_routes)
+                    env.k.vehicle.choose_routes(["rl_1"], south_routes)
+                    env.k.vehicle.choose_routes(["rl_2"], east_routes)
+                    env.k.vehicle.choose_routes(["rl_3"], west_routes)
+                    routes_chosen = True
+                
                 ep_steps += 1
                 memory.add(state, actions, next_state, reward, not_done)
                 if total_steps > args.start_timesteps:

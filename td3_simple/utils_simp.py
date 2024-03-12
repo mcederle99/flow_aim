@@ -3,7 +3,7 @@ import torch
 from flow.core.params import SumoCarFollowingParams, SumoParams
 from flow.utils.registry import make_create_env
 
-state_dim = 9*12
+state_dim = 9*4
 
 def order_vehicles(state):
     distances = {}
@@ -45,10 +45,21 @@ def map_actions(actions):
 
     return env_actions
 
+north_routes = [('t_c', 'c_b'), ('t_c', 'c_l'), ('t_c', 'c_r')]
+south_routes = [('b_c', 'c_t'), ('b_c', 'c_l'), ('b_c', 'c_r')]
+east_routes = [('r_c', 'c_l'), ('r_c', 'c_t'), ('r_c', 'c_b')]
+west_routes = [('l_c', 'c_r'), ('l_c', 'c_t'), ('l_c', 'c_b')]
+
 def evaluate(aim, flow_params, num_eps=10):
     returns_list = []
     ep_steps_list = []
     for i in range(num_eps):
+
+        np.random.shuffle(north_routes)
+        np.random.shuffle(south_routes)
+        np.random.shuffle(east_routes)
+        np.random.shuffle(west_routes)
+        routes_chosen = False
 
         #random_seed = np.random.choice(1000)
         sim_params = SumoParams(sim_step=0.25, render=False, seed=i)
@@ -75,7 +86,14 @@ def evaluate(aim, flow_params, num_eps=10):
             # crash: boolean
             state, reward, not_done, crash = env.step(actions)
             #state = trim(state)
-            
+
+            if len(env.k.vehicle.get_ids()) > 0 and not routes_chosen:
+                env.k.vehicle.choose_routes(["rl_0"], north_routes)
+                env.k.vehicle.choose_routes(["rl_1"], south_routes)
+                env.k.vehicle.choose_routes(["rl_2"], east_routes)
+                env.k.vehicle.choose_routes(["rl_3"], west_routes)
+                routes_chosen = True
+
             returns += reward
             ep_steps += 1
 
@@ -115,7 +133,7 @@ vehicles.add("rl",
              routing_controller=(ContinuousRouter, {}),
              car_following_params=SumoCarFollowingParams(
                 speed_mode="aggressive"),
-             num_vehicles=0,
+             num_vehicles=4,
              )
 
 from flow.core.params import InFlows
@@ -165,7 +183,7 @@ from flow.core.params import NetParams
 from environment_thesis import SpeedEnv
 from scenario_simp import IntersectionNetwork
 
-net_params = NetParams(inflows=inflow, additional_params=ADDITIONAL_NET_PARAMS)
+net_params = NetParams(additional_params=ADDITIONAL_NET_PARAMS)
 
 flow_params = dict(
     exp_tag='test',

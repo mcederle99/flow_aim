@@ -194,13 +194,13 @@ class IntersectionNetwork(Network):
             "c_b":
                 ["c_b"],
             "rl_0":
-                ["r_c", "c_t"],
+                ["t_c", "c_b"],
             "rl_1":
-                ["t_c", "c_r"],
-            "rl_2":
-                ["l_c", "c_t"],
+                ["b_c", "c_t"],
+           "rl_2":
+                ["r_c", "c_l"],
             "rl_3":
-                ["b_c", "c_l"],
+                ["l_c", "c_r"],
             }
 
         return rts
