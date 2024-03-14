@@ -47,13 +47,15 @@ aim = TD3(
         policy_freq=2,
         filename=f'models/AIM_TD3_{args.dimension}_{args.initial_speed}_{args.scenario}_{args.memories}_{args.seed}')
 
-#aim.load()
+aim.load()
 returns_list = []
 
 north_routes = np.array([('t_c', 'c_b'), ('t_c', 'c_l'), ('t_c', 'c_r')])
 south_routes = np.array([('b_c', 'c_t'), ('b_c', 'c_l'), ('b_c', 'c_r')])
 east_routes = np.array([('r_c', 'c_l'), ('r_c', 'c_t'), ('r_c', 'c_b')])
 west_routes = np.array([('l_c', 'c_r'), ('l_c', 'c_t'), ('l_c', 'c_b')])
+
+routes_list = [0, 2, 2, 0, 2, 2, 1, 0, 2, 2, 0, 2, 0, 1, 1, 1, 2, 2, 2, 1, 2, 1, 1, 2, 2, 0, 0, 0, 0, 1, 0, 0, 1, 0, 2, 0, 2, 2, 2, 2]
 
 for i in range(10):
 
@@ -79,27 +81,23 @@ for i in range(10):
         # reward: (1,) ordered tensor
         # done: (1,) ordered tensor
         # crash: boolean
-        state, reward, not_done, crash = env.step(torch.tensor([3.0]))
-        for q in env.k.vehicle.get_ids():
-            print(env.k.vehicle.get_speed(q))
-            print(env.k.vehicle.get_realized_accel(q))
-            print('---------------------------')
+        state, reward, not_done, crash = env.step(None)
 
-#        if len(env.k.vehicle.get_ids()) > 0 and not routes_chosen:
-#            env.k.vehicle.choose_routes("rl_0", north_routes[np.random.randint(0, high=3)])
-#            env.k.vehicle.choose_routes("rl_1", south_routes[np.random.randint(0, high=3)])
-#            env.k.vehicle.choose_routes("rl_2", east_routes[np.random.randint(0, high=3)])
-#            env.k.vehicle.choose_routes("rl_3", west_routes[np.random.randint(0, high=3)])
-#            routes_chosen = True
+        if len(env.k.vehicle.get_ids()) > 0 and not routes_chosen:
+            env.k.vehicle.choose_routes("rl_0", north_routes[routes_list[i*4]])
+            env.k.vehicle.choose_routes("rl_1", south_routes[routes_list[i*4+1]])
+            env.k.vehicle.choose_routes("rl_2", east_routes[routes_list[i*4+2]])
+            env.k.vehicle.choose_routes("rl_3", west_routes[routes_list[i*4+3]])
+            routes_chosen = True
         
         returns += reward
         ep_steps += 1
 
         if crash:
             break
-    raise KeyboardInterrupt
+
     returns_list.append(returns)
-    print(f"Average episode T: {ep_steps} Average reward: {returns.item():.3f}")
-    print(len(env.k.vehicle.get_ids()))
+    #print(f"Average episode T: {ep_steps} Average reward: {returns.item():.3f}")
+    #print(len(env.k.vehicle.get_ids()))
     env.terminate()
 print(sum(returns_list)/10)
