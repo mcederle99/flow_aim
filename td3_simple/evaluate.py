@@ -49,7 +49,7 @@ aim = TD3(
         policy_freq=2,
         filename=f'models/AIM_TD3_{args.dimension}_{args.initial_speed}_{args.scenario}_{args.memories}_{args.seed}')
 
-#aim.load()
+aim.load()
 returns_list = []
 
 north_routes = np.array([('t_c', 'c_b'), ('t_c', 'c_l'), ('t_c', 'c_r')])
@@ -61,7 +61,7 @@ for i in range(10):
 
     routes_chosen = False
 
-    sim_params = SumoParams(sim_step=0.25, render=True, seed=i)
+    sim_params = SumoParams(sim_step=0.25, render=False, seed=i)
     flow_params['sim'] = sim_params
     # Get the env name and a creator for the environment.
     create_env, _ = make_create_env(flow_params)
@@ -77,6 +77,8 @@ for i in range(10):
     for j in range(max_ep_steps):    
         # actions: (V,) ordered tensor
         actions = aim.select_action(np.array(state))
+        print(actions)
+        time.sleep(0.2)
         # next_state: (V, F) ordered tensor
         # reward: (1,) ordered tensor
         # done: (1,) ordered tensor
@@ -89,7 +91,7 @@ for i in range(10):
             env.k.vehicle.choose_routes("rl_2", east_routes[np.random.randint(0, high=3)])
             env.k.vehicle.choose_routes("rl_3", west_routes[np.random.randint(0, high=3)])
             routes_chosen = True
-
+        
         returns += reward
         ep_steps += 1
 

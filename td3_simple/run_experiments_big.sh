@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Script to reproduce results
-for (( i=0; i<10; i++ ))
+for (( i=3; i<10; i++ ))
 do
-	CUDA_VISIBLE_DEVICES=0 python main_big.py \
+	CUDA_VISIBLE_DEVICES=2 python main_big.py \
 	--seed $i
 done

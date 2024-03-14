@@ -119,7 +119,7 @@ class SpeedEnv(Env):
 
         #self.last_positions = {"rl_0": 0.0, "rl_1": 0.0, "rl_2": 0.0, "rl_3": 0.0}
         self.last_positions = {}
-        self.state_dim = 9*4
+        self.state_dim = 13*4
 
     @property
     def action_space(self):
@@ -243,18 +243,18 @@ class SpeedEnv(Env):
             if self.k.vehicle.get_route(q) == '': # just to fix a simulator bug
                 #lane = [0.0, 0.0, 0.0]
                 way = [0.0, 0.0, 0.0]
-                #queue = [0.0, 0.0, 0.0, 0.0]
+                queue = [0.0, 0.0, 0.0, 0.0]
             else:
                 way = ways[self.k.vehicle.get_route(q)]
                 #lane = [way[2], way[1], way[0]]
-                #queue = queues[self.k.vehicle.get_route(q)[0]]
+                queue = queues[self.k.vehicle.get_route(q)[0]]
             
-            obs = obs + way #+ queue
+            obs = obs + way + queue
             
             state_dict[q] = obs
         
         ord_vehs = order_vehicles(state_dict)
-        state = torch.zeros((4, 9), dtype=torch.float32)
+        state = torch.zeros((4, 13), dtype=torch.float32)
         for k in range(len(ord_vehs)):
             ego_state = torch.as_tensor(state_dict[ord_vehs[k]], dtype=torch.float32)
             state[k] = ego_state

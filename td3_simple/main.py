@@ -43,7 +43,7 @@ best_return = -2000
 returns_list = []
 ep_steps_list = []
 
-state_dim = 9*4
+state_dim = 13*4
 action_dim = 4
 
 memory = ReplayBuffer(state_dim, action_dim)
@@ -85,16 +85,11 @@ for i in range(int(1e6)):
     env = create_env()
     max_ep_steps = env.env_params.horizon
     
-    np.random.shuffle(north_routes)
-    np.random.shuffle(south_routes)
-    np.random.shuffle(east_routes)
-    np.random.shuffle(west_routes)
-
     # state is a 2-dim tensor
     state = env.reset()
     ep_steps = 0
     returns = 0
-    routes_chosen = False
+    routes_chosen = 0 
 
     for j in range(max_ep_steps):    
         # actions: (V,) ordered tensor
@@ -117,17 +112,20 @@ for i in range(int(1e6)):
         
         if args.memories == 1:
             if len(env.k.vehicle.get_ids()) > 0:
-                if not routes_chosen:
-                    env.k.vehicle.choose_routes(["rl_0"], north_routes)
-                    env.k.vehicle.choose_routes(["rl_1"], south_routes)
-                    env.k.vehicle.choose_routes(["rl_2"], east_routes)
-                    env.k.vehicle.choose_routes(["rl_3"], west_routes)
-                    routes_chosen = True
-                
                 ep_steps += 1
-                memory.add(state, actions, next_state, reward, not_done)
-                if total_steps > args.start_timesteps:
-                    aim.train(memory)
+                if routes_chosen == 0:
+                    env.k.vehicle.choose_routes("rl_0", north_routes[np.random.randint(0, high=3)])
+                    env.k.vehicle.choose_routes("rl_1", south_routes[np.random.randint(0, high=3)])
+                    env.k.vehicle.choose_routes("rl_2", east_routes[np.random.randint(0, high=3)])
+                    env.k.vehicle.choose_routes("rl_3", west_routes[np.random.randint(0, high=3)])
+                    routes_chosen += 1
+                elif routes_chosen == 1:
+                    routes_chosen += 1
+                else: 
+                    memory.add(state, actions, next_state, reward, not_done)
+                    returns += reward
+                    if total_steps > args.start_timesteps:
+                        aim.train(memory)
 #        else:
 #            if state.shape[0] > 0:
 #                ep_steps += 1
@@ -142,7 +140,6 @@ for i in range(int(1e6)):
         #state = trim(state)
           
         total_steps += 1
-        returns += reward
 
         if total_steps % args.eval_freq == 0:
             ev_ep_steps, ev_returns = evaluate(aim, flow_params)

@@ -3,7 +3,7 @@ import torch
 from flow.core.params import SumoCarFollowingParams, SumoParams
 from flow.utils.registry import make_create_env
 
-state_dim = 9*4
+state_dim = 13*4
 
 def order_vehicles(state):
     distances = {}
@@ -55,10 +55,6 @@ def evaluate(aim, flow_params, num_eps=10):
     ep_steps_list = []
     for i in range(num_eps):
 
-        np.random.shuffle(north_routes)
-        np.random.shuffle(south_routes)
-        np.random.shuffle(east_routes)
-        np.random.shuffle(west_routes)
         routes_chosen = False
 
         #random_seed = np.random.choice(1000)
@@ -88,10 +84,10 @@ def evaluate(aim, flow_params, num_eps=10):
             #state = trim(state)
 
             if len(env.k.vehicle.get_ids()) > 0 and not routes_chosen:
-                env.k.vehicle.choose_routes(["rl_0"], north_routes)
-                env.k.vehicle.choose_routes(["rl_1"], south_routes)
-                env.k.vehicle.choose_routes(["rl_2"], east_routes)
-                env.k.vehicle.choose_routes(["rl_3"], west_routes)
+                env.k.vehicle.choose_routes("rl_0", north_routes[np.random.randint(0, high=3)])
+                env.k.vehicle.choose_routes("rl_1", south_routes[np.random.randint(0, high=3)])
+                env.k.vehicle.choose_routes("rl_2", east_routes[np.random.randint(0, high=3)])
+                env.k.vehicle.choose_routes("rl_3", west_routes[np.random.randint(0, high=3)])
                 routes_chosen = True
 
             returns += reward
@@ -132,7 +128,7 @@ vehicles.add("rl",
              acceleration_controller=(RLController, {}),
              routing_controller=(ContinuousRouter, {}),
              car_following_params=SumoCarFollowingParams(
-                speed_mode="aggressive"),
+                speed_mode="obey_safe_speed"),
              num_vehicles=4,
              )
 
