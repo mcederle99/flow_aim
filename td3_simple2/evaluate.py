@@ -81,8 +81,8 @@ for i in range(10):
         # reward: (1,) ordered tensor
         # done: (1,) ordered tensor
         # crash: boolean
-        state, reward, not_done, crash = env.step(None)
-
+        state, reward, not_done, crash = env.step(actions)
+        
         if len(env.k.vehicle.get_ids()) > 0 and not routes_chosen:
             env.k.vehicle.choose_routes("rl_0", north_routes[routes_list[i*4]])
             env.k.vehicle.choose_routes("rl_1", south_routes[routes_list[i*4+1]])

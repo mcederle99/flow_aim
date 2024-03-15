@@ -40,8 +40,8 @@ queues = { 't_c': [1.0, 0.0, 0.0, 0.0],
 ADDITIONAL_ENV_PARAMS = {
     # maximum velocity for autonomous vehicles, in m/s
     'max_speed': 13.9,
-    'max_accel': 3,
-    'max_decel': 3
+    'max_accel': 1,
+    'max_decel': 1
 }
 
 def goal_position(way, lane, queue):
@@ -218,7 +218,7 @@ class SpeedEnv(Env):
             elif np.abs(acc) > 10:
                 acc = 0.0
             else:
-                acc = np.clip(acc, -3, 3)
+                acc = np.clip(acc, -1, 1)
             obs.append(acc)
 
             # HEADING ANGLE

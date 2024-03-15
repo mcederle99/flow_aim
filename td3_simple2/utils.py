@@ -3,7 +3,7 @@ import torch
 from flow.core.params import SumoCarFollowingParams, SumoParams
 from flow.utils.registry import make_create_env
 
-state_dim = 13*4
+state_dim = 13*12
 
 def order_vehicles(state):
     distances = {}
@@ -57,8 +57,6 @@ def evaluate(aim, flow_params, num_eps=10):
     ep_steps_list = []
     for i in range(num_eps):
 
-        routes_chosen = False
-
         #random_seed = np.random.choice(1000)
         sim_params = SumoParams(sim_step=0.25, render=False, seed=i)
         flow_params['sim'] = sim_params
@@ -84,13 +82,6 @@ def evaluate(aim, flow_params, num_eps=10):
             # crash: boolean
             state, reward, not_done, crash = env.step(actions)
             #state = trim(state)
-
-            if len(env.k.vehicle.get_ids()) > 0 and not routes_chosen:
-                env.k.vehicle.choose_routes("rl_0", north_routes[routes_list[i*4]])
-                env.k.vehicle.choose_routes("rl_1", south_routes[routes_list[i*4+1]])
-                env.k.vehicle.choose_routes("rl_2", east_routes[routes_list[i*4+2]])
-                env.k.vehicle.choose_routes("rl_3", west_routes[routes_list[i*4+3]])
-                routes_chosen = True
 
             returns += reward
             ep_steps += 1
@@ -131,7 +122,7 @@ vehicles.add("rl",
              routing_controller=(ContinuousRouter, {}),
              car_following_params=SumoCarFollowingParams(
                 speed_mode="obey_safe_speed"),
-             num_vehicles=4,
+             num_vehicles=0,
              )
 
 from flow.core.params import InFlows
@@ -181,7 +172,7 @@ from flow.core.params import NetParams
 from environment import SpeedEnv
 from scenario import IntersectionNetwork
 
-net_params = NetParams(additional_params=ADDITIONAL_NET_PARAMS)
+net_params = NetParams(inflows=inflow, additional_params=ADDITIONAL_NET_PARAMS)
 
 flow_params = dict(
     exp_tag='test',
