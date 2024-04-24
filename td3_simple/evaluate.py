@@ -49,7 +49,7 @@ aim = TD3(
         policy_freq=2,
         filename=f'models/AIM_TD3_{args.dimension}_{args.initial_speed}_{args.scenario}_{args.memories}_{args.seed}')
 
-aim.load()
+#aim.load()
 returns_list = []
 
 north_routes = np.array([('t_c', 'c_b'), ('t_c', 'c_l'), ('t_c', 'c_r')])
@@ -61,7 +61,7 @@ for i in range(10):
 
     routes_chosen = False
 
-    sim_params = SumoParams(sim_step=0.25, render=False, seed=i)
+    sim_params = SumoParams(sim_step=0.25, render=True, seed=i)
     flow_params['sim'] = sim_params
     # Get the env name and a creator for the environment.
     create_env, _ = make_create_env(flow_params)

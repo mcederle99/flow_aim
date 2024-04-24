@@ -957,12 +957,12 @@ class TraCIVehicle(KernelVehicle):
     def apply_acceleration(self, veh_ids, acc, smooth=True):
         """See parent class."""
         # to handle the case of a single vehicle
-        if len(veh_ids) == 1 and acc.shape == torch.Size():
-            acc = [acc.item()]
+        # if len(veh_ids) == 1 and acc.shape == torch.Size():
+        #     acc = [acc.item()]
 
-        #if type(veh_ids) == str:
-        #    veh_ids = [veh_ids]
-        #    acc = [acc]
+        if type(veh_ids) == str:
+           veh_ids = [veh_ids]
+           acc = [acc]
 
         for i, vid in enumerate(veh_ids):
             if acc[i] is not None and vid in self.get_ids():
