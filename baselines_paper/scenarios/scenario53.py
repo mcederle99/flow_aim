@@ -25,16 +25,16 @@ class IntersectionNetwork(Network):
     def specify_routes(self, net_params):
         """See parent class."""
         rts = {
-            "edge-east-EW": ["edge-east-EW", routes_list[0][0]],
+            "edge-east-EW": ["edge-east-EW", routes_list[53][0]],
                 # [(["edge-east-EW", "edge-west-EW"], 1/3), (["edge-east-EW", "edge-north-SN"], 1/3),
                 #     (["edge-east-EW", "edge-south-NS"], 1/3)],
-            "edge-south-SN": ["edge-south-SN", routes_list[0][1]],
+            "edge-south-SN": ["edge-south-SN", routes_list[53][1]],
                 # [(["edge-south-SN", "edge-west-EW"], 1/3), (["edge-south-SN", "edge-north-SN"], 1/3),
                 #     (["edge-south-SN", "edge-east-WE"], 1/3)],
-            "edge-north-NS": ["edge-north-NS", routes_list[0][2]],
+            "edge-north-NS": ["edge-north-NS", routes_list[53][2]],
                 # [(["edge-north-NS", "edge-south-NS"], 1/3), (["edge-north-NS", "edge-west-EW"], 1/3),
                 #     (["edge-north-NS", "edge-east-WE"], 1/3)],
-            "edge-west-WE": ["edge-west-WE", routes_list[0][3]],
+            "edge-west-WE": ["edge-west-WE", routes_list[53][3]],
                 # [(["edge-west-WE", "edge-east-WE"], 1/3), (["edge-west-WE", "edge-north-SN"], 1/3),
                 #     (["edge-west-WE", "edge-south-NS"], 1/3)],
             "edge-east-WE":

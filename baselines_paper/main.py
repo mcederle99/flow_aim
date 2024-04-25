@@ -7,7 +7,7 @@ def rl_actions(*_):
     return None
 
 
-num_runs = 1
+num_runs = 81
 num_steps = 1200
 
 collisions = []

@@ -8,7 +8,7 @@ from flow.core.params import NetParams
 import importlib
 networks = []
 class_name = 'IntersectionNetwork'
-for i in range(1):
+for i in range(81):
     scenario_module = importlib.import_module('baselines_paper.scenarios.scenario' + str(i))
     networks.append(getattr(scenario_module, class_name))
 from flow.envs.ring.accel import ADDITIONAL_ENV_PARAMS
@@ -17,7 +17,7 @@ from flow.core.params import SumoParams
 from flow.core.params import InFlows
 
 traffic_lights = TrafficLightParams()
-sim_params = SumoParams(sim_step=0.1, render=True)
+sim_params = SumoParams(sim_step=0.1, render=False)
 env_params = EnvParams(additional_params=ADDITIONAL_ENV_PARAMS)
 initial_config = InitialConfig()
 vehicles = VehicleParams()
@@ -60,7 +60,7 @@ net_params = NetParams(inflows=inflow, template='map.net.xml')
 
 fp_list = []
 
-for i in range(1):
+for i in range(81):
     flow_params = dict(
         exp_tag='baseline',
         env_name=AccelEnv,
