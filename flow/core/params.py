@@ -847,7 +847,8 @@ class SumoCarFollowingParams:
 
     def __init__(
             self,
-            speed_mode='right_of_way', # THIS LINE
+            # speed_mode='right_of_way', # THIS LINE
+            speed_mode='aggressive',  # THIS LINE
             accel=2.6,
             decel=4.5,
             sigma=0.5,
