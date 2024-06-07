@@ -1,8 +1,10 @@
-from utils import edges_dict, routes_dict, routes_edges_matrix
+from utils import edges_dict, routes_dict, routes_edges_matrix, compute_edges, from_networkx_multigraph
 from flow.envs.base import Env
 from gym.spaces.box import Box
 from gym.spaces import Discrete
 import numpy as np
+import networkx as nx
+import torch
 
 all_vehicles = {}
 
@@ -49,6 +51,8 @@ class MyEnv(Env):
         # the get_ids() method is used to get the names of all vehicles in the network
         ids = self.k.vehicle.get_ids()
         state = {}
+
+        graph = nx.MultiDiGraph()
         
         for q in ids:
             
@@ -120,7 +124,20 @@ class MyEnv(Env):
                 route = routes_dict[self.k.vehicle.get_route(q)]
 
             state[q] = (pos, vel, acc, coord, angle, edge, route)
-                                
+
+            graph.add_node(q, pos=torch.tensor([state[q][0]], dtype=torch.float),
+                           vel=torch.tensor([state[q][1]], dtype=torch.float),
+                           acc=torch.tensor([state[q][2]], dtype=torch.float))
+
+        edges, edges_type = compute_edges(self, state)
+
+        for edge in list(edges.keys()):
+            graph.add_edge(edge[0], edge[1], key=edges_type[edge],
+                           dist=torch.tensor([edges[edge][0]], dtype=torch.float),
+                           bearing=torch.tensor([edges[edge][1]], dtype=torch.float))
+
+        state = from_networkx_multigraph(graph)
+
         return state
                                 
     def compute_reward(self, rl_actions, state=None, **kwargs):

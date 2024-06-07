@@ -1,38 +1,40 @@
 import numpy as np
+import torch
 
-class ReplayBuffer:
-    def __init__(self, size):
-        
-        self.size = size
-        self.buffer = []
-        self.index = 0
-        self.length = 0
-        
-    def add(self, nodes, edges, edges_type, action, reward, nodes_, edges_, edges_type_, done):
-        
-        data = (nodes, edges, edges_type, action, reward, nodes_, edges_, edges_type_, done)
-        
-        if self.index >= len(self.buffer):
-            self.buffer.append(data)
-        else:
-            self.buffer[self.index] = data
-            
-        self.index = (self.index + 1) % self.size
-        
-        self.length = min(self.length + 1, self.size)
-        
-    def sample(self, batch_size, n_steps=1):
-        
-        samples = {'weights': np.ones(shape=batch_size, dtype=np.float32),
-                   'indexes': np.random.choice(self.length - n_steps + 1, batch_size, replace=False)}
-        
-        sample_data = []
-        if n_steps == 1:
-            for i in samples['indexes']:
-                data_i = self.buffer[i]
-                sample_data.append(data_i)
-        else:
-            for i in samples['indexes']:
-                data_i = self.buffer[i: i + n_steps]
-                sample_data.append(data_i)
-        return samples, sample_data
+
+class ReplayBuffer(object):
+    def __init__(self, state_dim, action_dim, max_size=int(1e6)):
+        self.max_size = max_size
+        self.ptr = 0
+        self.size = 0
+
+        self.state = np.zeros((max_size, state_dim))
+        self.action = np.zeros((max_size, action_dim))
+        self.next_state = np.zeros((max_size, state_dim))
+        self.reward = np.zeros((max_size, 1))
+        self.not_done = np.zeros((max_size, 1))
+
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+
+    def add(self, state, action, next_state, reward, done):
+        self.state[self.ptr] = state
+        self.action[self.ptr] = action
+        self.next_state[self.ptr] = next_state
+        self.reward[self.ptr] = reward
+        self.not_done[self.ptr] = 1. - done
+
+        self.ptr = (self.ptr + 1) % self.max_size
+        self.size = min(self.size + 1, self.max_size)
+
+
+    def sample(self, batch_size):
+        ind = np.random.randint(0, self.size, size=batch_size)
+
+        return (
+            torch.FloatTensor(self.state[ind]).to(self.device),
+            torch.FloatTensor(self.action[ind]).to(self.device),
+            torch.FloatTensor(self.next_state[ind]).to(self.device),
+            torch.FloatTensor(self.reward[ind]).to(self.device),
+            torch.FloatTensor(self.not_done[ind]).to(self.device)
+        )

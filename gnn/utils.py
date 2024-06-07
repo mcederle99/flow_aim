@@ -1,6 +1,7 @@
 import numpy as np
 import torch
 from numpy.linalg import inv
+from torch_geometric.utils import from_networkx
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -211,48 +212,43 @@ def compute_edges(env, state):
     return edges, edges_type
 
 
-def compute_rp(edges, reward):
-    d = 0.0
-    num_edges = len(list(edges.values()))
-    for i in range(len(list(edges.values()))):
-        d += 1/list(edges.values())[i][0]
-    rp = -d / num_edges if num_edges > 0 else 0.0
-    w_p = 0.2
-    reward += w_p * rp
+def compute_rp(graph, reward):
+    num_edges = graph.edge_index.shape[1]
+    if num_edges == 0:
+        return 0.0
+    else:
+        d = torch.sum(graph.dist, dim=0).item()
+        rp = -d / num_edges
+        w_p = 0.2
+        reward += w_p * rp
 
-    return reward
+        return reward
 
 
-class Graph:
-    def __init__(self, nodes_list, edges_list):
-        self.nodes = [_ for _ in range(len(nodes_list))]
-        self.edges = []
-        for e in edges_list:
-            self.edges = self.edges + [(nodes_list.index(e[0]), nodes_list.index(e[1]))]
-        
-        self.edata = {}
-        self.ndata = {}
-        self.sparse_adj = torch.zeros([2, len(self.edges)], dtype=torch.long, device=device)
-        for k in range(len(self.edges)):
-            self.sparse_adj[0][k] = self.edges[k][0]
-            self.sparse_adj[1][k] = self.edges[k][1]
-        
-    def num_nodes(self):
-        return len(self.nodes)
-    
-    def num_edges(self):
-        return len(self.edges)
-    
-    def insert_node_features(self, nodes_feat):
-        self.ndata['x'] = nodes_feat
-        
-    def insert_edge_features(self, edges_feat, edges_types): 
-        self.edata['x'] = edges_feat
-        self.edata['type'] = list(edges_types.values())
-        self.edata['type_bin'] = list(edges_types.values())
-        for i in range(len(self.edata['type_bin'])):
-            if self.edata['type_bin'][i] == 'same_lane':
-                self.edata['type_bin'][i] = 0
-            else:
-                self.edata['type_bin'][i] = 1
-        self.edata['type_bin'] = torch.tensor(self.edata['type_bin'])
+def from_networkx_multigraph(G):
+    data = from_networkx(G)
+    if data.pos is None:
+        return data
+
+    # Extract node attributes
+    node_attrs = ['pos', 'vel', 'acc']
+    data.x = torch.cat([torch.stack([G.nodes[n][attr] for n in G.nodes()]) for attr in node_attrs], dim=-1)
+
+    # Extract edge types
+    edge_types = []
+    edge_attrs = ['dist', 'bearing']
+    edge_attr_list = {attr: [] for attr in edge_attrs}
+    for u, v, k, attr in G.edges(data=True, keys=True):
+        edge_types.append(k)
+        for edge_attr in edge_attrs:
+            edge_attr_list[edge_attr].append(attr[edge_attr])
+
+    # Map edge types to integers
+    edge_type_mapping = {etype: i for i, etype in enumerate(set(edge_types))}
+    edge_type_indices = torch.tensor([edge_type_mapping[etype] for etype in edge_types], dtype=torch.long)
+
+    # Add edge types and attributes to the data object
+    data.edge_type = edge_type_indices
+    data.edge_attr = torch.cat([torch.tensor(edge_attr_list[attr], dtype=torch.float).view(-1, 1) for attr in edge_attrs], dim=-1)
+
+    return data

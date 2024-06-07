@@ -1,9 +1,11 @@
+import numpy as np
+
 from flow.controllers import IDMController, ContinuousRouter
 from flow.core.params import SumoParams, EnvParams, InitialConfig, NetParams, VehicleParams, InFlows
 from flow.utils.registry import make_create_env
 from intersection_network import IntersectionNetwork, ADDITIONAL_NET_PARAMS
 from intersection_env import MyEnv, ADDITIONAL_ENV_PARAMS
-from utils import compute_edges, compute_rp
+from utils import compute_rp
 
 vehicles = VehicleParams()
 vehicles.add(veh_id="rl",
@@ -33,7 +35,7 @@ vehicles.add(veh_id="rl",
 #            probability=0.05,
 #            #depart_speed="random",
 #           )
-sim_params = SumoParams(sim_step=0.1, render=True)
+sim_params = SumoParams(sim_step=0.1, render=False)
 initial_config = InitialConfig()
 env_params = EnvParams(additional_params=ADDITIONAL_ENV_PARAMS)
 additional_net_params = ADDITIONAL_NET_PARAMS.copy()
@@ -55,50 +57,29 @@ flow_params['env'].horizon = 1000
 create_env, _ = make_create_env(flow_params)
 env = create_env()
 
-finished = False
 num_steps = env.env_params.horizon
 eval_returns = []
+steps_per_ep = []
 
-st = 0
 rl_actions = []
-while not finished:
+for i in range(10):
     ep_steps = 0
     ret = 0
     state = env.reset()
-    
-    veh_ids = env.k.vehicle.get_ids()
-    edges, edges_type = compute_edges(env, state)
-    nodes = {}
-    for node in list(state.keys()):
-        nodes[node] = state[node][:3]
+
     for j in range(num_steps):
-        num_veh = len(list(nodes.keys()))
+
+        # HERE ACTION SELECTION STEP
         state_, reward, done, _ = env.step(rl_actions=rl_actions)
-        reward = compute_rp(edges, reward)
+        reward = compute_rp(state, reward)
 
-        print(edges)
-        print(edges_type)
-        input("")
-
-        veh_ids = env.k.vehicle.get_ids()
-        edges_, edges_type_ = compute_edges(env, state_)
-        nodes_ = {}
-        for node in list(state_.keys()):
-            nodes_[node] = state_[node][:3]
-
-        st += 1
         ep_steps += 1
-        
-        nodes = nodes_
-        edges = edges_
-        edges_type = edges_type_
-        
+        state = state_
         ret += reward
-        
-        if done:
-            break
-        if st == 1000000:
-            finished = True
+        if done or state_.pos is None:
+            steps_per_ep.append(ep_steps)
+            eval_returns.append(ret)
             break
 
 env.terminate()
+print(f'Average return: {np.mean(eval_returns)}, Average ep steps: {np.mean(steps_per_ep)}')
