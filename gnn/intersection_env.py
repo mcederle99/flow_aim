@@ -21,10 +21,12 @@ class MyEnv(Env):
         num_actions = len(self.k.vehicle.get_rl_ids())
         accel_ub = self.env_params.additional_params["max_accel"]
         accel_lb = -abs(self.env_params.additional_params["max_decel"])
+        accel_lb = 0.0
 
         return Box(low=accel_lb,
                    high=accel_ub,
-                   shape=(num_actions,))
+                   shape=(num_actions,),
+                   dtype=np.float32)
     
     @property
     def observation_space(self):
@@ -43,6 +45,8 @@ class MyEnv(Env):
     def _apply_rl_actions(self, rl_actions):
         # the names of all autonomous (RL) vehicles in the network
         rl_ids = self.k.vehicle.get_rl_ids()
+        ids = self.k.vehicle.get_ids()
+        # assert rl_ids == ids
         # use the base environment method to convert actions into accelerations for the rl vehicles
         self.k.vehicle.apply_acceleration(rl_ids, rl_actions)
         
@@ -137,6 +141,11 @@ class MyEnv(Env):
                            bearing=torch.tensor([edges[edge][1]], dtype=torch.float))
 
         state = from_networkx_multigraph(graph)
+
+        del state.pos
+        del state.vel
+        del state.acc
+        del state.bearing
 
         return state
                                 

@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from numpy.linalg import inv
 from torch_geometric.utils import from_networkx
+from flow.core.params import InFlows
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -215,7 +216,7 @@ def compute_edges(env, state):
 def compute_rp(graph, reward):
     num_edges = graph.edge_index.shape[1]
     if num_edges == 0:
-        return 0.0
+        return reward
     else:
         d = torch.sum(graph.dist, dim=0).item()
         rp = -d / num_edges
@@ -225,20 +226,20 @@ def compute_rp(graph, reward):
         return reward
 
 
-def from_networkx_multigraph(G):
-    data = from_networkx(G)
+def from_networkx_multigraph(g):
+    data = from_networkx(g)
     if data.pos is None:
         return data
 
     # Extract node attributes
     node_attrs = ['pos', 'vel', 'acc']
-    data.x = torch.cat([torch.stack([G.nodes[n][attr] for n in G.nodes()]) for attr in node_attrs], dim=-1)
+    data.x = torch.cat([torch.stack([g.nodes[n][attr] for n in g.nodes()]) for attr in node_attrs], dim=-1)
 
     # Extract edge types
     edge_types = []
     edge_attrs = ['dist', 'bearing']
     edge_attr_list = {attr: [] for attr in edge_attrs}
-    for u, v, k, attr in G.edges(data=True, keys=True):
+    for u, v, k, attr in g.edges(data=True, keys=True):
         edge_types.append(k)
         for edge_attr in edge_attrs:
             edge_attr_list[edge_attr].append(attr[edge_attr])
@@ -249,6 +250,54 @@ def from_networkx_multigraph(G):
 
     # Add edge types and attributes to the data object
     data.edge_type = edge_type_indices
-    data.edge_attr = torch.cat([torch.tensor(edge_attr_list[attr], dtype=torch.float).view(-1, 1) for attr in edge_attrs], dim=-1)
+    data.edge_attr = torch.cat([torch.tensor(edge_attr_list[attr],
+                                             dtype=torch.float).view(-1, 1) for attr in edge_attrs], dim=-1)
 
     return data
+
+
+def eval_policy(aim, env, eval_episodes=10):
+
+    avg_reward = 0.
+    for _ in range(eval_episodes):
+        state = env.reset()
+        done = False
+        while not done:
+            actions = aim.select_action(state.x, state.edge_index, state.edge_attr)
+            state, reward, done, _ = env.step(rl_actions=actions)
+            if state.x is None:
+                done = True
+            else:
+                reward = compute_rp(state, reward)
+            avg_reward += reward
+
+    avg_reward /= eval_episodes
+
+    print("---------------------------------------")
+    print(f"Evaluation over {eval_episodes} episodes: {avg_reward:.3f}")
+    print("---------------------------------------")
+    return avg_reward
+
+
+inflow = InFlows()
+inflow.add(veh_type="rl",
+           edge="b_c",
+           vehs_per_hour="1"
+           # probability=0.05,
+           # depart_speed="random",
+          )
+inflow.add(veh_type="rl",
+           edge="t_c",
+           probability=0.1,
+           # depart_speed="random",
+          )
+inflow.add(veh_type="rl",
+           edge="l_c",
+           probability=0.1,
+           # depart_speed="random",
+          )
+inflow.add(veh_type="rl",
+           edge="r_c",
+           probability=0.05,
+           # depart_speed="random",
+          )

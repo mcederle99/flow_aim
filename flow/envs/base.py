@@ -281,6 +281,8 @@ class Env(gym.Env, metaclass=ABCMeta):
         start_pos, start_lanes = self.k.network.generate_starting_positions(
             initial_config=self.initial_config,
             num_vehicles=len(self.initial_ids))
+        start_pos = [('b_c', 0), ('l_c', 0.0), ('t_c', 0.0), ('r_c', 0.0)]
+        start_lanes = [0, 0, 0, 0]
 
         # save the initial state. This is used in the _reset function
         for i, veh_id in enumerate(self.initial_ids):
@@ -438,6 +440,8 @@ class Env(gym.Env, metaclass=ABCMeta):
         if self.should_render:
             self.sim_params.render = True
             # got to restart the simulation to make it actually display anything
+            self.restart_simulation(self.sim_params)
+        else:
             self.restart_simulation(self.sim_params)
 
         # warn about not using restart_instance when using inflows

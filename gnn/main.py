@@ -1,138 +1,33 @@
-from flow.core.params import VehicleParams
-from flow.controllers import IDMController, ContinuousRouter
-from flow.core.params import SumoParams, EnvParams, InitialConfig, NetParams
-from flow.controllers import RLController
-from flow.utils.registry import make_create_env
-import time
 import numpy as np
-
-from intersection_network import IntersectionNetwork, ADDITIONAL_NET_PARAMS
-from intersection_env import myEnv, ADDITIONAL_ENV_PARAMS
-from utils import compute_edges, compute_rp
-from intersection_agent import AIM
-from memory import ReplayBuffer
-from networks import Actor, Critic
 import torch
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+from agent import TD3
+from memory import ReplayBuffer
+from flow.controllers import ContinuousRouter, RLController
+from flow.core.params import SumoParams, EnvParams, InitialConfig, NetParams, VehicleParams
+from flow.utils.registry import make_create_env
+from intersection_network import IntersectionNetwork, ADDITIONAL_NET_PARAMS
+from intersection_env import MyEnv, ADDITIONAL_ENV_PARAMS
+from utils import compute_rp, eval_policy
+import argparse
+import os
+import warnings
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 vehicles = VehicleParams()
-
 vehicles.add(veh_id="rl",
              acceleration_controller=(RLController, {}),
              routing_controller=(ContinuousRouter, {}),
-             num_vehicles=2,
+             num_vehicles=4,
              color='green')
-
-from flow.core.params import InFlows
-
-inflow = InFlows()
-
-inflow.add(veh_type="rl",
-           edge="b_c",
-           probability=0.05,
-           depart_speed="random",
-          )
-inflow.add(veh_type="rl",
-           edge="t_c",
-           probability=0.1,
-           depart_speed="random",
-          )
-inflow.add(veh_type="rl",
-           edge="l_c",
-           probability=0.1,
-           depart_speed="random",
-          )
-inflow.add(veh_type="rl",
-           edge="r_c",
-           probability=0.05,
-           depart_speed="random",
-          )
-
-
 sim_params = SumoParams(sim_step=0.1, render=False)
-
 initial_config = InitialConfig()
-
 env_params = EnvParams(additional_params=ADDITIONAL_ENV_PARAMS)
-
 additional_net_params = ADDITIONAL_NET_PARAMS.copy()
 net_params = NetParams(additional_params=additional_net_params)
 
-def evaluate(aim, flow_params, st):
-    num_steps = 500
-    returns = []
-    outflows = []
-    eval_steps_list = []
-    for i in range(10):
-        ret = 0
-        
-        # Get the env name and a creator for the environment.
-        create_env, _ = make_create_env(flow_params)
-
-        # Create the environment.
-        env = create_env()
-        num_steps = env.env_params.horizon    
-        
-        state = env.reset()
-    
-        veh_ids = env.k.vehicle.get_ids()
-        edges, edges_type = compute_edges(env, state)
-        nodes = {}
-        for node in list(state.keys()):
-            nodes[node] = state[node][:3]
-        eval_steps = 0
-  
-        for j in range(num_steps):
-        
-            actions = aim.test_action(nodes, edges, edges_type)
-        
-            state_, reward, done, _ = env.step(rl_actions=actions.cpu().detach().numpy())
-
-            veh_ids = env.k.vehicle.get_ids()
-            edges_, edges_type_ = compute_edges(env, state_)
-            nodes_ = {}
-            for node in list(state_.keys()):
-                nodes_[node] = state_[node][:3]
-        
-            proximity_reward = compute_rp(edges)
-            w_p = 0.2
-            reward += proximity_reward*w_p
-        
-            nodes = nodes_
-            edges = edges_
-            edges_type = edges_type_
-        
-            ret += reward
-            eval_steps += 1
-        
-            if done:
-                break
-    
-        # Store the information from the run in info_dict.
-        outflow = env.k.vehicle.get_outflow_rate(int(eval_steps))
-        outflows.append(outflow)
-        returns.append(ret)
-        eval_steps_list.append(eval_steps)
-
-        env.terminate()
-
-    #if np.mean(outflows) == 0:
-    #    print(torch.sum(actor.n_enc.weight))
-    #    print(torch.sum(actor.RGCN1.weight))
-    #    print(torch.sum(actor.RGCN2.weight))
-    #    print(torch.sum(actor.n_dec.weight))
-
-    print("Average return: {0}".format(np.mean(returns)))
-    print("Average duration of the episode: {0}".format(np.mean(eval_steps_list)))
-    print("Average outflow of the episode: {0}".format(np.mean(outflows)))
-    print("Total training steps up to now: {0}".format(st))
-
-    return np.mean(returns)
-
 flow_params = dict(
     exp_tag='test_network',
-    env_name=myEnv,
+    env_name=MyEnv,
     network=IntersectionNetwork,
     simulator='traci',
     sim=sim_params,
@@ -142,163 +37,105 @@ flow_params = dict(
     initial=initial_config,
 )
 
-# number of time steps
-flow_params['env'].horizon = 500
+flow_params['env'].horizon = 1000
+create_env, _ = make_create_env(flow_params)
+env = create_env()
 
-# Get the env name and a creator for the environment.
-#create_env, _ = make_create_env(flow_params)
+parser = argparse.ArgumentParser()
+parser.add_argument("--seed", default=0, type=int)              # Sets PyTorch and Numpy seeds
+parser.add_argument("--start_timesteps", default=300, type=int)# Time steps initial random policy is used
+parser.add_argument("--eval_freq", default=5e3, type=int)       # How often (time steps) we evaluate
+parser.add_argument("--max_timesteps", default=1e6, type=int)   # Max time steps to run environment
+parser.add_argument("--expl_noise", default=0.1, type=float)    # Std of Gaussian exploration noise
+parser.add_argument("--batch_size", default=256, type=int)      # Batch size for both actor and critic
+parser.add_argument("--discount", default=0.99, type=float)     # Discount factor
+parser.add_argument("--tau", default=0.005, type=float)         # Target network update rate
+parser.add_argument("--policy_noise", default=0.2)              # Noise added to target policy during critic update
+parser.add_argument("--noise_clip", default=0.5)                # Range to clip target policy noise
+parser.add_argument("--policy_freq", default=2, type=int)       # Frequency of delayed policy updates
+parser.add_argument("--save_model", action="store_true")        # Save model and optimizer parameters
+parser.add_argument("--load_model", default="")                 # Model load file name, "" doesn't load, "default" uses file_name
+args = parser.parse_args()
 
-# Create the environment.
-#env = create_env()
+file_name = f"aim_{args.seed}"
+print("---------------------------------------")
+print(f"Seed: {args.seed}")
+print("---------------------------------------")
 
-#logging.info(" Starting experiment {} at {}".format(
-#    env.network.name, str(datetime.utcnow())))
+if not os.path.exists("./results"):
+    os.makedirs("./results")
 
-#logging.info("Initializing environment.")
+if args.save_model and not os.path.exists("./models"):
+    os.makedirs("./models")
 
-finished = False
+torch.manual_seed(args.seed)
+np.random.seed(args.seed)
 
-#num_steps = env.env_params.horizon
+state_dim = 3
+edge_dim = 2
+action_dim = 1
+max_action = 1.0
 
-# raise an error if convert_to_csv is set to True but no emission
-# file will be generated, to avoid getting an error at the end of the
-# simulation
-#convert_to_csv = False
-#if convert_to_csv and env.sim_params.emission_path is None:
-#    raise ValueError(
-#        'The experiment was run with convert_to_csv set '
-#        'to True, but no emission file will be generated. If you wish '
-#        'to generate an emission file, you should set the parameter '
-#        'emission_path in the simulation parameters (SumoParams or '
-#        'AimsunParams) to the path of the folder where emissions '
-#        'output should be generated. If you do not wish to generate '
-#        'emissions, set the convert_to_csv parameter to False.')
+aim = TD3(state_dim, edge_dim, action_dim, discount=args.discount, tau=args.tau, policy_noise=args.policy_noise,
+          noise_clip=args.noise_clip, policy_freq=args.policy_freq, max_action=max_action)
+memory = ReplayBuffer()
 
-# used to store
-eval_returns = []
+if args.load_model != "":
+    policy_file = file_name if args.load_model == "default" else args.load_model
+    aim.load(f"./models/{policy_file}")
 
-# time profiling information
-t = time.time()
-times = []
+evaluations = [eval_policy(aim, env)]
+max_evaluations = evaluations[0]
+num_steps = env.env_params.horizon
+num_evaluations = 1
 
-# RL agent initialization - inizio
-actor = Actor()
-critic_1 = Critic(aggr_func='mean')
-critic_2 = Critic(aggr_func='mean')
+ep_steps = 0
+ep_return = 0
+ep_number = 0
+state = env.reset()
 
-lr = 1e-4
-actor_optimizer = torch.optim.Adam(actor.parameters(), lr=lr)
-critic_optimizer_1 = torch.optim.Adam(critic_1.parameters(), lr=lr)
-critic_optimizer_2 = torch.optim.Adam(critic_2.parameters(), lr=lr)
+for t in range(int(args.max_timesteps)):
 
-explore_noise = 0.1
+    ep_steps += 1
 
-import pickle
-# Load object from a file
-def load_object_from_pickle(filename):
-    with open(filename, 'rb') as pickle_file:
-        obj = pickle.load(pickle_file)
-    return obj
-#replay_buffer = load_object_from_pickle('replay_buffer.pkl')
+    if t < args.start_timesteps:
+        actions = env.action_space.sample()
+    else:
+        actions = aim.select_action(state.x, state.edge_index, state.edge_attr)
+        noise = np.random.normal(0.0, max_action * args.expl_noise, size=len(actions)).astype(np.float32)
+        actions = (actions + noise).clip(-max_action, max_action)
 
-replay_buffer = ReplayBuffer(10**6) 
+    state_, reward, done, _ = env.step(rl_actions=actions)
 
-gamma = 0.9
+    if state_.x is None:
+        done_bool = 1.0
+        memory.add(state, actions, state, reward, done_bool)
+    else:
+        reward = compute_rp(state_, reward)
+        done_bool = float(done) if ep_steps < num_steps else 0.0
+        memory.add(state, actions, state_, reward, done_bool)
 
-warmup = 25000 
-# RL agent initialization - fine
+    state = state_
+    ep_return += reward
 
-aim = AIM(actor,
-          actor_optimizer,
-          critic_1,
-          critic_optimizer_1,
-          critic_2,
-          critic_optimizer_2,
-          explore_noise,
-          warmup,
-          replay_buffer,
-          batch_size=256,
-          update_interval=100,
-          update_interval_actor=200,
-          target_update_interval=100,
-          soft_update_tau=0.005,
-          n_steps=1,
-          gamma=gamma,
-          model_name='AIM_model')
+    if t >= args.start_timesteps:
+        aim.train(memory, args.batch_size)
 
-st = 0
-best_eval_return = -1000
+    if done or state.x is None:
+        print(f"Total T: {t + 1} Episode Num: {ep_number + 1} Episode T: {ep_steps} Reward: {ep_return:.3f}")
+        # Evaluate episode
+        if (t + 1) >= args.eval_freq * num_evaluations:
+            evaluations.append(eval_policy(aim, env))
+            np.save(f"./results/{file_name}", evaluations)
+            if evaluations[-1] > max_evaluations:
+                if args.save_model:
+                    aim.save(f"./models/{file_name}")
+                max_evaluations = evaluations[-1]
+            num_evaluations += 1
+        # Reset environment
+        state = env.reset()
+        ep_steps = 0
+        ep_return = 0
+        ep_number += 1
 
-while not finished:
-    ep_steps = 0
-    ret = 0
-    # Get the env name and a creator for the environment.
-    create_env, _ = make_create_env(flow_params)
-
-    # Create the environment.
-    env = create_env()
-    num_steps = env.env_params.horizon
-
-    state = env.reset()
-    
-    veh_ids = env.k.vehicle.get_ids()
-    edges, edges_type = compute_edges(env, state)
-    nodes = {}
-    for node in list(state.keys()):
-        nodes[node] = state[node][:3]
-    
-    for j in range(num_steps):
-        actions = aim.choose_action(nodes, edges, edges_type)
-        t0 = time.time()
-        state_, reward, done, _ = env.step(rl_actions=actions.cpu().detach().numpy())
-
-        veh_ids = env.k.vehicle.get_ids()
-        edges_, edges_type_ = compute_edges(env, state_)
-        nodes_ = {}
-        for node in list(state_.keys()):
-            nodes_[node] = state_[node][:3]
-        
-        Rp = compute_rp(edges)
-        w_p = 0.2
-        reward += Rp*w_p
-        
-        if nodes != {}:
-            aim.store_transition(nodes, edges, edges_type, actions, reward, nodes_, edges_, edges_type_, done)
-        aim.learn()
-        st += 1
-        ep_steps += 1
-        
-        nodes = nodes_
-        edges = edges_
-        edges_type = edges_type_
-        
-        t1 = time.time()
-        times.append(1 / (t1 - t0))
-        
-        ret += reward
-        
-        if st == 1025000:
-            finished = True
-            break
-        if st % 5000 == 0 and st > 25000:
-            print('EVALUATION RUN')
-            eval_ret = evaluate(aim, flow_params, st)
-            if eval_ret > best_eval_return:
-                aim.save_model('../TrainedModels/TD3_new')
-                best_eval_return = eval_ret
-            print('END EVALUATION')
-            eval_returns.append(eval_ret)
-            np.save('returns_new.npy', eval_returns)
-            break
-        if done:
-            break
-    
-    # Save emission data at the end of every rollout. This is skipped
-    # by the internal method if no emission path was specified.
-    #if env.simulator == "traci":
-    #    env.k.simulation.save_emission(run_id=i)
-
-# Print the averages/std for all variables in the info_dict.
-#print("Total time:", time.time() - t)
-#print("steps/second:", np.mean(times))
-    env.terminate()
+env.terminate()

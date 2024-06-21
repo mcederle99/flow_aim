@@ -1,15 +1,18 @@
 import numpy as np
-
-from flow.controllers import IDMController, ContinuousRouter
+from agent import TD3
+from memory import ReplayBuffer
+from flow.controllers import IDMController, ContinuousRouter, RLController
 from flow.core.params import SumoParams, EnvParams, InitialConfig, NetParams, VehicleParams, InFlows
 from flow.utils.registry import make_create_env
 from intersection_network import IntersectionNetwork, ADDITIONAL_NET_PARAMS
 from intersection_env import MyEnv, ADDITIONAL_ENV_PARAMS
 from utils import compute_rp
+import warnings
+warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 vehicles = VehicleParams()
 vehicles.add(veh_id="rl",
-             acceleration_controller=(IDMController, {}),
+             acceleration_controller=(RLController, {}),
              routing_controller=(ContinuousRouter, {}),
              num_vehicles=4,
              color='green')
@@ -57,11 +60,14 @@ flow_params['env'].horizon = 1000
 create_env, _ = make_create_env(flow_params)
 env = create_env()
 
+aim = TD3(3, 2, 1)
+memory = ReplayBuffer()
+
 num_steps = env.env_params.horizon
 eval_returns = []
 steps_per_ep = []
+total_steps = 0
 
-rl_actions = []
 for i in range(10):
     ep_steps = 0
     ret = 0
@@ -69,17 +75,26 @@ for i in range(10):
 
     for j in range(num_steps):
 
-        # HERE ACTION SELECTION STEP
-        state_, reward, done, _ = env.step(rl_actions=rl_actions)
+        actions = aim.select_action(state.x, state.edge_index)
+        state_, reward, done, _ = env.step(rl_actions=actions)
         reward = compute_rp(state, reward)
+
+        memory.add(state, actions, state_, reward, done)
+        total_steps += 1
+
+        if total_steps > 100:
+            aim.train(memory, batch_size=2)
+            print('training!')
+            input("")
 
         ep_steps += 1
         state = state_
         ret += reward
-        if done or state_.pos is None:
+        if done or state_.x is None:
             steps_per_ep.append(ep_steps)
             eval_returns.append(ret)
             break
+    print(i)
 
 env.terminate()
 print(f'Average return: {np.mean(eval_returns)}, Average ep steps: {np.mean(steps_per_ep)}')
