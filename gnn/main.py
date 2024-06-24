@@ -83,6 +83,8 @@ memory = ReplayBuffer()
 if args.load_model != "":
     policy_file = file_name if args.load_model == "default" else args.load_model
     aim.load(f"./models/{policy_file}")
+    _ = [eval_policy(aim, env, eval_episodes=100)]
+    raise KeyboardInterrupt
 
 evaluations = [eval_policy(aim, env)]
 max_evaluations = evaluations[0]
@@ -111,7 +113,7 @@ for t in range(int(args.max_timesteps)):
         done_bool = 1.0
         memory.add(state, actions, state, reward, done_bool)
     else:
-        reward = compute_rp(state_, reward)
+        #reward = compute_rp(state_, reward)
         done_bool = float(done) if ep_steps < num_steps else 0.0
         memory.add(state, actions, state_, reward, done_bool)
 

@@ -150,9 +150,9 @@ class MyEnv(Env):
         return state
                                 
     def compute_reward(self, rl_actions, state=None, **kwargs):
-        w_v = 0.03
+        w_v = 0.3
         w_a = 0.01
-        w_i = 0.01
+        w_i = 0.5
         w_c = 1
         
         # the get_ids() method is used to get the names of all vehicles in the network

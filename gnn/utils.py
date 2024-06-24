@@ -269,8 +269,8 @@ def eval_policy(aim, env, eval_episodes=10):
             state, reward, done, _ = env.step(rl_actions=actions)
             if state.x is None:
                 done = True
-            else:
-                reward = compute_rp(state, reward)
+            #else:
+                #reward = compute_rp(state, reward)
             avg_reward += reward
 
     avg_reward /= eval_episodes
