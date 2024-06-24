@@ -1,7 +1,7 @@
 import numpy as np
 import torch
 from torch_geometric.data import Data
-
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class PairData(Data):
     def __inc__(self, key, value, *args, **kwargs):
@@ -27,8 +27,8 @@ class ReplayBuffer(object):
                               x_t=next_state.x, edge_index_t=next_state.edge_index,
                               edge_attr_t=next_state.edge_attr, edge_type_t=next_state.edge_type)
 
-        transition.actions = torch.tensor(action).unsqueeze(dim=1)
-        transition.reward = torch.tensor([reward], dtype=torch.float32)
+        transition.actions = torch.tensor(action, device=device).unsqueeze(dim=1)
+        transition.reward = torch.tensor([reward], dtype=torch.float32, device=device)
         transition.not_done = 1. - done
 
         if len(list(self.buffer)) >= self.buffer_size:

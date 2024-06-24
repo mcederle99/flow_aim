@@ -12,7 +12,7 @@ ADDITIONAL_ENV_PARAMS = {
     "max_accel": 5,
     "max_decel": -5,
 }
-
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 class MyEnv(Env):
 
@@ -129,16 +129,16 @@ class MyEnv(Env):
 
             state[q] = (pos, vel, acc, coord, angle, edge, route)
 
-            graph.add_node(q, pos=torch.tensor([state[q][0]], dtype=torch.float),
-                           vel=torch.tensor([state[q][1]], dtype=torch.float),
-                           acc=torch.tensor([state[q][2]], dtype=torch.float))
+            graph.add_node(q, pos=torch.tensor([state[q][0]], dtype=torch.float, device=device),
+                           vel=torch.tensor([state[q][1]], dtype=torch.float, device=device),
+                           acc=torch.tensor([state[q][2]], dtype=torch.float, device=device))
 
         edges, edges_type = compute_edges(self, state)
 
         for edge in list(edges.keys()):
             graph.add_edge(edge[0], edge[1], key=edges_type[edge],
-                           dist=torch.tensor([edges[edge][0]], dtype=torch.float),
-                           bearing=torch.tensor([edges[edge][1]], dtype=torch.float))
+                           dist=torch.tensor([edges[edge][0]], dtype=torch.float, device=device),
+                           bearing=torch.tensor([edges[edge][1]], dtype=torch.float, device=device))
 
         state = from_networkx_multigraph(graph)
 
