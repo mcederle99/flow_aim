@@ -29,7 +29,7 @@ class ReplayBuffer(object):
 
         transition.actions = torch.tensor(action, device=device).unsqueeze(dim=1)
         transition.reward = torch.tensor([reward], dtype=torch.float32, device=device)
-        transition.not_done = 1. - done
+        transition.not_done = 1. - torch.tensor([done], device=device)
 
         if len(list(self.buffer)) >= self.buffer_size:
             self.buffer.pop(0)
