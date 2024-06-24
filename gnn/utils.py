@@ -247,7 +247,7 @@ def from_networkx_multigraph(g):
 
     # Map edge types to integers
     edge_type_mapping = {etype: i for i, etype in enumerate(set(edge_types))}
-    edge_type_indices = torch.tensor([edge_type_mapping[etype] for etype in edge_types], dtype=torch.long)
+    edge_type_indices = torch.tensor([edge_type_mapping[etype] for etype in edge_types], dtype=torch.long, device=device)
 
     # Add edge types and attributes to the data object
     data.edge_type = edge_type_indices
