@@ -253,6 +253,7 @@ def from_networkx_multigraph(g):
     data.edge_type = edge_type_indices
     data.edge_attr = torch.cat([torch.tensor(edge_attr_list[attr],
                                              dtype=torch.float).view(-1, 1) for attr in edge_attrs], dim=-1)
+    data.edge_attr.to(device)
 
     return data
 
