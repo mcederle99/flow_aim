@@ -219,6 +219,7 @@ def compute_rp(graph, reward):
         return reward
     else:
         d = torch.sum(graph.dist, dim=0).item()
+        assert graph.dist.shape[0] == num_edges
         rp = -d / num_edges
         w_p = 0.2
         reward += w_p * rp
@@ -263,7 +264,7 @@ def eval_policy(aim, env, eval_episodes=10):
         state = env.reset()
         done = False
         while not done:
-            actions = aim.select_action(state.x, state.edge_index, state.edge_attr)
+            actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type)
             state, reward, done, _ = env.step(rl_actions=actions)
             if state.x is None:
                 done = True

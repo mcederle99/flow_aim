@@ -9,8 +9,8 @@ import torch
 all_vehicles = {}
 
 ADDITIONAL_ENV_PARAMS = {
-    "max_accel": 1,
-    "max_decel": -1,
+    "max_accel": 5,
+    "max_decel": -5,
 }
 
 
@@ -21,7 +21,7 @@ class MyEnv(Env):
         num_actions = len(self.k.vehicle.get_rl_ids())
         accel_ub = self.env_params.additional_params["max_accel"]
         accel_lb = -abs(self.env_params.additional_params["max_decel"])
-        accel_lb = 0.0
+        # accel_lb = 0.0
 
         return Box(low=accel_lb,
                    high=accel_ub,
@@ -103,7 +103,7 @@ class MyEnv(Env):
 
             # ACCELERATION
             acc = self.k.vehicle.get_realized_accel(q)
-            acc = np.clip(acc, -1, 1)
+            acc = np.clip(acc, -5, 5)
             if acc is None:
                 acc = 0
 
@@ -152,7 +152,7 @@ class MyEnv(Env):
     def compute_reward(self, rl_actions, state=None, **kwargs):
         w_v = 0.03
         w_a = 0.01
-        w_i = 0.1
+        w_i = 0.01
         w_c = 1
         
         # the get_ids() method is used to get the names of all vehicles in the network

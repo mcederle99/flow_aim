@@ -38,8 +38,8 @@ class TD3(object):
 
         self.total_it = 0
 
-    def select_action(self, state, edge_index, edge_attr):
-        return self.actor(state, edge_index, edge_attr).cpu().data.numpy().flatten()
+    def select_action(self, state, edge_index, edge_attr, edge_type):
+        return self.actor(state, edge_index, edge_attr, edge_type).cpu().data.numpy().flatten()
 
     def train(self, replay_buffer, batch_size=256):
         self.total_it += 1
@@ -51,7 +51,7 @@ class TD3(object):
 
         with torch.no_grad():
             # Select action according to policy and add clipped noise
-            next_action = self.actor_target(batch.x_t, batch.edge_index_t, batch.edge_attr_t)
+            next_action = self.actor_target(batch.x_t, batch.edge_index_t, batch.edge_attr_t, batch.edge_type_t)
             noise = (
                     torch.randn_like(next_action) * self.policy_noise
             ).clamp(-self.noise_clip, self.noise_clip)
@@ -76,7 +76,8 @@ class TD3(object):
         if self.total_it % self.policy_freq == 0:
 
             # Compute actor losses
-            actor_loss = -self.critic.q1(batch, self.actor(batch.x_s, batch.edge_index_s, batch.edge_attr_s), 's').mean()
+            actor_loss = -self.critic.q1(batch, self.actor(batch.x_s, batch.edge_index_s,
+                                                           batch.edge_attr_s, batch.edge_type_s), 's').mean()
 
             # Optimize the actor
             self.actor_optimizer.zero_grad()

@@ -1,52 +1,54 @@
 import torch
-import torch.nn as nn
-import numpy as np
+from torch_geometric.nn import MessagePassing
+from torch.nn import Linear
+import torch.nn.functional as f
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-class RGCNLayer(nn.Module):
-    def __init__(self, in_feat, out_feat, num_rels):
-        super(RGCNLayer, self).__init__()
-        self.in_feat = in_feat # encoded_nodes_features_dim + encoded_edges_features_dim
-        self.out_feat = out_feat # encoded_nodes_features_dim
-        self.num_rels = num_rels # 2 per ora
-        
-        # weight tensors
-        self.weight = nn.Parameter(torch.Tensor(self.num_rels, self.out_feat,
-                                                self.in_feat))
-        self.weight_0 = nn.Parameter(torch.Tensor(self.out_feat, self.out_feat))
-            
-        # initialize trainable parameters
-        nn.init.xavier_uniform_(self.weight,
-                                gain=nn.init.calculate_gain('relu'))
-        nn.init.xavier_uniform_(self.weight_0,
-                                gain=nn.init.calculate_gain('relu'))
-            
-    def forward(self, g):
-        
-        #weight = self.weight
-        
-        enh_adj = {}
-        for i in range(g.num_nodes()):
-            for j in range(g.num_nodes()):
-                if (j,i) in g.edges:
-                    enh_adj[(i,j)] = torch.cat((g.ndata['x'][j], g.edata['x'][g.edges.index((j,i))]))
-                else:
-                    enh_adj[(i,j)] = torch.zeros([1,], device=device)
-        
-        types = ('same_lane', 'crossing')
-        out = torch.zeros([g.num_nodes(),64], device=device)
-        for i in range(g.num_nodes()):
-            message = torch.zeros([64,], device=device)
-            for r in types:
-                max_value = -np.inf*torch.ones([64,], device=device)
-                for j in range(g.num_nodes()):
-                    if torch.sum(enh_adj[(i,j)]) != 0:
-                        if g.edata['type'][g.edges.index((j,i))] == r:
-                            temp = torch.matmul(self.weight[types.index(r)], enh_adj[(i,j)])
-                            max_value = torch.maximum(max_value, temp)
-                if torch.sum(max_value) != -np.inf:
-                    message = message + max_value
-            out[i] = message + torch.matmul(self.weight_0, g.ndata['x'][i])
-        
-        return out
+class RGCNLayer(MessagePassing):
+    def __init__(self, in_channels, out_channels, num_relations, edge_channels):
+        super(RGCNLayer, self).__init__(aggr='max')  # Use max aggregation
+        self.num_relations = num_relations
+        self.edge_channels = edge_channels
+        self.out_channels = out_channels
+
+        self.linear_node = Linear(in_channels, out_channels, bias=False)
+        self.relation_weights = torch.nn.ModuleList([
+            Linear(in_channels + edge_channels, out_channels, bias=False) for _ in range(num_relations)
+        ])
+
+    def forward(self, x, edge_index, edge_type, edge_attr):
+        out = torch.zeros(x.size(0), self.out_channels, device=x.device)
+        for rel in range(self.num_relations):
+            mask = edge_type == rel
+            if mask.sum() == 0:
+                continue
+            edge_index_rel = edge_index[:, mask]
+            edge_attr_rel = edge_attr[mask]
+            out += self.propagate(edge_index_rel, x=x, edge_attr=edge_attr_rel, rel=rel)
+        return f.relu(out + self.linear_node(x))
+
+    def message(self, x_j, edge_attr, rel):
+        # Concatenate node feature and edge feature
+        edge_msg = torch.cat([x_j, edge_attr], dim=-1)
+        return self.relation_weights[rel](edge_msg)
+
+    def update(self, aggr_out):
+        # The default behavior is to return the aggregated messages
+        return aggr_out
+
+
+# Example usage
+# num_nodes = 100
+# num_edges = 200
+# in_channels = 16
+# out_channels = 32
+# num_relations = 4
+# edge_channels = 8  # Dimension of the edge feature vector
+#
+# rgcn_layer = RGCNLayer(in_channels, out_channels, num_relations, edge_channels)
+# x = torch.randn((num_nodes, in_channels))  # Node features
+# edge_index = torch.randint(0, num_nodes, (2, num_edges))  # Edge indices
+# edge_type = torch.randint(0, num_relations, (num_edges,))  # Edge types
+# edge_attr = torch.randn((num_edges, edge_channels))  # Edge features
+
+# out = rgcn_layer(x, edge_index, edge_type, edge_attr)

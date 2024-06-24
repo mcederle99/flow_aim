@@ -43,7 +43,7 @@ env = create_env()
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--seed", default=0, type=int)              # Sets PyTorch and Numpy seeds
-parser.add_argument("--start_timesteps", default=300, type=int)# Time steps initial random policy is used
+parser.add_argument("--start_timesteps", default=5e3, type=int)# Time steps initial random policy is used
 parser.add_argument("--eval_freq", default=5e3, type=int)       # How often (time steps) we evaluate
 parser.add_argument("--max_timesteps", default=1e6, type=int)   # Max time steps to run environment
 parser.add_argument("--expl_noise", default=0.1, type=float)    # Std of Gaussian exploration noise
@@ -74,7 +74,7 @@ np.random.seed(args.seed)
 state_dim = 3
 edge_dim = 2
 action_dim = 1
-max_action = 1.0
+max_action = 5.0
 
 aim = TD3(state_dim, edge_dim, action_dim, discount=args.discount, tau=args.tau, policy_noise=args.policy_noise,
           noise_clip=args.noise_clip, policy_freq=args.policy_freq, max_action=max_action)
@@ -101,7 +101,7 @@ for t in range(int(args.max_timesteps)):
     if t < args.start_timesteps:
         actions = env.action_space.sample()
     else:
-        actions = aim.select_action(state.x, state.edge_index, state.edge_attr)
+        actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type)
         noise = np.random.normal(0.0, max_action * args.expl_noise, size=len(actions)).astype(np.float32)
         actions = (actions + noise).clip(-max_action, max_action)
 
