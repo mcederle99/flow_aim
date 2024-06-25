@@ -153,7 +153,7 @@ class MyEnv(Env):
         w_v = 0.3
         w_a = 0.01
         w_i = 0.5
-        w_c = 1
+        w_c = 5
         
         # the get_ids() method is used to get the names of all vehicles in the network
         ids = self.k.vehicle.get_ids()
