@@ -7,7 +7,7 @@ from flow.core.params import SumoParams, EnvParams, InitialConfig, NetParams, Ve
 from flow.utils.registry import make_create_env
 from intersection_network import IntersectionNetwork, ADDITIONAL_NET_PARAMS
 from intersection_env import MyEnv, ADDITIONAL_ENV_PARAMS
-from utils import compute_rp, eval_policy
+from utils import compute_rp, eval_policy, inflow
 import argparse
 import os
 import warnings
@@ -17,13 +17,13 @@ vehicles = VehicleParams()
 vehicles.add(veh_id="rl",
              acceleration_controller=(RLController, {}),
              routing_controller=(ContinuousRouter, {}),
-             num_vehicles=4,
+             num_vehicles=0,
              color='green')
 sim_params = SumoParams(sim_step=0.1, render=False)
 initial_config = InitialConfig()
 env_params = EnvParams(additional_params=ADDITIONAL_ENV_PARAMS)
 additional_net_params = ADDITIONAL_NET_PARAMS.copy()
-net_params = NetParams(additional_params=additional_net_params)
+net_params = NetParams(additional_params=additional_net_params, inflows=inflow)
 
 flow_params = dict(
     exp_tag='test_network',
@@ -83,8 +83,9 @@ memory = ReplayBuffer()
 if args.load_model != "":
     policy_file = file_name if args.load_model == "default" else args.load_model
     aim.load(f"./models/{policy_file}")
-    _ = [eval_policy(aim, env, eval_episodes=100)]
-    raise KeyboardInterrupt
+    policy_file = policy_file + "_flow100"  # just for now
+    # _ = [eval_policy(aim, env, eval_episodes=100)]
+    # raise KeyboardInterrupt
 
 evaluations = [eval_policy(aim, env)]
 max_evaluations = evaluations[0]
@@ -95,6 +96,8 @@ ep_steps = 0
 ep_return = 0
 ep_number = 0
 state = env.reset()
+for _ in range(9):
+    state, _, _, _ = env.step([])
 
 for t in range(int(args.max_timesteps)):
 
@@ -113,7 +116,7 @@ for t in range(int(args.max_timesteps)):
         done_bool = 1.0
         memory.add(state, actions, state, reward, done_bool)
     else:
-        #reward = compute_rp(state_, reward)
+        # reward = compute_rp(state_, reward)
         done_bool = float(done) if ep_steps < num_steps else 0.0
         memory.add(state, actions, state_, reward, done_bool)
 
@@ -136,6 +139,8 @@ for t in range(int(args.max_timesteps)):
             num_evaluations += 1
         # Reset environment
         state = env.reset()
+        for _ in range(9):
+            state, _, _, _ = env.step([])
         ep_steps = 0
         ep_return = 0
         ep_number += 1

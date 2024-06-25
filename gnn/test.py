@@ -12,37 +12,40 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 vehicles = VehicleParams()
 vehicles.add(veh_id="rl",
-             acceleration_controller=(RLController, {}),
+             acceleration_controller=(IDMController, {}),
              routing_controller=(ContinuousRouter, {}),
-             num_vehicles=4,
+             num_vehicles=0,
              color='green')
-# inflow = InFlows()
-# inflow.add(veh_type="rl",
-#            edge="b_c",
-#            vehs_per_hour="1"
-#            #probability=0.05,
-#            #depart_speed="random",
-#           )
-# inflow.add(veh_type="rl",
-#            edge="t_c",
-#            probability=0.1,
-#            #depart_speed="random",
-#           )
-# inflow.add(veh_type="rl",
-#            edge="l_c",
-#            probability=0.1,
-#            #depart_speed="random",
-#           )
-# inflow.add(veh_type="rl",
-#            edge="r_c",
-#            probability=0.05,
-#            #depart_speed="random",
-#           )
-sim_params = SumoParams(sim_step=0.1, render=False)
+inflow = InFlows()
+inflow.add(veh_type="rl",
+           edge="b_c",
+           vehs_per_hour="100",
+           # probability=0.2,
+           depart_speed="random",
+          )
+inflow.add(veh_type="rl",
+           edge="t_c",
+           vehs_per_hour="100",
+           # probability=0.2,
+           depart_speed="random",
+          )
+inflow.add(veh_type="rl",
+           edge="l_c",
+           vehs_per_hour="100",
+           # probability=0.2,
+           depart_speed="random",
+          )
+inflow.add(veh_type="rl",
+           edge="r_c",
+           vehs_per_hour="100",
+           # probability=0.2,
+           depart_speed="random",
+          )
+sim_params = SumoParams(sim_step=0.1, render=True, seed=100)
 initial_config = InitialConfig()
 env_params = EnvParams(additional_params=ADDITIONAL_ENV_PARAMS)
 additional_net_params = ADDITIONAL_NET_PARAMS.copy()
-net_params = NetParams(additional_params=additional_net_params)
+net_params = NetParams(additional_params=additional_net_params, inflows=inflow)
 
 flow_params = dict(
     exp_tag='test_network',
@@ -61,7 +64,7 @@ create_env, _ = make_create_env(flow_params)
 env = create_env()
 
 aim = TD3(3, 2, 1)
-memory = ReplayBuffer()
+# memory = ReplayBuffer()
 
 num_steps = env.env_params.horizon
 eval_returns = []
@@ -75,22 +78,24 @@ for i in range(10):
 
     for j in range(num_steps):
 
-        actions = aim.select_action(state.x, state.edge_index)
+        # actions = aim.select_action(state.x, state.edge_index)
+        actions = []
         state_, reward, done, _ = env.step(rl_actions=actions)
-        reward = compute_rp(state, reward)
+        input("")
+        # reward = compute_rp(state, reward)
 
-        memory.add(state, actions, state_, reward, done)
+        # memory.add(state, actions, state_, reward, done)
         total_steps += 1
 
-        if total_steps > 100:
-            aim.train(memory, batch_size=2)
-            print('training!')
-            input("")
+        # if total_steps > 100:
+        #     aim.train(memory, batch_size=2)
+        #     print('training!')
+        #     input("")
 
         ep_steps += 1
         state = state_
         ret += reward
-        if done or state_.x is None:
+        if done:  # or state_.x is None:
             steps_per_ep.append(ep_steps)
             eval_returns.append(ret)
             break

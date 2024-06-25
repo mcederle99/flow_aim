@@ -247,12 +247,14 @@ def from_networkx_multigraph(g):
 
     # Map edge types to integers
     edge_type_mapping = {etype: i for i, etype in enumerate(set(edge_types))}
-    edge_type_indices = torch.tensor([edge_type_mapping[etype] for etype in edge_types], dtype=torch.long, device=device)
+    edge_type_indices = torch.tensor([edge_type_mapping[etype] for etype in edge_types],
+                                     dtype=torch.long, device=device)
 
     # Add edge types and attributes to the data object
     data.edge_type = edge_type_indices
     data.edge_attr = torch.cat([torch.tensor(edge_attr_list[attr],
-                                             dtype=torch.float).view(-1, 1) for attr in edge_attrs], dim=-1).to(device)
+                                             dtype=torch.float).view(-1, 1) for attr in edge_attrs],
+                               dim=-1).to(device)
     data.edge_index = data.edge_index.to(device)
 
     return data
@@ -263,14 +265,18 @@ def eval_policy(aim, env, eval_episodes=10):
     avg_reward = 0.
     for _ in range(eval_episodes):
         state = env.reset()
+        for _ in range(9):
+            state, _, _, _ = env.step([])
         done = False
         while not done:
             actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type)
             state, reward, done, _ = env.step(rl_actions=actions)
+            # if done:
+            #     print('crash')
             if state.x is None:
                 done = True
-            #else:
-                #reward = compute_rp(state, reward)
+            # else:
+                # reward = compute_rp(state, reward)
             avg_reward += reward
 
     avg_reward /= eval_episodes
@@ -284,22 +290,25 @@ def eval_policy(aim, env, eval_episodes=10):
 inflow = InFlows()
 inflow.add(veh_type="rl",
            edge="b_c",
-           vehs_per_hour="1"
+           vehs_per_hour="100",
            # probability=0.05,
-           # depart_speed="random",
+           depart_speed="random",
           )
 inflow.add(veh_type="rl",
            edge="t_c",
-           probability=0.1,
-           # depart_speed="random",
+           vehs_per_hour="100",
+           # probability=0.1,
+           depart_speed="random",
           )
 inflow.add(veh_type="rl",
            edge="l_c",
-           probability=0.1,
-           # depart_speed="random",
+           vehs_per_hour="100",
+           # probability=0.1,
+           depart_speed="random",
           )
 inflow.add(veh_type="rl",
            edge="r_c",
-           probability=0.05,
-           # depart_speed="random",
+           vehs_per_hour="100",
+           # probability=0.05,
+           depart_speed="random",
           )
