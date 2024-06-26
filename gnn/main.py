@@ -7,7 +7,7 @@ from flow.core.params import SumoParams, EnvParams, InitialConfig, NetParams, Ve
 from flow.utils.registry import make_create_env
 from intersection_network import IntersectionNetwork, ADDITIONAL_NET_PARAMS
 from intersection_env import MyEnv, ADDITIONAL_ENV_PARAMS
-from utils import compute_rp, eval_policy, inflow
+from utils import compute_rp, eval_policy, get_inflows
 import argparse
 import os
 import warnings
@@ -23,7 +23,8 @@ sim_params = SumoParams(sim_step=0.1, render=False)
 initial_config = InitialConfig()
 env_params = EnvParams(additional_params=ADDITIONAL_ENV_PARAMS)
 additional_net_params = ADDITIONAL_NET_PARAMS.copy()
-net_params = NetParams(additional_params=additional_net_params, inflows=inflow)
+inflow_rate = 200
+net_params = NetParams(additional_params=additional_net_params, inflows=get_inflows(str(inflow_rate)))
 
 flow_params = dict(
     exp_tag='test_network',
@@ -57,7 +58,7 @@ parser.add_argument("--save_model", action="store_true")        # Save model and
 parser.add_argument("--load_model", default="")                 # Model load file name, "" doesn't load, "default" uses file_name
 args = parser.parse_args()
 
-file_name = f"aim_{args.seed}"
+file_name = f"aim_{args.seed}_flow100"
 print("---------------------------------------")
 print(f"Seed: {args.seed}")
 print("---------------------------------------")
@@ -83,11 +84,13 @@ memory = ReplayBuffer()
 if args.load_model != "":
     policy_file = file_name if args.load_model == "default" else args.load_model
     aim.load(f"./models/{policy_file}")
-    policy_file = policy_file + "_flow100"  # just for now
+    file_name = f"aim_{args.seed}_flow_incr"
     # _ = [eval_policy(aim, env, eval_episodes=100)]
     # raise KeyboardInterrupt
 
-evaluations = [eval_policy(aim, env)]
+evaluations = []
+ev, _ = eval_policy(aim, env)
+evaluations.append(ev)
 max_evaluations = evaluations[0]
 num_steps = env.env_params.horizon
 num_evaluations = 1
@@ -96,7 +99,7 @@ ep_steps = 0
 ep_return = 0
 ep_number = 0
 state = env.reset()
-for _ in range(9):
+while state.x is None:
     state, _, _, _ = env.step([])
 
 for t in range(int(args.max_timesteps)):
@@ -112,12 +115,11 @@ for t in range(int(args.max_timesteps)):
 
     state_, reward, done, _ = env.step(rl_actions=actions)
 
+    done_bool = float(done) if ep_steps < num_steps else 0.0
     if state_.x is None:
-        done_bool = 1.0
         memory.add(state, actions, state, reward, done_bool)
     else:
         # reward = compute_rp(state_, reward)
-        done_bool = float(done) if ep_steps < num_steps else 0.0
         memory.add(state, actions, state_, reward, done_bool)
 
     state = state_
@@ -126,20 +128,31 @@ for t in range(int(args.max_timesteps)):
     if t >= args.start_timesteps:
         aim.train(memory, args.batch_size)
 
-    if done or state.x is None:
+    while state.x is None and not done:
+        state, _, done, _ = env.step([])
+    if done:
         print(f"Total T: {t + 1} Episode Num: {ep_number + 1} Episode T: {ep_steps} Reward: {ep_return:.3f}")
         # Evaluate episode
         if (t + 1) >= args.eval_freq * num_evaluations:
-            evaluations.append(eval_policy(aim, env))
+            ev, num_crashes = eval_policy(aim, env)
+            evaluations.append(ev)
             np.save(f"./results/{file_name}", evaluations)
             if evaluations[-1] > max_evaluations:
                 if args.save_model:
                     aim.save(f"./models/{file_name}")
                 max_evaluations = evaluations[-1]
             num_evaluations += 1
+            if num_crashes <= 2:
+                env.terminate()
+                inflow_rate += 100
+                net_params = NetParams(additional_params=additional_net_params, inflows=get_inflows(str(inflow_rate)))
+                flow_params['net'] = net_params
+                create_env, _ = make_create_env(flow_params)
+                env = create_env()
+
         # Reset environment
         state = env.reset()
-        for _ in range(9):
+        while state.x is None:
             state, _, _, _ = env.step([])
         ep_steps = 0
         ep_return = 0

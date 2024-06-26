@@ -260,21 +260,22 @@ def from_networkx_multigraph(g):
     return data
 
 
-def eval_policy(aim, env, eval_episodes=10):
+def eval_policy(aim, env, eval_episodes=100):
 
     avg_reward = 0.
+    num_crashes = 0
     for _ in range(eval_episodes):
         state = env.reset()
-        for _ in range(9):
+        while state.x is None:
             state, _, _, _ = env.step([])
         done = False
         while not done:
             actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type)
             state, reward, done, _ = env.step(rl_actions=actions)
-            # if done:
-            #     print('crash')
-            if state.x is None:
-                done = True
+            if env.k.simulation.check_collision():
+                num_crashes += 1
+            while state.x is None and not done:
+                state, _, done, _ = env.step([])
             # else:
                 # reward = compute_rp(state, reward)
             avg_reward += reward
@@ -282,33 +283,36 @@ def eval_policy(aim, env, eval_episodes=10):
     avg_reward /= eval_episodes
 
     print("---------------------------------------")
-    print(f"Evaluation over {eval_episodes} episodes: {avg_reward:.3f}")
+    print(f"Evaluation over {eval_episodes} episodes: {avg_reward:.3f}. Number of crashes: {num_crashes}")
     print("---------------------------------------")
-    return avg_reward
+    return avg_reward, num_crashes
 
 
-inflow = InFlows()
-inflow.add(veh_type="rl",
-           edge="b_c",
-           vehs_per_hour="100",
-           # probability=0.05,
-           depart_speed="random",
-          )
-inflow.add(veh_type="rl",
-           edge="t_c",
-           vehs_per_hour="100",
-           # probability=0.1,
-           depart_speed="random",
-          )
-inflow.add(veh_type="rl",
-           edge="l_c",
-           vehs_per_hour="100",
-           # probability=0.1,
-           depart_speed="random",
-          )
-inflow.add(veh_type="rl",
-           edge="r_c",
-           vehs_per_hour="100",
-           # probability=0.05,
-           depart_speed="random",
-          )
+def get_inflows(rate="100"):
+    inflow = InFlows()
+    inflow.add(veh_type="rl",
+               edge="b_c",
+               vehs_per_hour=rate,
+               # probability=0.1,
+               depart_speed="random",
+              )
+    inflow.add(veh_type="rl",
+               edge="t_c",
+               vehs_per_hour=rate,
+               # probability=0.2,
+               depart_speed="random",
+              )
+    inflow.add(veh_type="rl",
+               edge="l_c",
+               vehs_per_hour=rate,
+               # probability=0.2,
+               depart_speed="random",
+              )
+    inflow.add(veh_type="rl",
+               edge="r_c",
+               vehs_per_hour=rate,
+               # probability=0.2,
+               depart_speed="random",
+              )
+
+    return inflow
