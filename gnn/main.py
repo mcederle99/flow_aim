@@ -19,11 +19,11 @@ vehicles.add(veh_id="rl",
              routing_controller=(ContinuousRouter, {}),
              num_vehicles=0,
              color='green')
-sim_params = SumoParams(sim_step=0.1, render=False)
+sim_params = SumoParams(sim_step=0.1, render=False, restart_instance=True)
 initial_config = InitialConfig()
 env_params = EnvParams(additional_params=ADDITIONAL_ENV_PARAMS)
 additional_net_params = ADDITIONAL_NET_PARAMS.copy()
-inflow_rate = 200
+inflow_rate = 100
 net_params = NetParams(additional_params=additional_net_params, inflows=get_inflows(inflow_rate))
 
 flow_params = dict(
@@ -58,7 +58,7 @@ parser.add_argument("--save_model", action="store_true")        # Save model and
 parser.add_argument("--load_model", default="")                 # Model load file name, "" doesn't load, "default" uses file_name
 args = parser.parse_args()
 
-file_name = f"aim_{args.seed}_flow100"
+file_name = f"aim_{args.seed}_flowincr"
 print("---------------------------------------")
 print(f"Seed: {args.seed}")
 print("---------------------------------------")
@@ -84,11 +84,10 @@ memory = ReplayBuffer()
 if args.load_model != "":
     policy_file = file_name if args.load_model == "default" else args.load_model
     aim.load(f"./models/{policy_file}")
-    file_name = f"aim_{args.seed}_flow_incr"
-    # for _ in range(10):
-    #     _, _ = eval_policy(aim, env, eval_episodes=10)
-    # env.terminate()
-    # raise KeyboardInterrupt
+    for _ in range(10):
+        _, _ = eval_policy(aim, env, eval_episodes=10)
+    env.terminate()
+    raise KeyboardInterrupt
 
 evaluations = []
 evs = 0.0

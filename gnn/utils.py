@@ -260,7 +260,7 @@ def from_networkx_multigraph(g):
     return data
 
 
-def eval_policy(aim, env, eval_episodes=100):
+def eval_policy(aim, env, eval_episodes=10):
 
     avg_reward = 0.
     num_crashes = 0
