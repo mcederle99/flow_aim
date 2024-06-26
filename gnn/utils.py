@@ -282,9 +282,9 @@ def eval_policy(aim, env, eval_episodes=10):
 
     avg_reward /= eval_episodes
 
-    print("---------------------------------------")
-    print(f"Evaluation over {eval_episodes} episodes: {avg_reward:.3f}. Number of crashes: {num_crashes}")
-    print("---------------------------------------")
+    # print("---------------------------------------")
+    # print(f"Evaluation over {eval_episodes} episodes: {avg_reward:.3f}. Number of crashes: {num_crashes}")
+    # print("---------------------------------------")
     return avg_reward, num_crashes
 
 

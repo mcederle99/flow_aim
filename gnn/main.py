@@ -91,10 +91,16 @@ if args.load_model != "":
 
 evaluations = []
 evs = 0.0
+num_crashes = 0
 for _ in range(10):
-    ev, _ = eval_policy(aim, env, eval_episodes=10)
+    ev, nc = eval_policy(aim, env, eval_episodes=10)
     evs += ev
+    num_crashes += nc
 evaluations.append(evs/100)
+print("---------------------------------------")
+print(f"Evaluation over 100 episodes: {evaluations[0]:.3f}. Number of crashes: {num_crashes}."
+      f"Flow rate: {inflow_rate}")
+print("---------------------------------------")
 max_evaluations = evaluations[0]
 num_steps = env.env_params.horizon
 num_evaluations = 1
@@ -145,6 +151,10 @@ for t in range(int(args.max_timesteps)):
                 evs += ev
                 num_crashes += nc
             evaluations.append(evs / 100)
+            print("---------------------------------------")
+            print(f"Evaluation over 100 episodes: {evaluations[-1]:.3f}. Number of crashes: {num_crashes}."
+                  f"Flow rate: {inflow_rate}")
+            print("---------------------------------------")
             np.save(f"./results/{file_name}", evaluations)
             if evaluations[-1] > max_evaluations:
                 if args.save_model:
@@ -158,7 +168,6 @@ for t in range(int(args.max_timesteps)):
                 flow_params['net'] = net_params
                 create_env, _ = make_create_env(flow_params)
                 env = create_env()
-                print('Changing gear')
 
         # Reset environment
         state = env.reset()
