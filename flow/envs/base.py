@@ -281,7 +281,7 @@ class Env(gym.Env, metaclass=ABCMeta):
         start_pos, start_lanes = self.k.network.generate_starting_positions(
             initial_config=self.initial_config,
             num_vehicles=len(self.initial_ids))
-        start_pos = [('b_c', 0), ('l_c', 0.0), ('t_c', 0.0), ('r_c', 0.0)]
+        start_pos = [('b_c', 0.0), ('l_c', 0.0), ('t_c', 0.0), ('r_c', 0.0)]
         start_lanes = [0, 0, 0, 0]
 
         # save the initial state. This is used in the _reset function
