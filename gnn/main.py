@@ -24,7 +24,7 @@ initial_config = InitialConfig()
 env_params = EnvParams(additional_params=ADDITIONAL_ENV_PARAMS)
 additional_net_params = ADDITIONAL_NET_PARAMS.copy()
 inflow_rate = 200
-net_params = NetParams(additional_params=additional_net_params, inflows=get_inflows(str(inflow_rate)))
+net_params = NetParams(additional_params=additional_net_params, inflows=get_inflows(inflow_rate))
 
 flow_params = dict(
     exp_tag='test_network',
@@ -87,11 +87,15 @@ if args.load_model != "":
     file_name = f"aim_{args.seed}_flow_incr"
     # for _ in range(10):
     #     _, _ = eval_policy(aim, env, eval_episodes=10)
+    # env.terminate()
     # raise KeyboardInterrupt
 
 evaluations = []
-ev, _ = eval_policy(aim, env)
-evaluations.append(ev)
+evs = 0.0
+for _ in range(10):
+    ev, _ = eval_policy(aim, env, eval_episodes=10)
+    evs += ev
+evaluations.append(evs/100)
 max_evaluations = evaluations[0]
 num_steps = env.env_params.horizon
 num_evaluations = 1
@@ -135,8 +139,13 @@ for t in range(int(args.max_timesteps)):
         print(f"Total T: {t + 1} Episode Num: {ep_number + 1} Episode T: {ep_steps} Reward: {ep_return:.3f}")
         # Evaluate episode
         if (t + 1) >= args.eval_freq * num_evaluations:
-            ev, num_crashes = eval_policy(aim, env)
-            evaluations.append(ev)
+            evs = 0.0
+            num_crashes = 0
+            for _ in range(10):
+                ev, nc = eval_policy(aim, env, eval_episodes=10)
+                evs += ev
+                num_crashes += nc
+            evaluations.append(evs / 100)
             np.save(f"./results/{file_name}", evaluations)
             if evaluations[-1] > max_evaluations:
                 if args.save_model:
@@ -146,10 +155,11 @@ for t in range(int(args.max_timesteps)):
             if num_crashes <= 2:
                 env.terminate()
                 inflow_rate += 100
-                net_params = NetParams(additional_params=additional_net_params, inflows=get_inflows(str(inflow_rate)))
+                net_params = NetParams(additional_params=additional_net_params, inflows=get_inflows(inflow_rate))
                 flow_params['net'] = net_params
                 create_env, _ = make_create_env(flow_params)
                 env = create_env()
+                print('Changing gear')
 
         # Reset environment
         state = env.reset()

@@ -288,7 +288,7 @@ def eval_policy(aim, env, eval_episodes=100):
     return avg_reward, num_crashes
 
 
-def get_inflows(rate="100"):
+def get_inflows(rate=100):
     inflow = InFlows()
     inflow.add(veh_type="rl",
                edge="b_c",
