@@ -440,8 +440,10 @@ class Env(gym.Env, metaclass=ABCMeta):
         if self.should_render:
             self.sim_params.render = True
             # got to restart the simulation to make it actually display anything
+            self.sim_params.seed = random.randint(0, 1e5)
             self.restart_simulation(self.sim_params)
         else:
+            self.sim_params.seed = random.randint(0, 1e5)
             self.restart_simulation(self.sim_params)
 
         # warn about not using restart_instance when using inflows

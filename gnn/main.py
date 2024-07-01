@@ -84,7 +84,7 @@ memory = ReplayBuffer()
 if args.load_model != "":
     policy_file = file_name if args.load_model == "default" else args.load_model
     aim.load(f"./models/{policy_file}")
-    file_name = f"aim_{args.seed}_flow200"
+    # file_name = f"aim_{args.seed}_flow200"
     for _ in range(1):
        _, _ = eval_policy(aim, env, eval_episodes=10)
     env.terminate()
