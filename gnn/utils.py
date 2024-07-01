@@ -272,7 +272,7 @@ def eval_policy(aim, env, eval_episodes=10):
         while not done:
             actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type)
             state, reward, done, _ = env.step(rl_actions=actions)
-            if done:
+            if env.k.check_collision():
                 num_crashes += 1
 
             while state.x is None and not done:
@@ -293,26 +293,26 @@ def get_inflows(rate=100):
     inflow = InFlows()
     inflow.add(veh_type="rl",
                edge="b_c",
-               vehs_per_hour=rate,
-               # probability=0.1,
+               # vehs_per_hour=rate,
+               probability=rate,
                depart_speed=0,
               )
     inflow.add(veh_type="rl",
                edge="t_c",
-               vehs_per_hour=rate,
-               # probability=0.2,
+               # vehs_per_hour=rate,
+               probability=rate,
                depart_speed=0,
               )
     inflow.add(veh_type="rl",
                edge="l_c",
-               vehs_per_hour=rate,
-               # probability=0.2,
+               # vehs_per_hour=rate,
+               probability=rate,
                depart_speed=0,
               )
     inflow.add(veh_type="rl",
                edge="r_c",
-               vehs_per_hour=rate,
-               # probability=0.2,
+               # vehs_per_hour=rate,
+               probability=rate,
                depart_speed=0,
               )
 

@@ -23,7 +23,7 @@ sim_params = SumoParams(sim_step=0.1, render=False)
 initial_config = InitialConfig()
 env_params = EnvParams(additional_params=ADDITIONAL_ENV_PARAMS)
 additional_net_params = ADDITIONAL_NET_PARAMS.copy()
-inflow_rate = 200
+inflow_rate = 0.1
 net_params = NetParams(additional_params=additional_net_params, inflows=get_inflows(inflow_rate))
 
 flow_params = dict(
@@ -58,7 +58,7 @@ parser.add_argument("--save_model", action="store_true")        # Save model and
 parser.add_argument("--load_model", default="")                 # Model load file name, "" doesn't load, "default" uses file_name
 args = parser.parse_args()
 
-file_name = f"aim_{args.seed}_flowincr"
+file_name = f"aim_{args.seed}_flowprob"
 print("---------------------------------------")
 print(f"Seed: {args.seed}")
 print("---------------------------------------")
@@ -85,10 +85,10 @@ if args.load_model != "":
     policy_file = file_name if args.load_model == "default" else args.load_model
     aim.load(f"./models/{policy_file}")
     file_name = f"aim_{args.seed}_flow200"
-    #for _ in range(1):
-    #    _, _ = eval_policy(aim, env, eval_episodes=10)
-    #env.terminate()
-    #raise KeyboardInterrupt
+    for _ in range(1):
+       _, _ = eval_policy(aim, env, eval_episodes=10)
+    env.terminate()
+    raise KeyboardInterrupt
 
 evaluations = []
 #evs = 0.0
@@ -168,7 +168,7 @@ for t in range(int(args.max_timesteps)):
             num_evaluations += 1
             if num_crashes == 0 and evaluations[-1] > 50:
                 env.terminate()
-                inflow_rate += 100
+                inflow_rate *= 1.5
                 net_params = NetParams(additional_params=additional_net_params, inflows=get_inflows(inflow_rate))
                 flow_params['net'] = net_params
                 create_env, _ = make_create_env(flow_params)
