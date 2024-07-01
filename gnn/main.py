@@ -19,11 +19,11 @@ vehicles.add(veh_id="rl",
              routing_controller=(ContinuousRouter, {}),
              num_vehicles=0,
              color='green')
-sim_params = SumoParams(sim_step=0.1, render=False, restart_instance=True)
+sim_params = SumoParams(sim_step=0.1, render=False)
 initial_config = InitialConfig()
 env_params = EnvParams(additional_params=ADDITIONAL_ENV_PARAMS)
 additional_net_params = ADDITIONAL_NET_PARAMS.copy()
-inflow_rate = 100
+inflow_rate = 200
 net_params = NetParams(additional_params=additional_net_params, inflows=get_inflows(inflow_rate))
 
 flow_params = dict(
@@ -84,23 +84,26 @@ memory = ReplayBuffer()
 if args.load_model != "":
     policy_file = file_name if args.load_model == "default" else args.load_model
     aim.load(f"./models/{policy_file}")
-    for _ in range(10):
-        _, _ = eval_policy(aim, env, eval_episodes=10)
-    env.terminate()
-    raise KeyboardInterrupt
+    file_name = f"aim_{args.seed}_flow200"
+    #for _ in range(1):
+    #    _, _ = eval_policy(aim, env, eval_episodes=10)
+    #env.terminate()
+    #raise KeyboardInterrupt
 
 evaluations = []
-evs = 0.0
-num_crashes = 0
-for _ in range(10):
-    ev, nc = eval_policy(aim, env, eval_episodes=10)
-    evs += ev
-    num_crashes += nc
-evaluations.append(evs/100)
+#evs = 0.0
+#num_crashes = 0
+#for _ in range(10):
+ev, num_crashes = eval_policy(aim, env, eval_episodes=10)
+print(f"Inflow_rate: {inflow_rate}")
 print("---------------------------------------")
-print(f"Evaluation over 100 episodes: {evaluations[0]:.3f}. Number of crashes: {num_crashes}."
-      f"Flow rate: {inflow_rate}")
-print("---------------------------------------")
+#    evs += ev
+#    num_crashes += nc
+evaluations.append(ev)
+#print("---------------------------------------")
+#print(f"Evaluation over 100 episodes: {evaluations[0]:.3f}. Number of crashes: {num_crashes}."
+#      f"Flow rate: {inflow_rate}")
+#print("---------------------------------------")
 max_evaluations = evaluations[0]
 num_steps = env.env_params.horizon
 num_evaluations = 1
@@ -144,24 +147,26 @@ for t in range(int(args.max_timesteps)):
         print(f"Total T: {t + 1} Episode Num: {ep_number + 1} Episode T: {ep_steps} Reward: {ep_return:.3f}")
         # Evaluate episode
         if (t + 1) >= args.eval_freq * num_evaluations:
-            evs = 0.0
-            num_crashes = 0
-            for _ in range(10):
-                ev, nc = eval_policy(aim, env, eval_episodes=10)
-                evs += ev
-                num_crashes += nc
-            evaluations.append(evs / 100)
+            #evs = 0.0
+            #num_crashes = 0
+            #for _ in range(1):
+            ev, num_crashes = eval_policy(aim, env, eval_episodes=10)
+            print(f"Inflow_rate: {inflow_rate}")
             print("---------------------------------------")
-            print(f"Evaluation over 100 episodes: {evaluations[-1]:.3f}. Number of crashes: {num_crashes}."
-                  f"Flow rate: {inflow_rate}")
-            print("---------------------------------------")
+            #    evs += ev
+            #    num_crashes += nc
+            evaluations.append(ev)
+            #print("---------------------------------------")
+            #print(f"Evaluation over 100 episodes: {evaluations[-1]:.3f}. Number of crashes: {num_crashes}."
+            #      f"Flow rate: {inflow_rate}")
+            #print("---------------------------------------")
             np.save(f"./results/{file_name}", evaluations)
-            if evaluations[-1] > max_evaluations:
+            if evaluations[-1] > max_evaluations and num_crashes == 0:
                 if args.save_model:
                     aim.save(f"./models/{file_name}")
                 max_evaluations = evaluations[-1]
             num_evaluations += 1
-            if num_crashes <= 2:
+            if num_crashes == 0 and evaluations[-1] > 50:
                 env.terminate()
                 inflow_rate += 100
                 net_params = NetParams(additional_params=additional_net_params, inflows=get_inflows(inflow_rate))
@@ -178,3 +183,4 @@ for t in range(int(args.max_timesteps)):
         ep_number += 1
 
 env.terminate()
+print(inflow_rate)

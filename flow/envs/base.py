@@ -441,8 +441,8 @@ class Env(gym.Env, metaclass=ABCMeta):
             self.sim_params.render = True
             # got to restart the simulation to make it actually display anything
             self.restart_simulation(self.sim_params)
-        # else:
-        #     self.restart_simulation(self.sim_params)
+        else:
+            self.restart_simulation(self.sim_params)
 
         # warn about not using restart_instance when using inflows
         #if len(self.net_params.inflows.get()) > 0 and \

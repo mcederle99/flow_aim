@@ -100,9 +100,9 @@ class TD3(object):
 
     def load(self, filename):
         self.critic.load_state_dict(torch.load(filename + "_critic", map_location=torch.device(device)))
-        self.critic_optimizer.load_state_dict(torch.load(filename + "_critic_optimizer", map_location=torch.device(device)))
+        self.critic_optimizer.load_state_dict(torch.load(filename + "_critic_optimizer"))
         self.critic_target = copy.deepcopy(self.critic)
 
         self.actor.load_state_dict(torch.load(filename + "_actor", map_location=torch.device(device)))
-        self.actor_optimizer.load_state_dict(torch.load(filename + "_actor_optimizer", map_location=torch.device(device)))
+        self.actor_optimizer.load_state_dict(torch.load(filename + "_actor_optimizer"))
         self.actor_target = copy.deepcopy(self.actor)

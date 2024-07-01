@@ -272,8 +272,9 @@ def eval_policy(aim, env, eval_episodes=10):
         while not done:
             actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type)
             state, reward, done, _ = env.step(rl_actions=actions)
-            if env.k.simulation.check_collision():
+            if done:
                 num_crashes += 1
+
             while state.x is None and not done:
                 state, _, done, _ = env.step([])
             # else:
@@ -282,9 +283,9 @@ def eval_policy(aim, env, eval_episodes=10):
 
     avg_reward /= eval_episodes
 
-    # print("---------------------------------------")
-    # print(f"Evaluation over {eval_episodes} episodes: {avg_reward:.3f}. Number of crashes: {num_crashes}")
-    # print("---------------------------------------")
+    print("---------------------------------------")
+    print(f"Evaluation over {eval_episodes} episodes: {avg_reward:.3f}. Number of crashes: {num_crashes}")
+    #print("---------------------------------------")
     return avg_reward, num_crashes
 
 
@@ -294,25 +295,25 @@ def get_inflows(rate=100):
                edge="b_c",
                vehs_per_hour=rate,
                # probability=0.1,
-               depart_speed="random",
+               depart_speed=0,
               )
     inflow.add(veh_type="rl",
                edge="t_c",
                vehs_per_hour=rate,
                # probability=0.2,
-               depart_speed="random",
+               depart_speed=0,
               )
     inflow.add(veh_type="rl",
                edge="l_c",
                vehs_per_hour=rate,
                # probability=0.2,
-               depart_speed="random",
+               depart_speed=0,
               )
     inflow.add(veh_type="rl",
                edge="r_c",
                vehs_per_hour=rate,
                # probability=0.2,
-               depart_speed="random",
+               depart_speed=0,
               )
 
     return inflow
