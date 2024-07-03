@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from agent import TD3
+from agent import DQNAgent
 from memory import ReplayBuffer
 from flow.controllers import ContinuousRouter, RLController
 from flow.core.params import SumoParams, EnvParams, InitialConfig, NetParams, VehicleParams
@@ -45,21 +45,20 @@ env = create_env()
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--seed", default=0, type=int)              # Sets PyTorch and Numpy seeds
-parser.add_argument("--start_timesteps", default=25e3, type=int)# Time steps initial random policy is used
+parser.add_argument("--start_timesteps", default=300, type=int) # Time steps initial random policy is used
 parser.add_argument("--eval_freq", default=5e3, type=int)       # How often (time steps) we evaluate
 parser.add_argument("--max_timesteps", default=1e6, type=int)   # Max time steps to run environment
-parser.add_argument("--expl_noise", default=0.1, type=float)    # Std of Gaussian exploration noise
+parser.add_argument("--epsilon", default=1.0, type=float)       # Initial exploration rate
 parser.add_argument("--batch_size", default=256, type=int)      # Batch size for both actor and critic
 parser.add_argument("--discount", default=0.99, type=float)     # Discount factor
 parser.add_argument("--tau", default=0.005, type=float)         # Target network update rate
-parser.add_argument("--policy_noise", default=0.2)              # Noise added to target policy during critic update
-parser.add_argument("--noise_clip", default=0.5)                # Range to clip target policy noise
-parser.add_argument("--policy_freq", default=2, type=int)       # Frequency of delayed policy updates
+parser.add_argument("--eps_min", default=0.01)                  # Minimum exploration rate
+parser.add_argument("--eps_dec", default=5e-7, type=float)      # Epsilon decrement
 parser.add_argument("--save_model", action="store_true")        # Save model and optimizer parameters
 parser.add_argument("--load_model", default="")                 # Model load file name, "" doesn't load, "default" uses file_name
 args = parser.parse_args()
 
-file_name = f"aim_{args.seed}_manualflow"
+file_name = f"aim_dqn_{args.seed}_4"
 print("---------------------------------------")
 print(f"Seed: {args.seed}")
 print("---------------------------------------")
@@ -75,22 +74,21 @@ np.random.seed(args.seed)
 
 state_dim = 3
 edge_dim = 2
-action_dim = 1
-max_action = 5.0
+action_dim = 5
 
-aim = TD3(state_dim, edge_dim, action_dim, discount=args.discount, tau=args.tau, policy_noise=args.policy_noise,
-          noise_clip=args.noise_clip, policy_freq=args.policy_freq, max_action=max_action)
+aim = DQNAgent(state_dim, edge_dim, action_dim, discount=args.discount, tau=args.tau, epsilon=args.epsilon,
+               eps_min=args.eps_min, eps_dec=args.eps_dec)
 memory = ReplayBuffer()
 
 if args.load_model != "":
     policy_file = file_name if args.load_model == "default" else args.load_model
     aim.load(f"./models/{policy_file}")
-    _, _ = eval_policy(aim, env, eval_episodes=10)
+    _, _, _ = eval_policy(aim, env, eval_episodes=10)
     env.terminate()
     raise KeyboardInterrupt
 
 evaluations = []
-ev, num_crashes = eval_policy(aim, env, eval_episodes=10)
+ev, num_crashes, not_completed = eval_policy(aim, env, eval_episodes=10)
 print(f"Inflow_rate: {inflow_rate}")
 print("---------------------------------------")
 evaluations.append(ev)
@@ -101,7 +99,6 @@ num_evaluations = 1
 ep_steps = 0
 ep_return = 0
 ep_number = 0
-veh_num = 4
 state = env.reset()
 while state.x is None:
     state, _, _, _ = env.step([])
@@ -109,18 +106,10 @@ while state.x is None:
 for t in range(int(args.max_timesteps)):
 
     ep_steps += 1
-
-    if t < args.start_timesteps:
-        actions = env.action_space.sample()
-    else:
-        actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type)
-        noise = np.random.normal(0.0, max_action * args.expl_noise, size=len(actions)).astype(np.float32)
-        actions = (actions + noise).clip(-max_action, max_action)
-
+    actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type)
     state_, reward, done, _ = env.step(rl_actions=actions)
 
     done_bool = float(done) if ep_steps < num_steps else 0.0
-
     if state_.x is None:
         memory.add(state, actions, state, reward, done_bool)
     else:
@@ -133,25 +122,19 @@ for t in range(int(args.max_timesteps)):
     if t >= args.start_timesteps:
         aim.train(memory, args.batch_size)
 
-    if state.x is None:
-        env.k.vehicle.add("rl_{}".format(veh_num), "rl", "b_c", 0.0, 0, 0.0)
-        env.k.vehicle.add("rl_{}".format(veh_num + 1), "rl", "t_c", 0.0, 0, 0.0)
-        env.k.vehicle.add("rl_{}".format(veh_num + 2), "rl", "l_c", 0.0, 0, 0.0)
-        env.k.vehicle.add("rl_{}".format(veh_num + 3), "rl", "r_c", 0.0, 0, 0.0)
-        veh_num += 4
-        state, _, _, _ = env.step([])
-    # while state.x is None and not done:
-    #     state, _, done, _ = env.step([])
+    while state.x is None and not done:
+        state, _, done, _ = env.step([])
     if done:
-        print(f"Total T: {t + 1} Episode Num: {ep_number + 1} Episode T: {ep_steps} Reward: {ep_return:.3f}")
+        print(f"Total T: {t + 1} Episode Num: {ep_number + 1} Episode T: {ep_steps} Reward: {ep_return:.3f}"
+              f" Epsilon: {aim.epsilon:.3f}")
         # Evaluate episode
         if (t + 1) >= args.eval_freq * num_evaluations:
-            ev, num_crashes = eval_policy(aim, env, eval_episodes=10)
+            ev, num_crashes, not_completed = eval_policy(aim, env, eval_episodes=10)
             print(f"Inflow_rate: {inflow_rate}")
             print("---------------------------------------")
             evaluations.append(ev)
             np.save(f"./results/{file_name}", evaluations)
-            if evaluations[-1] > max_evaluations and num_crashes == 0:
+            if evaluations[-1] > max_evaluations and (num_crashes + not_completed) <= 1:
                 if args.save_model:
                     aim.save(f"./models/{file_name}")
                 max_evaluations = evaluations[-1]
@@ -171,7 +154,6 @@ for t in range(int(args.max_timesteps)):
         ep_steps = 0
         ep_return = 0
         ep_number += 1
-        veh_num = 4
 
 env.terminate()
 print(inflow_rate)

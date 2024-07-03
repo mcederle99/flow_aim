@@ -1,7 +1,7 @@
 from utils import edges_dict, routes_dict, routes_edges_matrix, compute_edges, from_networkx_multigraph
 from flow.envs.base import Env
 from gym.spaces.box import Box
-from gym.spaces import Discrete
+from gym.spaces import Discrete, MultiDiscrete
 import numpy as np
 import networkx as nx
 import torch
@@ -14,19 +14,23 @@ ADDITIONAL_ENV_PARAMS = {
 }
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+
+def map_actions(rl_actions):
+    mapping = {0: -5, 1: -2.5, 2: 0, 3: 2.5, 4: 5}
+    env_actions = []
+    for i in range(len(rl_actions)):
+        env_actions.append(mapping[rl_actions[i]])
+
+    return env_actions
+
+
 class MyEnv(Env):
 
     @property
     def action_space(self):
         num_actions = len(self.k.vehicle.get_rl_ids())
-        accel_ub = self.env_params.additional_params["max_accel"]
-        accel_lb = -abs(self.env_params.additional_params["max_decel"])
-        # accel_lb = 0.0
 
-        return Box(low=accel_lb,
-                   high=accel_ub,
-                   shape=(num_actions,),
-                   dtype=np.float32)
+        return MultiDiscrete(np.array(num_actions,))
     
     @property
     def observation_space(self):
@@ -45,10 +49,11 @@ class MyEnv(Env):
     def _apply_rl_actions(self, rl_actions):
         # the names of all autonomous (RL) vehicles in the network
         rl_ids = self.k.vehicle.get_rl_ids()
-        ids = self.k.vehicle.get_ids()
+        # ids = self.k.vehicle.get_ids()
         # assert rl_ids == ids
+        env_actions = map_actions(rl_actions)
         # use the base environment method to convert actions into accelerations for the rl vehicles
-        self.k.vehicle.apply_acceleration(rl_ids, rl_actions)
+        self.k.vehicle.apply_acceleration(rl_ids, env_actions)
         
     def get_state(self, **kwargs):
         
@@ -210,7 +215,7 @@ class MyEnv(Env):
             rc = -1
         else:
             rc = 0
-            
-        r = w_v * rv + w_i * ri + w_c * rc
+
+        r = w_v * rv + w_i * ri + w_c * rc  # + ra * w_a
 
         return r

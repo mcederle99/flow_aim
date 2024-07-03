@@ -213,15 +213,15 @@ def compute_edges(env, state):
     return edges, edges_type
 
 
-def compute_rp(graph, reward):
+def compute_rp(graph, reward, crash=False):
     num_edges = graph.edge_index.shape[1]
-    if num_edges == 0:
+    if num_edges == 0 or crash:
         return reward
     else:
         d = torch.sum(graph.dist, dim=0).item()
         assert graph.dist.shape[0] == num_edges
         rp = -d / num_edges
-        w_p = 0.2
+        w_p = 0.05
         reward += w_p * rp
 
         return reward
@@ -262,43 +262,37 @@ def from_networkx_multigraph(g):
 
 def eval_policy(aim, env, eval_episodes=10):
 
-    avg_reward = 0.0
+    avg_reward = 0.
     num_crashes = 0
+    not_completed = 0
     for _ in range(eval_episodes):
         state = env.reset()
         while state.x is None:
             state, _, _, _ = env.step([])
         done = False
-        ep_steps = 0
-        veh_num = 4
         while not done:
-            ep_steps += 1
-
-            if state.x is None:
-                state, _, done, _ = env.step([])
-            else:
-                actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type)
-                state, reward, done, _ = env.step(rl_actions=actions)
-            if env.k.simulation.check_collision():
+            actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type, evaluate=True)
+            state, reward, done, _ = env.step(rl_actions=actions)
+            crash = env.k.simulation.check_collision()
+            if crash:
                 num_crashes += 1
+            elif done:
+                not_completed += 1
 
-            if state.x is None:
-                env.k.vehicle.add("rl_{}".format(veh_num), "rl", "b_c", 0.0, 0, 0.0)
-                env.k.vehicle.add("rl_{}".format(veh_num + 1), "rl", "t_c", 0.0, 0, 0.0)
-                env.k.vehicle.add("rl_{}".format(veh_num + 2), "rl", "l_c", 0.0, 0, 0.0)
-                env.k.vehicle.add("rl_{}".format(veh_num + 3), "rl", "r_c", 0.0, 0, 0.0)
-                veh_num += 4
-
+            while state.x is None and not done:
+                state, _, done, _ = env.step([])
             # else:
-                # reward = compute_rp(state, reward)
+            #     if not crash:
+            #         reward = compute_rp(state, reward)
             avg_reward += reward
 
     avg_reward /= eval_episodes
 
     print("---------------------------------------")
-    print(f"Evaluation over {eval_episodes} episodes: {avg_reward:.3f}. Number of crashes: {num_crashes}")
+    print(f"Evaluation over {eval_episodes} episodes: {avg_reward:.3f}. Number of crashes: {num_crashes}. Not"
+          f" completed episodes: {not_completed}")
     # print("---------------------------------------")
-    return avg_reward, num_crashes
+    return avg_reward, num_crashes, not_completed
 
 
 def get_inflows(rate=100):
