@@ -59,7 +59,7 @@ parser.add_argument("--save_model", action="store_true")        # Save model and
 parser.add_argument("--load_model", default="")                 # Model load file name, "" doesn't load, "default" uses file_name
 args = parser.parse_args()
 
-file_name = f"aim_{args.seed}_manualflow"
+file_name = f"aim_{args.seed}_manualflow_fixvel"
 print("---------------------------------------")
 print(f"Seed: {args.seed}")
 print("---------------------------------------")
@@ -85,6 +85,7 @@ memory = ReplayBuffer()
 if args.load_model != "":
     policy_file = file_name if args.load_model == "default" else args.load_model
     aim.load(f"./models/{policy_file}")
+    # file_name = f"aim_{args.seed}_manualflow_fixvel_flow100"
     _, _ = eval_policy(aim, env, eval_episodes=10)
     env.terminate()
     raise KeyboardInterrupt
@@ -134,6 +135,7 @@ for t in range(int(args.max_timesteps)):
         aim.train(memory, args.batch_size)
 
     if state.x is None:
+        # we may need to put "best" instead of 0 as starting lane (aquarium)
         env.k.vehicle.add("rl_{}".format(veh_num), "rl", "b_c", 0.0, 0, 0.0)
         env.k.vehicle.add("rl_{}".format(veh_num + 1), "rl", "t_c", 0.0, 0, 0.0)
         env.k.vehicle.add("rl_{}".format(veh_num + 2), "rl", "l_c", 0.0, 0, 0.0)
@@ -151,7 +153,7 @@ for t in range(int(args.max_timesteps)):
             print("---------------------------------------")
             evaluations.append(ev)
             np.save(f"./results/{file_name}", evaluations)
-            if evaluations[-1] > max_evaluations and num_crashes == 0:
+            if evaluations[-1] > max_evaluations and num_crashes <= 1:
                 if args.save_model:
                     aim.save(f"./models/{file_name}")
                 max_evaluations = evaluations[-1]

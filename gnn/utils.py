@@ -283,6 +283,7 @@ def eval_policy(aim, env, eval_episodes=10):
                 num_crashes += 1
 
             if state.x is None:
+                # we may need to put "best" instead of 0 as starting lane (aquarium)
                 env.k.vehicle.add("rl_{}".format(veh_num), "rl", "b_c", 0.0, 0, 0.0)
                 env.k.vehicle.add("rl_{}".format(veh_num + 1), "rl", "t_c", 0.0, 0, 0.0)
                 env.k.vehicle.add("rl_{}".format(veh_num + 2), "rl", "l_c", 0.0, 0, 0.0)
@@ -298,6 +299,7 @@ def eval_policy(aim, env, eval_episodes=10):
     print("---------------------------------------")
     print(f"Evaluation over {eval_episodes} episodes: {avg_reward:.3f}. Number of crashes: {num_crashes}")
     # print("---------------------------------------")
+    # print(veh_num)
     return avg_reward, num_crashes
 
 

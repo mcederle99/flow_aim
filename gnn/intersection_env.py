@@ -150,9 +150,9 @@ class MyEnv(Env):
         return state
                                 
     def compute_reward(self, rl_actions, state=None, **kwargs):
-        w_v = 0.3
+        w_v = 0.3  # in the simulation without idle w_v = 1
         # w_a = 0.01
-        w_i = 0.5
+        w_i = 0.5  # in the simulation without idle w_i = 0
         w_c = 5
         
         # the get_ids() method is used to get the names of all vehicles in the network
@@ -169,15 +169,15 @@ class MyEnv(Env):
         max_vel = 0
         for q in ids:
             vel = self.k.vehicle.get_speed(q)
-            if routes_dict[self.k.vehicle.get_route(q)] in (0, 3, 6, 9):
-                vel = vel / 13.0
-            elif routes_dict[self.k.vehicle.get_route(q)] in (1, 4, 7, 10):
-                vel = vel / 17.0
-            else:
-                vel = vel / 14.0
-            speeds += vel
             if vel > max_vel:
                 max_vel = vel
+            if routes_dict[self.k.vehicle.get_route(q)] in (0, 3, 6, 9):
+                vel = vel / 33.2  # before 13.0
+            elif routes_dict[self.k.vehicle.get_route(q)] in (1, 4, 7, 10):
+                vel = vel / 34.2  # before 17.0
+            else:
+                vel = vel / 34.2  # before 14.0
+            speeds += vel
 
         mean_speed = speeds / len(ids) if not_empty else 0.0
 

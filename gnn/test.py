@@ -12,9 +12,9 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 vehicles = VehicleParams()
 vehicles.add(veh_id="rl",
-             acceleration_controller=(IDMController, {}),
+             acceleration_controller=(RLController, {}),
              routing_controller=(ContinuousRouter, {}),
-             num_vehicles=0,
+             num_vehicles=1,
              color='green')
 inflow = InFlows()
 inflow.add(veh_type="rl",
@@ -45,7 +45,7 @@ sim_params = SumoParams(sim_step=0.1, render=True, seed=100)
 initial_config = InitialConfig()
 env_params = EnvParams(additional_params=ADDITIONAL_ENV_PARAMS)
 additional_net_params = ADDITIONAL_NET_PARAMS.copy()
-net_params = NetParams(additional_params=additional_net_params, inflows=inflow)
+net_params = NetParams(additional_params=additional_net_params)
 
 flow_params = dict(
     exp_tag='test_network',
@@ -79,8 +79,9 @@ for i in range(10):
     for j in range(num_steps):
 
         # actions = aim.select_action(state.x, state.edge_index)
-        actions = []
+        actions = [5]
         state_, reward, done, _ = env.step(rl_actions=actions)
+        print(env.k.vehicle.get_speed("rl_0"))
         input("")
         # reward = compute_rp(state, reward)
 
