@@ -264,6 +264,7 @@ def eval_policy(aim, env, eval_episodes=10):
 
     avg_reward = 0.0
     num_crashes = 0
+    # tot_veh_num = 0
     for _ in range(eval_episodes):
         state = env.reset()
         while state.x is None:
@@ -282,24 +283,26 @@ def eval_policy(aim, env, eval_episodes=10):
             if env.k.simulation.check_collision():
                 num_crashes += 1
 
-            if state.x is None:
+            # if state.x is None:
+            if ep_steps % 150 == 0:
                 # we may need to put "best" instead of 0 as starting lane (aquarium)
-                env.k.vehicle.add("rl_{}".format(veh_num), "rl", "b_c", 0.0, 0, 0.0)
-                env.k.vehicle.add("rl_{}".format(veh_num + 1), "rl", "t_c", 0.0, 0, 0.0)
-                env.k.vehicle.add("rl_{}".format(veh_num + 2), "rl", "l_c", 0.0, 0, 0.0)
-                env.k.vehicle.add("rl_{}".format(veh_num + 3), "rl", "r_c", 0.0, 0, 0.0)
+                env.k.vehicle.add("rl_{}".format(veh_num), "rl", "b_c", 0.0, "best", 0.0)
+                env.k.vehicle.add("rl_{}".format(veh_num + 1), "rl", "t_c", 0.0, "best", 0.0)
+                env.k.vehicle.add("rl_{}".format(veh_num + 2), "rl", "l_c", 0.0, "best", 0.0)
+                env.k.vehicle.add("rl_{}".format(veh_num + 3), "rl", "r_c", 0.0, "best", 0.0)
                 veh_num += 4
 
             # else:
                 # reward = compute_rp(state, reward)
             avg_reward += reward
 
+        # tot_veh_num += veh_num
     avg_reward /= eval_episodes
 
     print("---------------------------------------")
     print(f"Evaluation over {eval_episodes} episodes: {avg_reward:.3f}. Number of crashes: {num_crashes}")
     # print("---------------------------------------")
-    # print(veh_num)
+    # print(tot_veh_num)
     return avg_reward, num_crashes
 
 

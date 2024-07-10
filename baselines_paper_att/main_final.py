@@ -1,7 +1,7 @@
 from flow.core.params import TrafficLightParams
 from flow.envs.ring.accel import AccelEnv
 from flow.core.params import InitialConfig
-from flow.core.params import VehicleParams
+from flow.core.params import VehicleParams, SumoCarFollowingParams
 from flow.controllers.routing_controllers import ContinuousRouter
 from flow.controllers.car_following_models import IDMController
 from flow.core.params import NetParams
@@ -11,7 +11,7 @@ import importlib
 networks = []
 class_name = 'IntersectionNetwork'
 for i in range(81):
-    scenario_module = importlib.import_module('baselines_paper.scenarios.scenario' + str(i))
+    scenario_module = importlib.import_module('baselines_paper_att.scenarios.scenario' + str(i))
     networks.append(getattr(scenario_module, class_name))
 from flow.envs.ring.accel import ADDITIONAL_ENV_PARAMS
 from flow.core.params import EnvParams
@@ -32,6 +32,7 @@ vehicles.add("human",
              acceleration_controller=(IDMController, {}),
              routing_controller=(ContinuousRouter, {}),
              num_vehicles=0,
+             car_following_params=SumoCarFollowingParams(speed_mode='right_of_way'),
              )
 
 inflow = InFlows()
@@ -64,7 +65,7 @@ inflow.add(veh_type="human",
            #end=5.0
           )
 # net_params = NetParams(inflows=inflow, template='map.net.xml')
-net_params = NetParams(inflows=inflow, template='map_actuated.net.xml')
+net_params = NetParams(inflows=inflow, template='map.net.xml')
 
 fp_list = []
 
@@ -138,8 +139,8 @@ for i in range(num_runs):
 
     env.terminate()
 
-np.save(f'travel_time_atl2_{args.seed}.npy', travel_time)
-np.save(f'waiting_time_atl2_{args.seed}.npy', waiting_time)
-np.save(f'avg_speed_atl2_{args.seed}.npy', avg_speed)
+np.save(f'travel_time_fttlW_{args.seed}.npy', travel_time)
+np.save(f'waiting_time_fttlW_{args.seed}.npy', waiting_time)
+np.save(f'avg_speed_fttlW_{args.seed}.npy', avg_speed)
 
 print(f'Finished seed {args.seed}')
