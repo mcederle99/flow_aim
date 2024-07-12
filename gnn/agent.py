@@ -2,7 +2,7 @@ import copy
 import torch
 import torch.nn.functional as f
 from torch_geometric.loader import DataLoader
-from nnetworks import Actor, Critic
+from nnetworks_v1 import Actor, Critic
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 

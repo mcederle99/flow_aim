@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-res = np.load('aim_0_manualflow_noidle_fixrv.npy')
+res = np.load('aim_0_manualflow_fixvel_flow100.npy')
 
 
 def calculate_ema(values, spann):

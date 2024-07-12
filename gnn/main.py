@@ -59,7 +59,7 @@ parser.add_argument("--save_model", action="store_true")        # Save model and
 parser.add_argument("--load_model", default="")                 # Model load file name, "" doesn't load, "default" uses file_name
 args = parser.parse_args()
 
-file_name = f"aim_{args.seed}_manualflow_fixvel"
+file_name = f"aim_{args.seed}_manualflow_fixvel_flow100"
 print("---------------------------------------")
 print(f"Seed: {args.seed}")
 print("---------------------------------------")
