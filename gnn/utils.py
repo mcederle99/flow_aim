@@ -334,3 +334,33 @@ def get_inflows(rate=100):
               )
 
     return inflow
+
+
+def eval_policy_inflows(aim, env, eval_episodes=10):
+
+    avg_reward = 0.0
+    num_crashes = 0
+    for _ in range(eval_episodes):
+        state = env.reset()
+        while state.x is None:
+            state, _, _, _ = env.step([])
+        done = False
+        ep_steps = 0
+        while not done:
+            ep_steps += 1
+
+            if state.x is None:
+                state, _, done, _ = env.step([])
+            else:
+                actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type)
+                state, reward, done, _ = env.step(rl_actions=actions)
+            if env.k.simulation.check_collision():
+                num_crashes += 1
+
+            avg_reward += reward
+
+    avg_reward /= eval_episodes
+
+    print("---------------------------------------")
+    print(f"Evaluation over {eval_episodes} episodes: {avg_reward:.3f}. Number of crashes: {num_crashes}")
+    return avg_reward, num_crashes
