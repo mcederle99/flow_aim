@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-res = np.load('aim_0_manualflow_fixvel_flow100.npy')
+res = np.load('aim_0_flowprob_01.npy')
 
 
 def calculate_ema(values, spann):
@@ -18,3 +18,4 @@ span = 20
 ema_values = calculate_ema(res, span)
 plt.plot(ema_values)
 plt.show()
+print(np.max(res))
