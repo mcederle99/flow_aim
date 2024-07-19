@@ -136,8 +136,8 @@ for t in range(int(args.max_timesteps)):
         actions = (actions + noise).clip(-max_action, max_action)
 
     state_, reward, done, _ = env.step(rl_actions=actions)
-    while state_.x is None and not done:
-        state_, _, done, _ = env.step([])
+    #while state_.x is None and not done:
+    #    state_, _, done, _ = env.step([])
 
     done_bool = float(done) if ep_steps < num_steps else 0.0
 
@@ -155,16 +155,17 @@ for t in range(int(args.max_timesteps)):
 
     # if state.x is None:
     if args.inflows == "no":
-        if ep_steps % 150 == 0:
+        #if ep_steps % 150 == 0:
+        if state.x is None:
             # we may need to put "best" instead of 0 as starting lane (aquarium)
             env.k.vehicle.add("rl_{}".format(veh_num), "rl", "b_c", 0.0, "best", 0.0)
             env.k.vehicle.add("rl_{}".format(veh_num + 1), "rl", "t_c", 0.0, "best", 0.0)
             env.k.vehicle.add("rl_{}".format(veh_num + 2), "rl", "l_c", 0.0, "best", 0.0)
             env.k.vehicle.add("rl_{}".format(veh_num + 3), "rl", "r_c", 0.0, "best", 0.0)
             veh_num += 4
-            # state, _, _, _ = env.step([])
-    # while state.x is None and not done:
-    #     state, _, done, _ = env.step([])
+            state, _, _, _ = env.step([])
+    while state.x is None and not done:
+         state, _, done, _ = env.step([])
     if done:
         print(f"Total T: {t + 1} Episode Num: {ep_number + 1} Episode T: {ep_steps} Reward: {ep_return:.3f}")
         # Evaluate episode

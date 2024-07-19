@@ -188,7 +188,7 @@ class MyEnv(Env):
             speeds += vel
 
             if self.k.vehicle.get_route(q)[0] in ('t_c', 'b_c'):
-                re += -0.1
+                re += -0.05
 
         mean_speed = speeds / len(ids) if not_empty else 0.0
 

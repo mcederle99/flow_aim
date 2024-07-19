@@ -283,14 +283,14 @@ def eval_policy(aim, env, eval_episodes=10):
             if env.k.simulation.check_collision():
                 num_crashes += 1
 
-            # if state.x is None:
-            if ep_steps % 150 == 0:
+            if state.x is None: #if ep_steps % 150 == 0:
                 # we may need to put "best" instead of 0 as starting lane (aquarium)
                 env.k.vehicle.add("rl_{}".format(veh_num), "rl", "b_c", 0.0, "best", 0.0)
                 env.k.vehicle.add("rl_{}".format(veh_num + 1), "rl", "t_c", 0.0, "best", 0.0)
                 env.k.vehicle.add("rl_{}".format(veh_num + 2), "rl", "l_c", 0.0, "best", 0.0)
                 env.k.vehicle.add("rl_{}".format(veh_num + 3), "rl", "r_c", 0.0, "best", 0.0)
                 veh_num += 4
+                state, _, _, _ = env.step([])
 
             # else:
                 # reward = compute_rp(state, reward)
