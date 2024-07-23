@@ -128,9 +128,9 @@ class MyEnv(Env):
                 route = routes_dict[self.k.vehicle.get_route(q)]
 
             if self.k.vehicle.get_route(q)[0] in ('t_c', 'b_c'):
-                emission = 0
-            else:
                 emission = 1
+            else:
+                emission = 0
 
             state[q] = (pos, vel, acc, coord, angle, edge, route, emission)
 
