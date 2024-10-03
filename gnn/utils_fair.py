@@ -264,9 +264,9 @@ def eval_policy(aim, env, eval_episodes=10):
 
     avg_reward = 0.0
     num_crashes = 0
-    # tot_veh_num = 0
-    # fuel_vehs_time = 0
-    # elec_vehs_time = 0
+    tot_veh_num = 0
+    fuel_vehs_time = 0
+    elec_vehs_time = 0
     for _ in range(eval_episodes):
         state = env.reset()
         while state.x is None:
@@ -280,11 +280,11 @@ def eval_policy(aim, env, eval_episodes=10):
             if state.x is None:
                 state, _, done, _ = env.step([])
             else:
-                # for idx in env.k.vehicle.get_ids():
-                #     if env.k.vehicle.get_route(idx)[0] in ('t_c', 'b_c'):
-                #         fuel_vehs_time += 0.1
-                #     else:
-                #         elec_vehs_time += 0.1
+                for idx in env.k.vehicle.get_ids():
+                    if env.k.vehicle.get_route(idx)[0] in ('t_c', 'b_c'):
+                        fuel_vehs_time += 0.1
+                    else:
+                        elec_vehs_time += 0.1
                 actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type)
                 state, reward, done, _ = env.step(rl_actions=actions)
             if env.k.simulation.check_collision():
@@ -303,14 +303,14 @@ def eval_policy(aim, env, eval_episodes=10):
                 # reward = compute_rp(state, reward)
             avg_reward += reward
 
-        # tot_veh_num += veh_num
+        tot_veh_num += veh_num
     avg_reward /= eval_episodes
-    # tot_veh_num = tot_veh_num / 2
+    tot_veh_num = tot_veh_num / 2
 
     print("---------------------------------------")
     print(f"Evaluation over {eval_episodes} episodes: {avg_reward:.3f}. Number of crashes: {num_crashes}")
-    # print("---------------------------------------")
-    # print(f"Average fuel vehicles time: {fuel_vehs_time / tot_veh_num}, Average electric vehicles time: {elec_vehs_time / tot_veh_num}")
+    print("---------------------------------------")
+    print(f"Average fuel vehicles time: {fuel_vehs_time / tot_veh_num}, Average electric vehicles time: {elec_vehs_time / tot_veh_num}")
     return avg_reward, num_crashes
 
 
