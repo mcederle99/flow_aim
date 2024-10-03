@@ -1,7 +1,7 @@
 name: flow
 
 dependencies:
-    - python==3.7.3
+    - python==3.8.11
     - pip:
         - scipy==1.1.0
         - lxml==4.4.1
@@ -9,7 +9,6 @@ dependencies:
         - path.py
         - python-dateutil==2.7.3
         - pip>=18.0
-        - tensorflow==1.15.2
         - setuptools==41.0.0
         - plotly==2.4.0
         - gym==0.14.0
