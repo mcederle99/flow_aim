@@ -14,6 +14,7 @@ ADDITIONAL_ENV_PARAMS = {
 }
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+
 class MyEnv(Env):
 
     @property
@@ -45,7 +46,7 @@ class MyEnv(Env):
     def _apply_rl_actions(self, rl_actions):
         # the names of all autonomous (RL) vehicles in the network
         rl_ids = self.k.vehicle.get_rl_ids()
-        ids = self.k.vehicle.get_ids()
+        # ids = self.k.vehicle.get_ids()
         # assert rl_ids == ids
         # use the base environment method to convert actions into accelerations for the rl vehicles
         self.k.vehicle.apply_acceleration(rl_ids, rl_actions)
@@ -127,6 +128,7 @@ class MyEnv(Env):
             else:
                 route = routes_dict[self.k.vehicle.get_route(q)]
 
+            # EMISSIONS
             if self.k.vehicle.get_route(q)[0] in ('t_c', 'b_c'):
                 emission = 1
             else:

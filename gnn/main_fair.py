@@ -1,13 +1,13 @@
 import numpy as np
 import torch
-from agent import TD3
+from agent_fair import TD3
 from memory import ReplayBuffer
 from flow.controllers import ContinuousRouter, RLController
 from flow.core.params import SumoParams, EnvParams, InitialConfig, NetParams, VehicleParams
 from flow.utils.registry import make_create_env
 from intersection_network_fair import IntersectionNetwork, ADDITIONAL_NET_PARAMS
 from intersection_env_fair import MyEnv, ADDITIONAL_ENV_PARAMS
-from utils_fair import compute_rp, eval_policy, get_inflows, eval_policy_inflows
+from utils_fair import eval_policy, get_inflows, eval_policy_inflows
 import argparse
 import os
 import warnings
@@ -15,7 +15,7 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--seed", default=0, type=int)              # Sets PyTorch and Numpy seeds
-parser.add_argument("--start_timesteps", default=25e3, type=int)# Time steps initial random policy is used
+parser.add_argument("--start_timesteps", default=25e3, type=int)  # Time steps initial random policy is used
 parser.add_argument("--eval_freq", default=5e3, type=int)       # How often (time steps) we evaluate
 parser.add_argument("--max_timesteps", default=1e6, type=int)   # Max time steps to run environment
 parser.add_argument("--expl_noise", default=0.1, type=float)    # Std of Gaussian exploration noise
@@ -26,7 +26,7 @@ parser.add_argument("--policy_noise", default=0.2)              # Noise added to
 parser.add_argument("--noise_clip", default=0.5)                # Range to clip target policy noise
 parser.add_argument("--policy_freq", default=2, type=int)       # Frequency of delayed policy updates
 parser.add_argument("--save_model", action="store_true")        # Save model and optimizer parameters
-parser.add_argument("--load_model", default="")                 # Model load file name, "" doesn't load, "default" uses file_name
+parser.add_argument("--load_model", default="")  # Model load file name, "" doesn't load, "default" uses file_name
 parser.add_argument("--inflows", default="no")
 parser.add_argument("--file_name", default="")
 args = parser.parse_args()
@@ -40,10 +40,10 @@ if args.inflows == "yes":
                  color='green')
 else:
     vehicles.add(veh_id="rl",
-    acceleration_controller=(RLController, {}),
-    routing_controller=(ContinuousRouter, {}),
-    num_vehicles=4,
-    color='green')
+                 acceleration_controller=(RLController, {}),
+                 routing_controller=(ContinuousRouter, {}),
+                 num_vehicles=4,
+                 color='green')
 sim_params = SumoParams(sim_step=0.1, render=False)
 initial_config = InitialConfig()
 env_params = EnvParams(additional_params=ADDITIONAL_ENV_PARAMS)
@@ -96,7 +96,7 @@ memory = ReplayBuffer()
 if args.load_model != "":
     policy_file = file_name if args.load_model == "default" else args.load_model
     aim.load(f"./models/{policy_file}")
-    np.random.seed(np.random.randint(0, 1e5))
+    np.random.seed(np.random.randint(0, int(1e5)))
     if args.inflows == "yes":
         _, _ = eval_policy_inflows(aim, env, eval_episodes=10)
     else:
@@ -136,7 +136,7 @@ for t in range(int(args.max_timesteps)):
         actions = (actions + noise).clip(-max_action, max_action)
 
     state_, reward, done, _ = env.step(rl_actions=actions)
-    #while state_.x is None and not done:
+    # while state_.x is None and not done:
     #    state_, _, done, _ = env.step([])
 
     done_bool = float(done) if ep_steps < num_steps else 0.0
@@ -155,7 +155,7 @@ for t in range(int(args.max_timesteps)):
 
     # if state.x is None:
     if args.inflows == "no":
-        #if ep_steps % 150 == 0:
+        # if ep_steps % 150 == 0:
         if state.x is None:
             # we may need to put "best" instead of 0 as starting lane (aquarium)
             env.k.vehicle.add("rl_{}".format(veh_num), "rl", "b_c", 0.0, "best", 0.0)
@@ -165,7 +165,7 @@ for t in range(int(args.max_timesteps)):
             veh_num += 4
             state, _, _, _ = env.step([])
     while state.x is None and not done:
-         state, _, done, _ = env.step([])
+        state, _, done, _ = env.step([])
     if done:
         print(f"Total T: {t + 1} Episode Num: {ep_number + 1} Episode T: {ep_steps} Reward: {ep_return:.3f}")
         # Evaluate episode

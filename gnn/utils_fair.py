@@ -136,8 +136,24 @@ def compute_edges(env, state):
                     py = coord_i[1] - coord_j[1]
                     px = coord_i[0] - coord_j[1]
                     chi_ij = np.arctan(py/px) - state[j][4]
-                    
-                    edges_type[(i, j)] = 'crossing'
+
+                    if env.k.vehicle.get_route(i)[0] in ('t_c', 'b_c'):
+                        emissions_i = 'fuel'
+                    else:
+                        emissions_i = 'electric'
+                    if env.k.vehicle.get_route(j)[0] in ('t_c', 'b_c'):
+                        emissions_j = 'fuel'
+                    else:
+                        emissions_j = 'electric'
+
+                    if emissions_i == emissions_j == 'fuel':
+                        edges_type[(i, j)] = 'crossing_ff'
+                    if emissions_i == emissions_j == 'electric':
+                        edges_type[(i, j)] = 'crossing_ee'
+                    if emissions_i != emissions_j and emissions_i == 'fuel':
+                        edges_type[(i, j)] = 'crossing_fe'
+                    if emissions_i != emissions_j and emissions_i == 'electric':
+                        edges_type[(i, j)] = 'crossing_ef'
                     
                     edges[(i, j)] = (d_ij, chi_ij)
                 
@@ -159,8 +175,24 @@ def compute_edges(env, state):
                         py = coord_i[1] - coord_j[1]
                         px = coord_i[0] - coord_j[1]
                         chi_ij = np.arctan(py/px) - state[j][4]
-                        
-                        edges_type[(i, j)] = 'same_lane'
+
+                        if env.k.vehicle.get_route(i)[0] in ('t_c', 'b_c'):
+                            emissions_i = 'fuel'
+                        else:
+                            emissions_i = 'electric'
+                        if env.k.vehicle.get_route(j)[0] in ('t_c', 'b_c'):
+                            emissions_j = 'fuel'
+                        else:
+                            emissions_j = 'electric'
+
+                        if emissions_i == emissions_j == 'fuel':
+                            edges_type[(i, j)] = 'same_lane_ff'
+                        if emissions_i == emissions_j == 'electric':
+                            edges_type[(i, j)] = 'same_lane_ee'
+                        if emissions_i != emissions_j and emissions_i == 'fuel':
+                            edges_type[(i, j)] = 'same_lane_fe'
+                        if emissions_i != emissions_j and emissions_i == 'electric':
+                            edges_type[(i, j)] = 'same_lane_ef'
                         
                         edges[(i, j)] = (d_ij, chi_ij)
             
@@ -182,8 +214,24 @@ def compute_edges(env, state):
                     py = coord_i[1] - coord_j[1]
                     px = coord_i[0] - coord_j[1]
                     chi_ij = np.arctan(py/px) - state[j][4]
-                    
-                    edges_type[(i, j)] = 'same_lane'
+
+                    if env.k.vehicle.get_route(i)[0] in ('t_c', 'b_c'):
+                        emissions_i = 'fuel'
+                    else:
+                        emissions_i = 'electric'
+                    if env.k.vehicle.get_route(j)[0] in ('t_c', 'b_c'):
+                        emissions_j = 'fuel'
+                    else:
+                        emissions_j = 'electric'
+
+                    if emissions_i == emissions_j == 'fuel':
+                        edges_type[(i, j)] = 'same_lane_ff'
+                    if emissions_i == emissions_j == 'electric':
+                        edges_type[(i, j)] = 'same_lane_ee'
+                    if emissions_i != emissions_j and emissions_i == 'fuel':
+                        edges_type[(i, j)] = 'same_lane_fe'
+                    if emissions_i != emissions_j and emissions_i == 'electric':
+                        edges_type[(i, j)] = 'same_lane_ef'
                     
                     edges[(i, j)] = (d_ij, chi_ij)
             
@@ -206,7 +254,23 @@ def compute_edges(env, state):
                     px = coord_i[0] - coord_j[1]
                     chi_ij = np.arctan(py/px) - state[j][4]
 
-                    edges_type[(i, j)] = 'same_lane'
+                    if env.k.vehicle.get_route(i)[0] in ('t_c', 'b_c'):
+                        emissions_i = 'fuel'
+                    else:
+                        emissions_i = 'electric'
+                    if env.k.vehicle.get_route(j)[0] in ('t_c', 'b_c'):
+                        emissions_j = 'fuel'
+                    else:
+                        emissions_j = 'electric'
+
+                    if emissions_i == emissions_j == 'fuel':
+                        edges_type[(i, j)] = 'same_lane_ff'
+                    if emissions_i == emissions_j == 'electric':
+                        edges_type[(i, j)] = 'same_lane_ee'
+                    if emissions_i != emissions_j and emissions_i == 'fuel':
+                        edges_type[(i, j)] = 'same_lane_fe'
+                    if emissions_i != emissions_j and emissions_i == 'electric':
+                        edges_type[(i, j)] = 'same_lane_ef'
                     
                     edges[(i, j)] = (d_ij, chi_ij)
                     
@@ -238,6 +302,8 @@ def from_networkx_multigraph(g):
 
     # Extract edge types
     edge_types = []
+    all_edge_types = ['crossing_ff', 'crossing_ee', 'crossing_fe', 'crossing_ef',
+                      'same_lane_ff', 'same_lane_ee', 'same_lane_fe', 'same_lane_ef']
     edge_attrs = ['dist', 'bearing']
     edge_attr_list = {attr: [] for attr in edge_attrs}
     for u, v, k, attr in g.edges(data=True, keys=True):
@@ -246,7 +312,7 @@ def from_networkx_multigraph(g):
             edge_attr_list[edge_attr].append(attr[edge_attr])
 
     # Map edge types to integers
-    edge_type_mapping = {etype: i for i, etype in enumerate(set(edge_types))}
+    edge_type_mapping = {etype: i for i, etype in enumerate(all_edge_types)}
     edge_type_indices = torch.tensor([edge_type_mapping[etype] for etype in edge_types],
                                      dtype=torch.long, device=device)
 
@@ -290,7 +356,7 @@ def eval_policy(aim, env, eval_episodes=10):
             if env.k.simulation.check_collision():
                 num_crashes += 1
 
-            if state.x is None: #if ep_steps % 150 == 0:
+            if state.x is None:  # if ep_steps % 150 == 0:
                 # we may need to put "best" instead of 0 as starting lane (aquarium)
                 env.k.vehicle.add("rl_{}".format(veh_num), "rl", "b_c", 0.0, "best", 0.0)
                 env.k.vehicle.add("rl_{}".format(veh_num + 1), "rl", "t_c", 0.0, "best", 0.0)
@@ -310,7 +376,8 @@ def eval_policy(aim, env, eval_episodes=10):
     print("---------------------------------------")
     print(f"Evaluation over {eval_episodes} episodes: {avg_reward:.3f}. Number of crashes: {num_crashes}")
     print("---------------------------------------")
-    print(f"Average fuel vehicles time: {fuel_vehs_time / tot_veh_num}, Average electric vehicles time: {elec_vehs_time / tot_veh_num}")
+    print(f"Average fuel vehicles time: {fuel_vehs_time / tot_veh_num},"
+          f"Average electric vehicles time: {elec_vehs_time / tot_veh_num}")
     return avg_reward, num_crashes
 
 
@@ -320,26 +387,22 @@ def get_inflows(rate=100):
                edge="b_c",
                # vehs_per_hour=rate,
                probability=rate,
-               depart_speed=0,
-              )
+               depart_speed=0,)
     inflow.add(veh_type="rl",
                edge="t_c",
                # vehs_per_hour=rate,
                probability=rate,
-               depart_speed=0,
-              )
+               depart_speed=0,)
     inflow.add(veh_type="rl",
                edge="l_c",
                # vehs_per_hour=rate,
                probability=rate,
-               depart_speed=0,
-              )
+               depart_speed=0,)
     inflow.add(veh_type="rl",
                edge="r_c",
                # vehs_per_hour=rate,
                probability=rate,
-               depart_speed=0,
-              )
+               depart_speed=0,)
 
     return inflow
 

@@ -3,6 +3,7 @@ import torch
 from torch_geometric.data import Data
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
+
 class PairData(Data):
     def __inc__(self, key, value, *args, **kwargs):
         if key == 'edge_index_s':
