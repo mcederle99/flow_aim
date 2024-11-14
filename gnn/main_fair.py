@@ -13,6 +13,9 @@ import os
 import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
+# r_e = -0.1    manualflow_fair
+# r_e = -0.05   manualflow_fair2
+
 parser = argparse.ArgumentParser()
 parser.add_argument("--seed", default=0, type=int)              # Sets PyTorch and Numpy seeds
 parser.add_argument("--start_timesteps", default=25e3, type=int)  # Time steps initial random policy is used
