@@ -123,6 +123,9 @@ veh_num = 4
 state = env.reset()
 while state.x is None:
     state, _, _, _ = env.step([])
+ids = env.k.vehicle.get_ids()
+elec_vehs = np.random.choice(ids, 2, replace=False)
+env.k.vehicle.set_emission_class(elec_vehs)
 
 for t in range(int(args.max_timesteps)):
 
@@ -164,6 +167,9 @@ for t in range(int(args.max_timesteps)):
             env.k.vehicle.add("rl_{}".format(veh_num + 3), "rl", "r_c", 0.0, "best", 0.0)
             veh_num += 4
             state, _, _, _ = env.step([])
+            ids = env.k.vehicle.get_ids()
+            elec_vehs = np.random.choice(ids, 2, replace=False)
+            env.k.vehicle.set_emission_class(elec_vehs)
     while state.x is None and not done:
         state, _, done, _ = env.step([])
     if done:
@@ -195,6 +201,9 @@ for t in range(int(args.max_timesteps)):
         state = env.reset()
         while state.x is None:
             state, _, _, _ = env.step([])
+        ids = env.k.vehicle.get_ids()
+        elec_vehs = np.random.choice(ids, 2, replace=False)
+        env.k.vehicle.set_emission_class(elec_vehs)
         ep_steps = 0
         ep_return = 0
         ep_number += 1

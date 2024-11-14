@@ -41,7 +41,7 @@ inflow.add(veh_type="rl",
            # probability=0.2,
            depart_speed="random",
           )
-sim_params = SumoParams(sim_step=0.1, render=True, seed=100)
+sim_params = SumoParams(sim_step=0.1, render=False, seed=100)
 initial_config = InitialConfig()
 env_params = EnvParams(additional_params=ADDITIONAL_ENV_PARAMS)
 additional_net_params = ADDITIONAL_NET_PARAMS.copy()
@@ -81,8 +81,21 @@ for i in range(10):
         # actions = aim.select_action(state.x, state.edge_index)
         actions = [5]
         state_, reward, done, _ = env.step(rl_actions=actions)
-        print(env.k.vehicle.get_speed("rl_0"))
-        input("")
+        idx = env.k.vehicle.get_ids()[0]
+        print(env.k.vehicle.get_emission_class(idx))
+        print(env.k.vehicle.kernel_api.vehicle.getCO2Emission(idx))
+        print(env.k.vehicle.get_emission_class(idx) == "HBEFA3/PC_G_EU4")
+        print(env.k.vehicle.kernel_api.vehicle.getElectricityConsumption(idx))
+        env.k.vehicle.set_emission_class(idx)
+        print(env.k.vehicle.get_emission_class(idx))
+        print(env.k.vehicle.kernel_api.vehicle.getCO2Emission(idx))
+        print(env.k.vehicle.kernel_api.vehicle.getElectricityConsumption(idx))
+        print(env.k.vehicle.get_emission_class(idx) == "Energy/unknown")
+        ids = ['a', 'b', 'c', 'd']
+        for _ in range(10):
+            elec_vehs = np.random.choice(ids, 2, replace=False)
+            print(elec_vehs)
+        raise KeyboardInterrupt
         # reward = compute_rp(state, reward)
 
         # memory.add(state, actions, state_, reward, done)

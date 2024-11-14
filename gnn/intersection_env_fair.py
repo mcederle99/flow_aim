@@ -129,7 +129,8 @@ class MyEnv(Env):
                 route = routes_dict[self.k.vehicle.get_route(q)]
 
             # EMISSIONS
-            if self.k.vehicle.get_route(q)[0] in ('t_c', 'b_c'):
+            # if self.k.vehicle.get_route(q)[0] in ('t_c', 'b_c'):
+            if self.k.vehicle.get_emission_class(q) == "HBEFA3/PC_G_EU4":
                 emission = 1
             else:
                 emission = 0
@@ -163,6 +164,7 @@ class MyEnv(Env):
         # w_a = 0.01
         w_i = 0.5  # in the simulation without idle w_i = 0
         w_c = 5
+        w_e = 1 / 10000
         
         # the get_ids() method is used to get the names of all vehicles in the network
         ids = self.k.vehicle.get_ids()
@@ -189,8 +191,9 @@ class MyEnv(Env):
                 vel = vel / 34.2  # before 14.0
             speeds += vel
 
-            if self.k.vehicle.get_route(q)[0] in ('t_c', 'b_c'):
-                re += -0.1
+            # if self.k.vehicle.get_route(q)[0] in ('t_c', 'b_c'):
+            if self.k.vehicle.get_emission_class(q) == "HBEFA3/PC_G_EU4":
+                re += -self.k.vehicle.kernel_api.vehicle.getCO2Emission(q)
 
         mean_speed = speeds / len(ids) if not_empty else 0.0
 
@@ -224,6 +227,6 @@ class MyEnv(Env):
         else:
             rc = 0
             
-        r = w_v * rv + w_i * ri + w_c * rc + re
+        r = w_v * rv + w_i * ri + w_c * rc + w_e * re
 
         return r

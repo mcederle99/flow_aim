@@ -548,6 +548,20 @@ class TraCIVehicle(KernelVehicle):
             return [self.get_fuel_consumption(vehID, error) for vehID in veh_id]
         return self.__sumo_obs.get(veh_id, {}).get(tc.VAR_FUELCONSUMPTION, error) * ml_to_gallons
 
+    def set_emission_class(self, veh_id, error=-1001):
+        """Test"""
+        if isinstance(veh_id, (list, np.ndarray)):
+            return [self.set_emission_class(vehID, error) for vehID in veh_id]
+        # return self.__sumo_obs.get(veh_id, {}).get(0x93, error)
+        return self.kernel_api.vehicle.setEmissionClass(veh_id, "Energy/unknown")
+
+    def get_emission_class(self, veh_id, error=-1001):
+        """Test"""
+        if isinstance(veh_id, (list, np.ndarray)):
+            return [self.get_emission_class(vehID, error) for vehID in veh_id]
+        # return self.__sumo_obs.get(veh_id, {}).get(0x93, error)
+        return self.kernel_api.vehicle.getEmissionClass(veh_id)
+
     def get_previous_speed(self, veh_id, error=-1001):
         """See parent class."""
         if isinstance(veh_id, (list, np.ndarray)):
