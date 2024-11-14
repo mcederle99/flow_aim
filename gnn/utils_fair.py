@@ -137,11 +137,13 @@ def compute_edges(env, state):
                     px = coord_i[0] - coord_j[1]
                     chi_ij = np.arctan(py/px) - state[j][4]
 
-                    if env.k.vehicle.get_route(i)[0] in ('t_c', 'b_c'):
+                    # if env.k.vehicle.get_route(i)[0] in ('t_c', 'b_c'):
+                    if env.k.vehicle.get_emission_class(i) == "HBEFA3/PC_G_EU4":
                         emissions_i = 'fuel'
                     else:
                         emissions_i = 'electric'
-                    if env.k.vehicle.get_route(j)[0] in ('t_c', 'b_c'):
+                    # if env.k.vehicle.get_route(j)[0] in ('t_c', 'b_c'):
+                    if env.k.vehicle.get_emission_class(j) == "HBEFA3/PC_G_EU4":
                         emissions_j = 'fuel'
                     else:
                         emissions_j = 'electric'
@@ -176,11 +178,13 @@ def compute_edges(env, state):
                         px = coord_i[0] - coord_j[1]
                         chi_ij = np.arctan(py/px) - state[j][4]
 
-                        if env.k.vehicle.get_route(i)[0] in ('t_c', 'b_c'):
+                        # if env.k.vehicle.get_route(i)[0] in ('t_c', 'b_c'):
+                        if env.k.vehicle.get_emission_class(i) == "HBEFA3/PC_G_EU4":
                             emissions_i = 'fuel'
                         else:
                             emissions_i = 'electric'
-                        if env.k.vehicle.get_route(j)[0] in ('t_c', 'b_c'):
+                        # if env.k.vehicle.get_route(j)[0] in ('t_c', 'b_c'):
+                        if env.k.vehicle.get_emission_class(j) == "HBEFA3/PC_G_EU4":
                             emissions_j = 'fuel'
                         else:
                             emissions_j = 'electric'
@@ -215,11 +219,13 @@ def compute_edges(env, state):
                     px = coord_i[0] - coord_j[1]
                     chi_ij = np.arctan(py/px) - state[j][4]
 
-                    if env.k.vehicle.get_route(i)[0] in ('t_c', 'b_c'):
+                    # if env.k.vehicle.get_route(i)[0] in ('t_c', 'b_c'):
+                    if env.k.vehicle.get_emission_class(i) == "HBEFA3/PC_G_EU4":
                         emissions_i = 'fuel'
                     else:
                         emissions_i = 'electric'
-                    if env.k.vehicle.get_route(j)[0] in ('t_c', 'b_c'):
+                    # if env.k.vehicle.get_route(j)[0] in ('t_c', 'b_c'):
+                    if env.k.vehicle.get_emission_class(j) == "HBEFA3/PC_G_EU4":
                         emissions_j = 'fuel'
                     else:
                         emissions_j = 'electric'
@@ -254,11 +260,13 @@ def compute_edges(env, state):
                     px = coord_i[0] - coord_j[1]
                     chi_ij = np.arctan(py/px) - state[j][4]
 
-                    if env.k.vehicle.get_route(i)[0] in ('t_c', 'b_c'):
+                    # if env.k.vehicle.get_route(i)[0] in ('t_c', 'b_c'):
+                    if env.k.vehicle.get_emission_class(i) == "HBEFA3/PC_G_EU4":
                         emissions_i = 'fuel'
                     else:
                         emissions_i = 'electric'
-                    if env.k.vehicle.get_route(j)[0] in ('t_c', 'b_c'):
+                    # if env.k.vehicle.get_route(j)[0] in ('t_c', 'b_c'):
+                    if env.k.vehicle.get_emission_class(j) == "HBEFA3/PC_G_EU4":
                         emissions_j = 'fuel'
                     else:
                         emissions_j = 'electric'
@@ -337,6 +345,9 @@ def eval_policy(aim, env, eval_episodes=10):
         state = env.reset()
         while state.x is None:
             state, _, _, _ = env.step([])
+        ids = env.k.vehicle.get_ids()
+        elec_vehs = np.random.choice(ids, 2, replace=False)
+        env.k.vehicle.set_emission_class(elec_vehs)
         done = False
         ep_steps = 0
         veh_num = 4
@@ -347,7 +358,8 @@ def eval_policy(aim, env, eval_episodes=10):
                 state, _, done, _ = env.step([])
             else:
                 for idx in env.k.vehicle.get_ids():
-                    if env.k.vehicle.get_route(idx)[0] in ('t_c', 'b_c'):
+                    # if env.k.vehicle.get_route(idx)[0] in ('t_c', 'b_c'):
+                    if env.k.vehicle.get_emission_class(idx) == "HBEFA3/PC_G_EU4":
                         fuel_vehs_time += 0.1
                     else:
                         elec_vehs_time += 0.1
@@ -364,6 +376,9 @@ def eval_policy(aim, env, eval_episodes=10):
                 env.k.vehicle.add("rl_{}".format(veh_num + 3), "rl", "r_c", 0.0, "best", 0.0)
                 veh_num += 4
                 state, _, _, _ = env.step([])
+                ids = env.k.vehicle.get_ids()
+                elec_vehs = np.random.choice(ids, 2, replace=False)
+                env.k.vehicle.set_emission_class(elec_vehs)
 
             # else:
                 # reward = compute_rp(state, reward)
