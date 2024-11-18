@@ -47,7 +47,7 @@ else:
                  routing_controller=(ContinuousRouter, {}),
                  num_vehicles=4,
                  color='green')
-sim_params = SumoParams(sim_step=0.1, render=False)
+sim_params = SumoParams(sim_step=0.1, render=True)
 initial_config = InitialConfig()
 env_params = EnvParams(additional_params=ADDITIONAL_ENV_PARAMS)
 additional_net_params = ADDITIONAL_NET_PARAMS.copy()
@@ -166,18 +166,19 @@ for t in range(int(args.max_timesteps)):
     if args.inflows == "no":
         # if ep_steps % 150 == 0:
         if state.x is None:
+            done = True
             # we may need to put "best" instead of 0 as starting lane (aquarium)
-            env.k.vehicle.add("rl_{}".format(veh_num), "rl", "b_c", 0.0, "best", 0.0)
-            env.k.vehicle.add("rl_{}".format(veh_num + 1), "rl", "t_c", 0.0, "best", 0.0)
-            env.k.vehicle.add("rl_{}".format(veh_num + 2), "rl", "l_c", 0.0, "best", 0.0)
-            env.k.vehicle.add("rl_{}".format(veh_num + 3), "rl", "r_c", 0.0, "best", 0.0)
-            veh_num += 4
-            state, _, _, _ = env.step([])
-            ids = env.k.vehicle.get_ids()
-            elec_vehs = list(np.random.choice(ids, 2, replace=False))
-            env.k.vehicle.set_emission_class(elec_vehs)
-            for v in elec_vehs:
-                env.k.vehicle.set_color(v, RED)
+            # env.k.vehicle.add("rl_{}".format(veh_num), "rl", "b_c", 0.0, "best", 0.0)
+            # env.k.vehicle.add("rl_{}".format(veh_num + 1), "rl", "t_c", 0.0, "best", 0.0)
+            # env.k.vehicle.add("rl_{}".format(veh_num + 2), "rl", "l_c", 0.0, "best", 0.0)
+            # env.k.vehicle.add("rl_{}".format(veh_num + 3), "rl", "r_c", 0.0, "best", 0.0)
+            # veh_num += 4
+            # state, _, _, _ = env.step([])
+            # ids = env.k.vehicle.get_ids()
+            # elec_vehs = list(np.random.choice(ids, 2, replace=False))
+            # env.k.vehicle.set_emission_class(elec_vehs)
+            # for v in elec_vehs:
+            #     env.k.vehicle.set_color(v, RED)
     while state.x is None and not done:
         state, _, done, _ = env.step([])
     if done:

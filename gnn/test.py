@@ -83,7 +83,7 @@ for i in range(10):
         state_, reward, done, _ = env.step(rl_actions=actions)
         idx = env.k.vehicle.get_ids()[0]
         # print(env.k.vehicle.get_emission_class(idx))
-        print(env.k.vehicle.kernel_api.vehicle.getCO2Emission(idx)/10000)
+        print(env.k.vehicle.kernel_api.vehicle.getCO2Emission(idx)/50000)
         input("")
         # print(env.k.vehicle.get_emission_class(idx) == "HBEFA3/PC_G_EU4")
         # print(env.k.vehicle.kernel_api.vehicle.getElectricityConsumption(idx))

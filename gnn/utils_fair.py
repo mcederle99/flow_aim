@@ -369,7 +369,6 @@ def eval_policy(aim, env, eval_episodes=10):
                         elec_vehs_time += 0.1
                 actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type)
                 state, reward, done, _ = env.step(rl_actions=actions)
-            input("")
             if env.k.simulation.check_collision():
                 num_crashes += 1
 
