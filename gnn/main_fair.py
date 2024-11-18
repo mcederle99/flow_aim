@@ -91,6 +91,7 @@ state_dim = 4
 edge_dim = 2
 action_dim = 1
 max_action = 5.0
+RED = (255, 0, 0)
 
 aim = TD3(state_dim, edge_dim, action_dim, discount=args.discount, tau=args.tau, policy_noise=args.policy_noise,
           noise_clip=args.noise_clip, policy_freq=args.policy_freq, max_action=max_action)
@@ -127,8 +128,10 @@ state = env.reset()
 while state.x is None:
     state, _, _, _ = env.step([])
 ids = env.k.vehicle.get_ids()
-elec_vehs = np.random.choice(ids, 2, replace=False)
+elec_vehs = list(np.random.choice(ids, 2, replace=False))
 env.k.vehicle.set_emission_class(elec_vehs)
+for v in elec_vehs:
+    env.k.vehicle.set_color(v, RED)
 
 for t in range(int(args.max_timesteps)):
 
@@ -171,8 +174,10 @@ for t in range(int(args.max_timesteps)):
             veh_num += 4
             state, _, _, _ = env.step([])
             ids = env.k.vehicle.get_ids()
-            elec_vehs = np.random.choice(ids, 2, replace=False)
+            elec_vehs = list(np.random.choice(ids, 2, replace=False))
             env.k.vehicle.set_emission_class(elec_vehs)
+            for v in elec_vehs:
+                env.k.vehicle.set_color(v, RED)
     while state.x is None and not done:
         state, _, done, _ = env.step([])
     if done:
@@ -205,8 +210,10 @@ for t in range(int(args.max_timesteps)):
         while state.x is None:
             state, _, _, _ = env.step([])
         ids = env.k.vehicle.get_ids()
-        elec_vehs = np.random.choice(ids, 2, replace=False)
+        elec_vehs = list(np.random.choice(ids, 2, replace=False))
         env.k.vehicle.set_emission_class(elec_vehs)
+        for v in elec_vehs:
+            env.k.vehicle.set_color(v, RED)
         ep_steps = 0
         ep_return = 0
         ep_number += 1

@@ -17,6 +17,8 @@ routes_dict = {('t_c', 'c_l'): 0, ('t_c', 'c_b'): 1, ('t_c', 'c_r'): 2,
                ('b_c', 'c_r'): 6, ('b_c', 'c_t'): 7, ('b_c', 'c_l'): 8,
                ('l_c', 'c_b'): 9, ('l_c', 'c_r'): 10, ('l_c', 'c_t'): 11}
 
+RED = (255, 0, 0)
+
 
 conflicting_routes_matrix = np.zeros((12, 12))
 for a in range(12):
@@ -346,8 +348,10 @@ def eval_policy(aim, env, eval_episodes=10):
         while state.x is None:
             state, _, _, _ = env.step([])
         ids = env.k.vehicle.get_ids()
-        elec_vehs = np.random.choice(ids, 2, replace=False)
+        elec_vehs = list(np.random.choice(ids, 2, replace=False))
         env.k.vehicle.set_emission_class(elec_vehs)
+        for v in elec_vehs:
+            env.k.vehicle.set_color(v, RED)
         done = False
         ep_steps = 0
         veh_num = 4
@@ -365,6 +369,7 @@ def eval_policy(aim, env, eval_episodes=10):
                         elec_vehs_time += 0.1
                 actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type)
                 state, reward, done, _ = env.step(rl_actions=actions)
+            input("")
             if env.k.simulation.check_collision():
                 num_crashes += 1
 
@@ -377,8 +382,10 @@ def eval_policy(aim, env, eval_episodes=10):
                 veh_num += 4
                 state, _, _, _ = env.step([])
                 ids = env.k.vehicle.get_ids()
-                elec_vehs = np.random.choice(ids, 2, replace=False)
+                elec_vehs = list(np.random.choice(ids, 2, replace=False))
                 env.k.vehicle.set_emission_class(elec_vehs)
+                for v in elec_vehs:
+                    env.k.vehicle.set_color(v, RED)
 
             # else:
                 # reward = compute_rp(state, reward)
