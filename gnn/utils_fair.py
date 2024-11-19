@@ -307,7 +307,7 @@ def from_networkx_multigraph(g):
         return data
 
     # Extract node attributes
-    node_attrs = ['pos', 'vel', 'acc', 'emission']
+    node_attrs = ['pos', 'vel', 'acc', 'emission', 'omega']
     data.x = torch.cat([torch.stack([g.nodes[n][attr] for n in g.nodes()]) for attr in node_attrs], dim=-1)
 
     # Extract edge types

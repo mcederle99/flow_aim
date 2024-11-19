@@ -75,11 +75,11 @@ print("---------------------------------------")
 print(f"Seed: {args.seed}")
 print("---------------------------------------")
 
-if not os.path.exists("./results"):
-    os.makedirs("./results")
+if not os.path.exists("../results"):
+    os.makedirs("../results")
 
-if args.save_model and not os.path.exists("./models"):
-    os.makedirs("./models")
+if args.save_model and not os.path.exists("../models"):
+    os.makedirs("../models")
 
 torch.manual_seed(args.seed)
 np.random.seed(args.seed)

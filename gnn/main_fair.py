@@ -47,7 +47,7 @@ else:
                  routing_controller=(ContinuousRouter, {}),
                  num_vehicles=4,
                  color='green')
-sim_params = SumoParams(sim_step=0.1, render=True)
+sim_params = SumoParams(sim_step=0.1, render=False)
 initial_config = InitialConfig()
 env_params = EnvParams(additional_params=ADDITIONAL_ENV_PARAMS)
 additional_net_params = ADDITIONAL_NET_PARAMS.copy()
@@ -87,7 +87,7 @@ if args.save_model and not os.path.exists("./models"):
 torch.manual_seed(args.seed)
 np.random.seed(args.seed)
 
-state_dim = 4
+state_dim = 5
 edge_dim = 2
 action_dim = 1
 max_action = 5.0

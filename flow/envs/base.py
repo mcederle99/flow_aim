@@ -124,6 +124,8 @@ class Env(gym.Env, metaclass=ABCMeta):
         flow.utils.exceptions.FatalFlowError
             if the render mode is not set to a valid value
         """
+        self.omega = 0.0
+
         self.env_params = env_params
         if scenario is not None:
             deprecated_attribute(self, "scenario", "network")
@@ -410,9 +412,9 @@ class Env(gym.Env, metaclass=ABCMeta):
         # compute the reward
         if self.env_params.clip_actions:
             #rl_clipped = self.clip_actions(rl_actions)
-            reward = self.compute_reward(rl_actions, state=next_observation, fail=crash)	# THIS LINE
+            reward = self.compute_reward(rl_actions, fail=crash)	# THIS LINE
         else:
-            reward = self.compute_reward(rl_actions, state=next_observation, fail=crash)	# THIS LINE
+            reward = self.compute_reward(rl_actions, fail=crash)	# THIS LINE
 
         return next_observation, reward, done, infos
 
@@ -432,6 +434,7 @@ class Env(gym.Env, metaclass=ABCMeta):
             the initial observation of the space. The initial reward is assumed
             to be zero.
         """
+        self.omega = np.random.choice([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
         # reset the time counter
         self.time_counter = 0
 
@@ -671,7 +674,7 @@ class Env(gym.Env, metaclass=ABCMeta):
         """
         pass
 
-    def compute_reward(self, rl_actions, state=None, **kwargs):	# THIS LINE
+    def compute_reward(self, rl_actions, **kwargs):	# THIS LINE
         """Reward function for the RL agent(s).
 
         MUST BE implemented in new environments.

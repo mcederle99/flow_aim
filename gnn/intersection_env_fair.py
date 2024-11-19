@@ -140,7 +140,8 @@ class MyEnv(Env):
             graph.add_node(q, pos=torch.tensor([state[q][0]], dtype=torch.float, device=device),
                            vel=torch.tensor([state[q][1]], dtype=torch.float, device=device),
                            acc=torch.tensor([state[q][2]], dtype=torch.float, device=device),
-                           emission=torch.tensor([state[q][7]], dtype=torch.float, device=device))
+                           emission=torch.tensor([state[q][7]], dtype=torch.float, device=device),
+                           omega=torch.tensor([self.omega], dtype=torch.float, device=device))
 
         edges, edges_type = compute_edges(self, state)
 
@@ -154,12 +155,13 @@ class MyEnv(Env):
         del state.pos
         del state.vel
         del state.acc
+        del state.omega
         del state.emission
         del state.bearing
 
         return state
                                 
-    def compute_reward(self, rl_actions, state=None, **kwargs):
+    def compute_reward(self, rl_actions, **kwargs):
         w_v = 0.3  # in the simulation without idle w_v = 1
         # w_a = 0.01
         w_i = 0.5  # in the simulation without idle w_i = 0
@@ -227,6 +229,8 @@ class MyEnv(Env):
         else:
             rc = 0
             
-        r = w_v * rv + w_i * ri + w_c * rc + w_e * re
+        # r = w_v * rv + w_i * ri + w_c * rc + w_e * re
+
+        r = self.omega * (rv + ri * 1.67) + (1 - self.omega) * re + w_c * rc
 
         return r
