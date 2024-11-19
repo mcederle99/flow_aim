@@ -104,7 +104,7 @@ if args.load_model != "":
     if args.inflows == "yes":
         _, _ = eval_policy_inflows(aim, env, eval_episodes=10)
     else:
-        _, _ = eval_policy(aim, env, eval_episodes=10)
+        _, _ = eval_policy(aim, env, eval_episodes=11)
     env.terminate()
     raise KeyboardInterrupt
 
@@ -112,7 +112,7 @@ evaluations = []
 if args.inflows == "yes":
     ev, num_crashes = eval_policy_inflows(aim, env, eval_episodes=10)
 else:
-    ev, num_crashes = eval_policy(aim, env, eval_episodes=10)
+    ev, num_crashes = eval_policy(aim, env, eval_episodes=11)
 print(f"Inflow_rate: {inflow_rate}")
 print("---------------------------------------")
 evaluations.append(ev)
@@ -188,7 +188,7 @@ for t in range(int(args.max_timesteps)):
             if args.inflows == "yes":
                 ev, num_crashes = eval_policy_inflows(aim, env, eval_episodes=10)
             else:
-                ev, num_crashes = eval_policy(aim, env, eval_episodes=10)
+                ev, num_crashes = eval_policy(aim, env, eval_episodes=11)
             print(f"Inflow_rate: {inflow_rate}")
             print("---------------------------------------")
             evaluations.append(ev)

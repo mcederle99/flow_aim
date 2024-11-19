@@ -343,8 +343,10 @@ def eval_policy(aim, env, eval_episodes=10):
     tot_veh_num = 0
     fuel_vehs_time = 0
     elec_vehs_time = 0
-    for _ in range(eval_episodes):
+    for i in range(eval_episodes):
         state = env.reset()
+        env.omega = i / 10
+        state.x[:, -1] = env.omega
         while state.x is None:
             state, _, _, _ = env.step([])
         ids = env.k.vehicle.get_ids()
