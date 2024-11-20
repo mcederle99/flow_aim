@@ -197,7 +197,12 @@ class MyEnv(Env):
                 re += -self.k.vehicle.kernel_api.vehicle.getCO2Emission(q) / 50000
                 fuel_vehs += 1
 
-        re /= fuel_vehs if fuel_vehs > 0 else 0
+        if fuel_vehs > 0:
+            re = re / fuel_vehs
+        else:
+            re = 0
+        if crash:
+            re = 0
 
         mean_speed = speeds / len(ids) if not_empty else 0.0
 
