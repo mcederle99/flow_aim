@@ -6,7 +6,7 @@ from flow.controllers import ContinuousRouter, RLController
 from flow.core.params import SumoParams, EnvParams, InitialConfig, NetParams, VehicleParams
 from flow.utils.registry import make_create_env
 from intersection_network_fair import IntersectionNetwork, ADDITIONAL_NET_PARAMS
-from intersection_env_fair import MyEnv, ADDITIONAL_ENV_PARAMS
+from intersection_env_fair_new import MyEnv, ADDITIONAL_ENV_PARAMS
 from utils_fair import eval_policy, get_inflows, eval_policy_inflows
 import argparse
 import os
