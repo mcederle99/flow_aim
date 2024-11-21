@@ -99,7 +99,7 @@ if args.load_model != "":
     if args.inflows == "yes":
         _, _ = eval_policy_inflows(aim, env, eval_episodes=10)
     else:
-        _, _ = eval_policy(aim, env, eval_episodes=10)
+        _, _ = eval_policy(aim, env, eval_episodes=11)
     env.terminate()
     raise KeyboardInterrupt
 
@@ -111,10 +111,11 @@ if args.inflows == "yes":
     print(f"Inflow_rate: {inflow_rate}")
     print("---------------------------------------")
 else:
-    ev, num_crashes = eval_policy(aim, env, eval_episodes=10)
+    ev, num_crashes = eval_policy(aim, env, eval_episodes=11)
 
 evaluations.append(ev)
-max_evaluations = -10000
+max_evaluations = -10
+best_num_crashes = 110
 num_steps = env.env_params.horizon
 num_evaluations = 1
 
@@ -178,13 +179,14 @@ for t in range(int(args.max_timesteps)):
                 print(f"Inflow_rate: {inflow_rate}")
                 print("---------------------------------------")
             else:
-                ev, num_crashes = eval_policy(aim, env, eval_episodes=10)
+                ev, num_crashes = eval_policy(aim, env, eval_episodes=11)
             evaluations.append(ev)
             np.save(f"./results/{file_name}", evaluations)
-            if evaluations[-1] > max_evaluations: # and num_crashes <= 1:
+            if evaluations[-1] > max_evaluations and num_crashes <= best_num_crashes:
                 if args.save_model:
                     aim.save(f"./models/{file_name}")
                 max_evaluations = evaluations[-1]
+                best_num_crashes = num_crashes
             num_evaluations += 1
             # if num_crashes == 0 and evaluations[-1] > 50:
             #     env.terminate()
@@ -201,6 +203,6 @@ for t in range(int(args.max_timesteps)):
         ep_steps = 0
         ep_return = 0
         ep_number += 1
-        veh_num = 4
+        # veh_num = 4
 
 env.terminate()

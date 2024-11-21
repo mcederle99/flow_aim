@@ -264,29 +264,31 @@ def eval_policy(aim, env, eval_episodes=10):
 
     avg_reward = 0.0
     num_crashes = 0
-    # tot_veh_num = 0
-    # fuel_vehs_time = 0
-    # elec_vehs_time = 0
-    for i in range(eval_episodes):
+    for i in range(eval_episodes * 10):
+        # avg_speed = []
+        # avg_emissions = []
         state = env.reset()
-        env.omega = i / 10
+        env.omega = (i % 11) / 10
         state.x[:, -1] = env.omega
         while state.x is None:
             state, _, _, _ = env.step([])
         done = False
         ep_steps = 0
-        veh_num = 4
+        # veh_num = 4
         while not done:
             ep_steps += 1
 
             if state.x is None:
                 state, _, done, _ = env.step([])
             else:
-            #     for idx in env.k.vehicle.get_ids():
-            #         if env.k.vehicle.get_route(idx)[0] in ('t_c', 'b_c'):
-            #             fuel_vehs_time += 0.1
-            #         else:
-            #             elec_vehs_time += 0.1
+                # speed = 0
+                # emission = 0
+                # for idx in env.k.vehicle.get_ids():
+                #     speed += env.k.vehicle.get_speed(idx)
+                #     emission += env.k.vehicle.kernel_api.vehicle.getCO2Emission(idx) / 50000
+                # avg_speed.append(speed / len(env.k.vehicle.get_ids()))
+                # avg_emissions.append(emission / len(env.k.vehicle.get_ids()))
+
                 actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type)
                 state, reward, done, _ = env.step(rl_actions=actions)
             if env.k.simulation.check_collision():
@@ -300,10 +302,9 @@ def eval_policy(aim, env, eval_episodes=10):
             #     env.k.vehicle.add("rl_{}".format(veh_num + 2), "rl", "l_c", 0.0, "best", 0.0)
             #     env.k.vehicle.add("rl_{}".format(veh_num + 3), "rl", "r_c", 0.0, "best", 0.0)
             #     veh_num += 4
-
-            # else:
-                # reward = compute_rp(state, reward)
             avg_reward += reward
+
+        # print(f"Average speed: {np.mean(avg_speed):.3f}. Average CO2 emission: {np.mean(avg_emissions):.3f}")
 
         # tot_veh_num += veh_num
     avg_reward /= eval_episodes
@@ -312,8 +313,6 @@ def eval_policy(aim, env, eval_episodes=10):
     print("---------------------------------------")
     print(f"Evaluation over {eval_episodes} episodes: {avg_reward:.3f}. Number of crashes: {num_crashes}")
     print("---------------------------------------")
-    # print(f"Average fuel vehicles time: {fuel_vehs_time / tot_veh_num},"
-    #       f"Average electric vehicles time: {elec_vehs_time / tot_veh_num}")
     return avg_reward, num_crashes
 
 
