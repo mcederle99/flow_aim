@@ -6,8 +6,8 @@ from flow.controllers import ContinuousRouter, RLController
 from flow.core.params import SumoParams, EnvParams, InitialConfig, NetParams, VehicleParams
 from flow.utils.registry import make_create_env
 from intersection_network import IntersectionNetwork, ADDITIONAL_NET_PARAMS
-from intersection_env import MyEnv, ADDITIONAL_ENV_PARAMS
-from utils import compute_rp, eval_policy, get_inflows, eval_policy_inflows
+from intersection_env_new import MyEnv, ADDITIONAL_ENV_PARAMS
+from utils import eval_policy, get_inflows, eval_policy_inflows
 import argparse
 import os
 import warnings
@@ -40,10 +40,10 @@ if args.inflows == "yes":
                  color='green')
 else:
     vehicles.add(veh_id="rl",
-    acceleration_controller=(RLController, {}),
-    routing_controller=(ContinuousRouter, {}),
-    num_vehicles=4,
-    color='green')
+                 acceleration_controller=(RLController, {}),
+                 routing_controller=(ContinuousRouter, {}),
+                 num_vehicles=4,
+                 color='green')
 sim_params = SumoParams(sim_step=0.1, render=False)
 initial_config = InitialConfig()
 env_params = EnvParams(additional_params=ADDITIONAL_ENV_PARAMS)
@@ -75,16 +75,16 @@ print("---------------------------------------")
 print(f"Seed: {args.seed}")
 print("---------------------------------------")
 
-if not os.path.exists("../results"):
-    os.makedirs("../results")
+if not os.path.exists("./results"):
+    os.makedirs("./results")
 
-if args.save_model and not os.path.exists("../models"):
-    os.makedirs("../models")
+if args.save_model and not os.path.exists("./models"):
+    os.makedirs("./models")
 
 torch.manual_seed(args.seed)
 np.random.seed(args.seed)
 
-state_dim = 3
+state_dim = 4
 edge_dim = 2
 action_dim = 1
 max_action = 5.0
@@ -96,7 +96,7 @@ memory = ReplayBuffer()
 if args.load_model != "":
     policy_file = file_name if args.load_model == "default" else args.load_model
     aim.load(f"./models/{policy_file}")
-    np.random.seed(np.random.randint(0, 1e5))
+    np.random.seed(np.random.randint(0, int(1e5)))
     if args.inflows == "yes":
         _, _ = eval_policy_inflows(aim, env, eval_episodes=10)
     else:
@@ -107,12 +107,13 @@ if args.load_model != "":
 evaluations = []
 if args.inflows == "yes":
     ev, num_crashes = eval_policy_inflows(aim, env, eval_episodes=10)
+    print(f"Inflow_rate: {inflow_rate}")
+    print("---------------------------------------")
 else:
     ev, num_crashes = eval_policy(aim, env, eval_episodes=10)
-print(f"Inflow_rate: {inflow_rate}")
-print("---------------------------------------")
+
 evaluations.append(ev)
-max_evaluations = evaluations[0]
+max_evaluations = -10000
 num_steps = env.env_params.horizon
 num_evaluations = 1
 
@@ -136,8 +137,8 @@ for t in range(int(args.max_timesteps)):
         actions = (actions + noise).clip(-max_action, max_action)
 
     state_, reward, done, _ = env.step(rl_actions=actions)
-    while state_.x is None and not done:
-        state_, _, done, _ = env.step([])
+    # while state_.x is None and not done:
+    #     state_, _, done, _ = env.step([])
 
     done_bool = float(done) if ep_steps < num_steps else 0.0
 
@@ -155,29 +156,31 @@ for t in range(int(args.max_timesteps)):
 
     # if state.x is None:
     if args.inflows == "no":
-        if ep_steps % 150 == 0:
+        # if ep_steps % 150 == 0:
+        if state.x is None:
+            done = True
             # we may need to put "best" instead of 0 as starting lane (aquarium)
-            env.k.vehicle.add("rl_{}".format(veh_num), "rl", "b_c", 0.0, "best", 0.0)
-            env.k.vehicle.add("rl_{}".format(veh_num + 1), "rl", "t_c", 0.0, "best", 0.0)
-            env.k.vehicle.add("rl_{}".format(veh_num + 2), "rl", "l_c", 0.0, "best", 0.0)
-            env.k.vehicle.add("rl_{}".format(veh_num + 3), "rl", "r_c", 0.0, "best", 0.0)
-            veh_num += 4
+            # env.k.vehicle.add("rl_{}".format(veh_num), "rl", "b_c", 0.0, "best", 0.0)
+            # env.k.vehicle.add("rl_{}".format(veh_num + 1), "rl", "t_c", 0.0, "best", 0.0)
+            # env.k.vehicle.add("rl_{}".format(veh_num + 2), "rl", "l_c", 0.0, "best", 0.0)
+            # env.k.vehicle.add("rl_{}".format(veh_num + 3), "rl", "r_c", 0.0, "best", 0.0)
+            # veh_num += 4
             # state, _, _, _ = env.step([])
-    # while state.x is None and not done:
-    #     state, _, done, _ = env.step([])
+    while state.x is None and not done:
+        state, _, done, _ = env.step([])
     if done:
         print(f"Total T: {t + 1} Episode Num: {ep_number + 1} Episode T: {ep_steps} Reward: {ep_return:.3f}")
         # Evaluate episode
         if (t + 1) >= args.eval_freq * num_evaluations:
             if args.inflows == "yes":
                 ev, num_crashes = eval_policy_inflows(aim, env, eval_episodes=10)
+                print(f"Inflow_rate: {inflow_rate}")
+                print("---------------------------------------")
             else:
                 ev, num_crashes = eval_policy(aim, env, eval_episodes=10)
-            print(f"Inflow_rate: {inflow_rate}")
-            print("---------------------------------------")
             evaluations.append(ev)
             np.save(f"./results/{file_name}", evaluations)
-            if evaluations[-1] > max_evaluations and num_crashes <= 1:
+            if evaluations[-1] > max_evaluations: # and num_crashes <= 1:
                 if args.save_model:
                     aim.save(f"./models/{file_name}")
                 max_evaluations = evaluations[-1]

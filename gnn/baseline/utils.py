@@ -233,7 +233,7 @@ def from_networkx_multigraph(g):
         return data
 
     # Extract node attributes
-    node_attrs = ['pos', 'vel', 'acc']
+    node_attrs = ['pos', 'vel', 'acc', 'omega']
     data.x = torch.cat([torch.stack([g.nodes[n][attr] for n in g.nodes()]) for attr in node_attrs], dim=-1)
 
     # Extract edge types
@@ -264,11 +264,13 @@ def eval_policy(aim, env, eval_episodes=10):
 
     avg_reward = 0.0
     num_crashes = 0
-    tot_veh_num = 0
-    fuel_vehs_time = 0
-    elec_vehs_time = 0
-    for _ in range(eval_episodes):
+    # tot_veh_num = 0
+    # fuel_vehs_time = 0
+    # elec_vehs_time = 0
+    for i in range(eval_episodes):
         state = env.reset()
+        env.omega = i / 10
+        state.x[:, -1] = env.omega
         while state.x is None:
             state, _, _, _ = env.step([])
         done = False
@@ -280,38 +282,38 @@ def eval_policy(aim, env, eval_episodes=10):
             if state.x is None:
                 state, _, done, _ = env.step([])
             else:
-                for idx in env.k.vehicle.get_ids():
-                    if env.k.vehicle.get_route(idx)[0] in ('t_c', 'b_c'):
-                        fuel_vehs_time += 0.1
-                    else:
-                        elec_vehs_time += 0.1
+            #     for idx in env.k.vehicle.get_ids():
+            #         if env.k.vehicle.get_route(idx)[0] in ('t_c', 'b_c'):
+            #             fuel_vehs_time += 0.1
+            #         else:
+            #             elec_vehs_time += 0.1
                 actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type)
                 state, reward, done, _ = env.step(rl_actions=actions)
             if env.k.simulation.check_collision():
                 num_crashes += 1
 
             #  if state.x is None:
-            if ep_steps % 150 == 0:
-                # we may need to put "best" instead of 0 as starting lane (aquarium)
-                env.k.vehicle.add("rl_{}".format(veh_num), "rl", "b_c", 0.0, "best", 0.0)
-                env.k.vehicle.add("rl_{}".format(veh_num + 1), "rl", "t_c", 0.0, "best", 0.0)
-                env.k.vehicle.add("rl_{}".format(veh_num + 2), "rl", "l_c", 0.0, "best", 0.0)
-                env.k.vehicle.add("rl_{}".format(veh_num + 3), "rl", "r_c", 0.0, "best", 0.0)
-                veh_num += 4
+            # if ep_steps % 150 == 0:
+            #     # we may need to put "best" instead of 0 as starting lane (aquarium)
+            #     env.k.vehicle.add("rl_{}".format(veh_num), "rl", "b_c", 0.0, "best", 0.0)
+            #     env.k.vehicle.add("rl_{}".format(veh_num + 1), "rl", "t_c", 0.0, "best", 0.0)
+            #     env.k.vehicle.add("rl_{}".format(veh_num + 2), "rl", "l_c", 0.0, "best", 0.0)
+            #     env.k.vehicle.add("rl_{}".format(veh_num + 3), "rl", "r_c", 0.0, "best", 0.0)
+            #     veh_num += 4
 
             # else:
                 # reward = compute_rp(state, reward)
             avg_reward += reward
 
-        tot_veh_num += veh_num
+        # tot_veh_num += veh_num
     avg_reward /= eval_episodes
-    tot_veh_num = tot_veh_num / 2
+    # tot_veh_num = tot_veh_num / 2
 
     print("---------------------------------------")
     print(f"Evaluation over {eval_episodes} episodes: {avg_reward:.3f}. Number of crashes: {num_crashes}")
     print("---------------------------------------")
-    print(f"Average fuel vehicles time: {fuel_vehs_time / tot_veh_num},"
-          f"Average electric vehicles time: {elec_vehs_time / tot_veh_num}")
+    # print(f"Average fuel vehicles time: {fuel_vehs_time / tot_veh_num},"
+    #       f"Average electric vehicles time: {elec_vehs_time / tot_veh_num}")
     return avg_reward, num_crashes
 
 

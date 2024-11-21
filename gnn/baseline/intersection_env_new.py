@@ -1,4 +1,4 @@
-from utils_fair import edges_dict, routes_dict, routes_edges_matrix, compute_edges, from_networkx_multigraph
+from utils import edges_dict, routes_dict, routes_edges_matrix, compute_edges, from_networkx_multigraph
 from flow.envs.base import Env
 from gym.spaces.box import Box
 from gym.spaces import Discrete
@@ -13,7 +13,6 @@ ADDITIONAL_ENV_PARAMS = {
     "max_decel": -5,
 }
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-
 
 class MyEnv(Env):
 
@@ -121,26 +120,18 @@ class MyEnv(Env):
                 edge = 5
             else:
                 edge = edges_dict[self.k.vehicle.get_edge(q)]
-
+                              
             # ROUTE
             if self.k.vehicle.get_route(q) == '':  # just to fix a simulator bug
                 route = 0
             else:
                 route = routes_dict[self.k.vehicle.get_route(q)]
 
-            # EMISSIONS
-            # if self.k.vehicle.get_route(q)[0] in ('t_c', 'b_c'):
-            if self.k.vehicle.get_emission_class(q) == "HBEFA3/PC_G_EU4":
-                emission = 1
-            else:
-                emission = 0
-
-            state[q] = (pos, vel, acc, coord, angle, edge, route, emission)
+            state[q] = (pos, vel, acc, coord, angle, edge, route)
 
             graph.add_node(q, pos=torch.tensor([state[q][0]], dtype=torch.float, device=device),
                            vel=torch.tensor([state[q][1]], dtype=torch.float, device=device),
                            acc=torch.tensor([state[q][2]], dtype=torch.float, device=device),
-                           emission=torch.tensor([state[q][7]], dtype=torch.float, device=device),
                            omega=torch.tensor([self.omega], dtype=torch.float, device=device))
 
         edges, edges_type = compute_edges(self, state)
@@ -156,13 +147,11 @@ class MyEnv(Env):
         del state.vel
         del state.acc
         del state.omega
-        del state.emission
         del state.bearing
 
         return state
                                 
-    def compute_reward(self, rl_actions, **kwargs):
-
+    def compute_reward(self, rl_actions, state=None, **kwargs):
         w_i = 1.67  # in the simulation without idle w_i = 0
         w_c = 10
 
@@ -174,7 +163,7 @@ class MyEnv(Env):
             not_empty = False
 
         crash = self.k.simulation.check_collision()
-        
+
         # VELOCITY TERM
         speeds = 0
         max_vel = 0
@@ -223,7 +212,7 @@ class MyEnv(Env):
                 ri = 0
         else:
             ri = 0
-        
+
         # COLLISION TERM
         if crash:
             rc = -1
