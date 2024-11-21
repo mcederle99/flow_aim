@@ -82,7 +82,6 @@ if args.save_model and not os.path.exists("./models"):
     os.makedirs("./models")
 
 torch.manual_seed(args.seed)
-np.random.seed(args.seed)
 
 state_dim = 4
 edge_dim = 2
@@ -103,6 +102,8 @@ if args.load_model != "":
         _, _ = eval_policy(aim, env, eval_episodes=10)
     env.terminate()
     raise KeyboardInterrupt
+
+np.random.seed(args.seed)
 
 evaluations = []
 if args.inflows == "yes":
