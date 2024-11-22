@@ -307,7 +307,7 @@ def eval_policy(aim, env, eval_episodes=10):
         # print(f"Average speed: {np.mean(avg_speed):.3f}. Average CO2 emission: {np.mean(avg_emissions):.3f}")
 
         # tot_veh_num += veh_num
-    avg_reward /= eval_episodes
+    avg_reward /= (eval_episodes * 10)
     # tot_veh_num = tot_veh_num / 2
 
     print("---------------------------------------")
