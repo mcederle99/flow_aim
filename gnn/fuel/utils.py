@@ -263,18 +263,26 @@ def from_networkx_multigraph(g, nn_architecture):
     return data
 
 
-def eval_policy(aim, env, eval_episodes=10, test=False, nn_architecture='base'):
+def eval_policy(aim, env, eval_episodes=10, test=False, nn_architecture='base', omega_space='discrete'):
 
     avg_reward = 0.0
     num_crashes = 0
     if test:
         avg_speed = [[], [], [], [], [], [], [], [], [], [], []]
         avg_emissions = [[], [], [], [], [], [], [], [], [], [], []]
-    for i in range(eval_episodes * 10):
+    if omega_space == 'continuous':
+        omegas = np.linspace(0.0, 1.0, num=eval_episodes * 1, dtype=np.float64)
+    else:
+        omegas = None
+    for i in range(eval_episodes * 1):
 
         state = env.reset()
-        env.omega = (i % 11) / 10
-        state.x[:, -1] = env.omega
+        if omegas is None:
+            env.omega = (i % 11) / 10
+        else:
+            env.omega = omegas[i]
+        if nn_architecture == 'base':
+            state.x[:, -1] = env.omega
         while state.x is None:
             state, _, _, _ = env.step([])
         done = False

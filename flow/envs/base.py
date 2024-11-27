@@ -126,6 +126,7 @@ class Env(gym.Env, metaclass=ABCMeta):
         """
         self.omega = 0.0
         self.nn_architecture = 'base'
+        self.omega_space = 'discrete'
 
         self.env_params = env_params
         if scenario is not None:
@@ -435,7 +436,10 @@ class Env(gym.Env, metaclass=ABCMeta):
             the initial observation of the space. The initial reward is assumed
             to be zero.
         """
-        self.omega = np.random.choice([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+        if self.omega_space == 'discrete':
+            self.omega = np.random.choice([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+        else:
+            self.omega = np.random.rand(1).item()
         # reset the time counter
         self.time_counter = 0
 

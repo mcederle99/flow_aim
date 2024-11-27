@@ -13,7 +13,7 @@ warnings.filterwarnings("ignore", category=RuntimeWarning)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--seed", default=0, type=int)              # Sets PyTorch and Numpy seeds
-parser.add_argument("--start_timesteps", default=25e3, type=int)# Time steps initial random policy is used
+parser.add_argument("--start_timesteps", default=5e3, type=int)# Time steps initial random policy is used
 parser.add_argument("--eval_freq", default=5e3, type=int)       # How often (time steps) we evaluate
 parser.add_argument("--max_timesteps", default=1e6, type=int)   # Max time steps to run environment
 parser.add_argument("--expl_noise", default=0.1, type=float)    # Std of Gaussian exploration noise
@@ -77,6 +77,7 @@ flow_params['env'].horizon = 1000
 create_env, _ = make_create_env(flow_params)
 env = create_env()
 env.nn_architecture = args.nn_architecture
+env.omega_space = args.omega_space
 
 file_name = f"aim_{args.seed}_{args.file_name}"
 print("---------------------------------------")
@@ -111,7 +112,7 @@ if args.load_model != "":
     if args.inflows == "yes":
         _, _ = eval_policy_inflows(aim, env, eval_episodes=10)
     else:
-        _, _ = eval_policy(aim, env, eval_episodes=11, test=True, nn_architecture=args.nn_architecture)
+        _, _ = eval_policy(aim, env, eval_episodes=11, test=True, nn_architecture=args.nn_architecture, omega_space=args.omega_space)
     env.terminate()
     raise KeyboardInterrupt
 
@@ -123,7 +124,7 @@ if args.inflows == "yes":
     print(f"Inflow_rate: {inflow_rate}")
     print("---------------------------------------")
 else:
-    ev, num_crashes = eval_policy(aim, env, eval_episodes=11, nn_architecture=args.nn_architecture)
+    ev, num_crashes = eval_policy(aim, env, eval_episodes=11, nn_architecture=args.nn_architecture, omega_space=args.omega_space)
 
 evaluations.append(ev)
 max_evaluations = -10
@@ -201,7 +202,7 @@ for t in range(int(args.max_timesteps)):
                 print(f"Inflow_rate: {inflow_rate}")
                 print("---------------------------------------")
             else:
-                ev, num_crashes = eval_policy(aim, env, eval_episodes=11, nn_architecture=args.nn_architecture)
+                ev, num_crashes = eval_policy(aim, env, eval_episodes=11, nn_architecture=args.nn_architecture, omega_space=args.omega_space)
             evaluations.append(ev)
             if args.save_model:
                 np.save(f"./results/{file_name}", evaluations)

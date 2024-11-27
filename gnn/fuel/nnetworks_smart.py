@@ -22,7 +22,6 @@ class Actor(nn.Module):
 
     def forward(self, x, edge_index, edge_attr, edge_type, omega):
 
-        print(omega)
         n = f.relu(self.n_enc(x))
         e = f.relu(self.e_enc(edge_attr))
         o = f.relu(self.o_enc(omega))
