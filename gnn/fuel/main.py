@@ -206,5 +206,3 @@ for t in range(int(args.max_timesteps)):
         # veh_num = 4
 
 env.terminate()
-
-prova
