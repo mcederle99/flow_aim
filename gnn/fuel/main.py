@@ -99,7 +99,7 @@ if args.load_model != "":
     if args.inflows == "yes":
         _, _ = eval_policy_inflows(aim, env, eval_episodes=10)
     else:
-        _, _ = eval_policy(aim, env, eval_episodes=11)
+        _, _ = eval_policy(aim, env, eval_episodes=11, test=True)
     env.terminate()
     raise KeyboardInterrupt
 

@@ -71,7 +71,7 @@ fp_list = []
 
 for i in range(81):
     flow_params = dict(
-        exp_tag='baseline',
+        exp_tag='fuel',
         env_name=AccelEnv,
         network=networks[i],
         simulator='traci',

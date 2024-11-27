@@ -260,13 +260,15 @@ def from_networkx_multigraph(g):
     return data
 
 
-def eval_policy(aim, env, eval_episodes=10):
+def eval_policy(aim, env, eval_episodes=10, test=False):
 
     avg_reward = 0.0
     num_crashes = 0
+    if test:
+        avg_speed = [[], [], [], [], [], [], [], [], [], [], []]
+        avg_emissions = [[], [], [], [], [], [], [], [], [], [], []]
     for i in range(eval_episodes * 10):
-        # avg_speed = []
-        # avg_emissions = []
+
         state = env.reset()
         env.omega = (i % 11) / 10
         state.x[:, -1] = env.omega
@@ -281,13 +283,14 @@ def eval_policy(aim, env, eval_episodes=10):
             if state.x is None:
                 state, _, done, _ = env.step([])
             else:
-                # speed = 0
-                # emission = 0
-                # for idx in env.k.vehicle.get_ids():
-                #     speed += env.k.vehicle.get_speed(idx)
-                #     emission += env.k.vehicle.kernel_api.vehicle.getCO2Emission(idx) / 50000
-                # avg_speed.append(speed / len(env.k.vehicle.get_ids()))
-                # avg_emissions.append(emission / len(env.k.vehicle.get_ids()))
+                if test:
+                    speed = 0
+                    emission = 0
+                    for idx in env.k.vehicle.get_ids():
+                        speed += env.k.vehicle.get_speed(idx)
+                        emission += env.k.vehicle.kernel_api.vehicle.getCO2Emission(idx) / 50000
+                    avg_speed[i % 11].append(speed / len(env.k.vehicle.get_ids()))
+                    avg_emissions[i % 11].append(emission / len(env.k.vehicle.get_ids()))
 
                 actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type)
                 state, reward, done, _ = env.step(rl_actions=actions)
@@ -313,6 +316,10 @@ def eval_policy(aim, env, eval_episodes=10):
     print("---------------------------------------")
     print(f"Evaluation over {eval_episodes} episodes: {avg_reward:.3f}. Number of crashes: {num_crashes}")
     print("---------------------------------------")
+    if test:
+        for i in range(11):
+            print(f"Omega value: {i / 10}. Avg speed: {np.mean(avg_speed[i])}. Avg. emissions: {np.mean(avg_emissions[i])}")
+
     return avg_reward, num_crashes
 
 

@@ -78,11 +78,11 @@ print("---------------------------------------")
 print(f"Seed: {args.seed}")
 print("---------------------------------------")
 
-if not os.path.exists("./results"):
-    os.makedirs("./results")
+if not os.path.exists("results"):
+    os.makedirs("results")
 
-if args.save_model and not os.path.exists("./models"):
-    os.makedirs("./models")
+if args.save_model and not os.path.exists("models"):
+    os.makedirs("models")
 
 torch.manual_seed(args.seed)
 np.random.seed(args.seed)
@@ -192,7 +192,7 @@ for t in range(int(args.max_timesteps)):
             print(f"Inflow_rate: {inflow_rate}")
             print("---------------------------------------")
             evaluations.append(ev)
-            np.save(f"./results/{file_name}", evaluations)
+            np.save(f"results/{file_name}", evaluations)
             if evaluations[-1] > max_evaluations and num_crashes <= 1:
                 if args.save_model:
                     aim.save(f"./models/{file_name}")

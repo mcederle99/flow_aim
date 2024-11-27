@@ -1,10 +1,10 @@
 import numpy as np
-from gnn.baseline.agent import TD3
+from gnn.fuel.agent import TD3
 from flow.controllers import ContinuousRouter, RLController
 from flow.core.params import SumoParams, EnvParams, InitialConfig, NetParams, VehicleParams, InFlows
 from flow.utils.registry import make_create_env
-from gnn.baseline.intersection_network import IntersectionNetwork, ADDITIONAL_NET_PARAMS
-from gnn.baseline.intersection_env import MyEnv, ADDITIONAL_ENV_PARAMS
+from gnn.fuel.intersection_network import IntersectionNetwork, ADDITIONAL_NET_PARAMS
+from gnn.fuel.intersection_env import MyEnv, ADDITIONAL_ENV_PARAMS
 import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
