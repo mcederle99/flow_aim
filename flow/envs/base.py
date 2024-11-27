@@ -125,6 +125,7 @@ class Env(gym.Env, metaclass=ABCMeta):
             if the render mode is not set to a valid value
         """
         self.omega = 0.0
+        self.nn_architecture = 'base'
 
         self.env_params = env_params
         if scenario is not None:

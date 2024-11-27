@@ -227,13 +227,16 @@ def compute_rp(graph, reward):
         return reward
 
 
-def from_networkx_multigraph(g):
+def from_networkx_multigraph(g, nn_architecture):
     data = from_networkx(g)
     if data.pos is None:
         return data
 
     # Extract node attributes
-    node_attrs = ['pos', 'vel', 'acc', 'omega']
+    if nn_architecture == "base":
+        node_attrs = ['pos', 'vel', 'acc', 'omega']
+    else:
+        node_attrs = ['pos', 'vel', 'acc']
     data.x = torch.cat([torch.stack([g.nodes[n][attr] for n in g.nodes()]) for attr in node_attrs], dim=-1)
 
     # Extract edge types
@@ -260,7 +263,7 @@ def from_networkx_multigraph(g):
     return data
 
 
-def eval_policy(aim, env, eval_episodes=10, test=False):
+def eval_policy(aim, env, eval_episodes=10, test=False, nn_architecture='base'):
 
     avg_reward = 0.0
     num_crashes = 0
@@ -292,7 +295,11 @@ def eval_policy(aim, env, eval_episodes=10, test=False):
                     avg_speed[i % 11].append(speed / len(env.k.vehicle.get_ids()))
                     avg_emissions[i % 11].append(emission / len(env.k.vehicle.get_ids()))
 
-                actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type)
+                if nn_architecture == 'base':
+                    actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type)
+                else:
+                    actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type,
+                                                torch.tensor([[env.omega, 1 - env.omega]], dtype=torch.float, device=device).repeat(state.x.shape[0], 1))
                 state, reward, done, _ = env.step(rl_actions=actions)
             if env.k.simulation.check_collision():
                 num_crashes += 1

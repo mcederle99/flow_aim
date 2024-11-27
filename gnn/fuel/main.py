@@ -1,7 +1,5 @@
 import numpy as np
 import torch
-from agent import TD3
-from memory import ReplayBuffer
 from flow.controllers import ContinuousRouter, RLController
 from flow.core.params import SumoParams, EnvParams, InitialConfig, NetParams, VehicleParams
 from flow.utils.registry import make_create_env
@@ -29,7 +27,16 @@ parser.add_argument("--save_model", action="store_true")        # Save model and
 parser.add_argument("--load_model", default="")                 # Model load file name, "" doesn't load, "default" uses file_name
 parser.add_argument("--inflows", default="no")
 parser.add_argument("--file_name", default="")
+parser.add_argument("--omega_space", default="discrete")
+parser.add_argument("--nn_architecture", default="base")
 args = parser.parse_args()
+
+if args.nn_architecture == "smart":
+    from agent_smart import TD3
+    from memory_smart import ReplayBuffer
+else:
+    from agent import TD3
+    from memory import ReplayBuffer
 
 vehicles = VehicleParams()
 if args.inflows == "yes":
@@ -69,6 +76,7 @@ flow_params = dict(
 flow_params['env'].horizon = 1000
 create_env, _ = make_create_env(flow_params)
 env = create_env()
+env.nn_architecture = args.nn_architecture
 
 file_name = f"aim_{args.seed}_{args.file_name}"
 print("---------------------------------------")
@@ -82,8 +90,12 @@ if args.save_model and not os.path.exists("./models"):
     os.makedirs("./models")
 
 torch.manual_seed(args.seed)
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-state_dim = 4
+if args.nn_architecture == "smart":
+    state_dim = 3
+else:
+    state_dim = 4
 edge_dim = 2
 action_dim = 1
 max_action = 5.0
@@ -99,7 +111,7 @@ if args.load_model != "":
     if args.inflows == "yes":
         _, _ = eval_policy_inflows(aim, env, eval_episodes=10)
     else:
-        _, _ = eval_policy(aim, env, eval_episodes=11, test=True)
+        _, _ = eval_policy(aim, env, eval_episodes=11, test=True, nn_architecture=args.nn_architecture)
     env.terminate()
     raise KeyboardInterrupt
 
@@ -111,7 +123,7 @@ if args.inflows == "yes":
     print(f"Inflow_rate: {inflow_rate}")
     print("---------------------------------------")
 else:
-    ev, num_crashes = eval_policy(aim, env, eval_episodes=11)
+    ev, num_crashes = eval_policy(aim, env, eval_episodes=11, nn_architecture=args.nn_architecture)
 
 evaluations.append(ev)
 max_evaluations = -10
@@ -134,7 +146,11 @@ for t in range(int(args.max_timesteps)):
     if t < args.start_timesteps:
         actions = env.action_space.sample()
     else:
-        actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type)
+        if args.nn_architecture == "smart":
+            actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type,
+                                        torch.tensor([[env.omega, 1 - env.omega]], dtype=torch.float, device=device).repeat(state.x.shape[0], 1))
+        else:
+            actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type)
         noise = np.random.normal(0.0, max_action * args.expl_noise, size=len(actions)).astype(np.float32)
         actions = (actions + noise).clip(-max_action, max_action)
 
@@ -145,10 +161,16 @@ for t in range(int(args.max_timesteps)):
     done_bool = float(done) if ep_steps < num_steps else 0.0
 
     if state_.x is None:
-        memory.add(state, actions, state, reward, done_bool)
+        if args.nn_architecture == "smart":
+            memory.add(state, actions, state, reward, done_bool, env.omega)
+        else:
+            memory.add(state, actions, state, reward, done_bool)
     else:
         # reward = compute_rp(state_, reward)
-        memory.add(state, actions, state_, reward, done_bool)
+        if args.nn_architecture == "smart":
+            memory.add(state, actions, state_, reward, done_bool, env.omega)
+        else:
+            memory.add(state, actions, state_, reward, done_bool)
 
     state = state_
     ep_return += reward
@@ -179,9 +201,10 @@ for t in range(int(args.max_timesteps)):
                 print(f"Inflow_rate: {inflow_rate}")
                 print("---------------------------------------")
             else:
-                ev, num_crashes = eval_policy(aim, env, eval_episodes=11)
+                ev, num_crashes = eval_policy(aim, env, eval_episodes=11, nn_architecture=args.nn_architecture)
             evaluations.append(ev)
-            np.save(f"./results/{file_name}", evaluations)
+            if args.save_model:
+                np.save(f"./results/{file_name}", evaluations)
             if evaluations[-1] > max_evaluations and num_crashes <= best_num_crashes:
                 if args.save_model:
                     aim.save(f"./models/{file_name}")
