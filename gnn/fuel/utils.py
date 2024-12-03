@@ -271,10 +271,10 @@ def eval_policy(aim, env, eval_episodes=10, test=False, nn_architecture='base', 
         avg_speed = [[], [], [], [], [], [], [], [], [], [], []]
         avg_emissions = [[], [], [], [], [], [], [], [], [], [], []]
     if omega_space == 'continuous':
-        omegas = np.linspace(0.0, 1.0, num=eval_episodes * 1, dtype=np.float64)
+        omegas = np.linspace(0.0, 1.0, num=eval_episodes * 10, dtype=np.float64)
     else:
         omegas = None
-    for i in range(eval_episodes * 1):
+    for i in range(eval_episodes * 10):
 
         state = env.reset()
         if omegas is None:
