@@ -150,7 +150,7 @@ class MyEnv(Env):
                            dist=torch.tensor([edges[edge][0]], dtype=torch.float, device=device),
                            bearing=torch.tensor([edges[edge][1]], dtype=torch.float, device=device))
 
-        state = from_networkx_multigraph(graph)
+        state = from_networkx_multigraph(graph, self.nn_architecture)
 
         del state.pos
         del state.vel

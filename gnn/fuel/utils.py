@@ -300,8 +300,12 @@ def eval_policy(aim, env, eval_episodes=10, test=False, nn_architecture='base', 
                     for idx in env.k.vehicle.get_ids():
                         speed += env.k.vehicle.get_speed(idx)
                         emission += env.k.vehicle.kernel_api.vehicle.getCO2Emission(idx) / 50000
-                    avg_speed[i % 11].append(speed / len(env.k.vehicle.get_ids()))
-                    avg_emissions[i % 11].append(emission / len(env.k.vehicle.get_ids()))
+                    if omega_space == 'continuous':
+                        avg_speed[i // 10].append(speed / len(env.k.vehicle.get_ids()))
+                        avg_emissions[i // 10].append(emission / len(env.k.vehicle.get_ids()))
+                    else:
+                        avg_speed[i % 11].append(speed / len(env.k.vehicle.get_ids()))
+                        avg_emissions[i % 11].append(emission / len(env.k.vehicle.get_ids()))
 
                 if nn_architecture == 'base':
                     actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type)
@@ -337,6 +341,83 @@ def eval_policy(aim, env, eval_episodes=10, test=False, nn_architecture='base', 
 
     return avg_reward, num_crashes
 
+def eval_policy_pareto(aim, env, eval_episodes=10, test=False, nn_architecture='base', omega_space='discrete'):
+
+    avg_reward = 0.0
+    num_crashes = 0
+    avg_speed = []
+    avg_emissions = []
+    if omega_space == 'continuous':
+        omegas = np.linspace(0.0, 1.0, num=eval_episodes * 10, dtype=np.float64)
+    else:
+        omegas = None
+    for i in range(eval_episodes * 10):
+
+        state = env.reset()
+        if omegas is None:
+            env.omega = (i % 11) / 10
+        else:
+            env.omega = omegas[i]
+        if nn_architecture == 'base':
+            state.x[:, -1] = env.omega
+        while state.x is None:
+            state, _, _, _ = env.step([])
+        done = False
+        ep_steps = 0
+        # veh_num = 4
+        speed = []
+        emission = []
+        while not done:
+            ep_steps += 1
+
+            if state.x is None:
+                state, _, done, _ = env.step([])
+            else:
+                speed_per_veh = 0
+                emission_per_veh = 0
+                for idx in env.k.vehicle.get_ids():
+                    speed_per_veh += env.k.vehicle.get_speed(idx)
+                    emission_per_veh += env.k.vehicle.kernel_api.vehicle.getCO2Emission(idx) / 50000
+                speed.append(speed_per_veh/len(env.k.vehicle.get_ids()))
+                emission.append(emission_per_veh/len(env.k.vehicle.get_ids()))
+
+                if nn_architecture == 'base':
+                    actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type)
+                else:
+                    actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type,
+                                                torch.tensor([[env.omega, 1 - env.omega]], dtype=torch.float, device=device).repeat(state.x.shape[0], 1))
+                state, reward, done, _ = env.step(rl_actions=actions)
+            if env.k.simulation.check_collision():
+                num_crashes += 1
+
+            #  if state.x is None:
+            # if ep_steps % 150 == 0:
+            #     # we may need to put "best" instead of 0 as starting lane (aquarium)
+            #     env.k.vehicle.add("rl_{}".format(veh_num), "rl", "b_c", 0.0, "best", 0.0)
+            #     env.k.vehicle.add("rl_{}".format(veh_num + 1), "rl", "t_c", 0.0, "best", 0.0)
+            #     env.k.vehicle.add("rl_{}".format(veh_num + 2), "rl", "l_c", 0.0, "best", 0.0)
+            #     env.k.vehicle.add("rl_{}".format(veh_num + 3), "rl", "r_c", 0.0, "best", 0.0)
+            #     veh_num += 4
+            avg_reward += reward
+        avg_speed.append(np.mean(speed))
+        avg_emissions.append(np.mean(emission))
+
+        # print(f"Average speed: {np.mean(avg_speed):.3f}. Average CO2 emission: {np.mean(avg_emissions):.3f}")
+
+        # tot_veh_num += veh_num
+    avg_reward /= (eval_episodes * 10)
+    # tot_veh_num = tot_veh_num / 2
+
+    # print("---------------------------------------")
+    # print(f"Evaluation over {eval_episodes} episodes: {avg_reward:.3f}. Number of crashes: {num_crashes}")
+    # print("---------------------------------------")
+    # if test:
+    #     for i in range(11):
+    #         print(f"Omega value: {i / 10}. Avg speed: {np.mean(avg_speed[i])}. Avg. emissions: {np.mean(avg_emissions[i])}")
+    np.save('pareto_speed_cs.npy', avg_speed)
+    np.save('pareto_emission_cs.npy', avg_emissions)
+
+    return avg_reward, num_crashes
 
 def get_inflows(rate=100):
     inflow = InFlows()

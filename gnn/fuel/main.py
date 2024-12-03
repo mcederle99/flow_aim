@@ -5,7 +5,7 @@ from flow.core.params import SumoParams, EnvParams, InitialConfig, NetParams, Ve
 from flow.utils.registry import make_create_env
 from intersection_network import IntersectionNetwork, ADDITIONAL_NET_PARAMS
 from intersection_env_new import MyEnv, ADDITIONAL_ENV_PARAMS
-from utils import eval_policy, get_inflows, eval_policy_inflows
+from utils import eval_policy, get_inflows, eval_policy_inflows  # , eval_policy_pareto
 import argparse
 import os
 import warnings
