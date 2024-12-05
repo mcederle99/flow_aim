@@ -263,7 +263,7 @@ def from_networkx_multigraph(g, nn_architecture):
     return data
 
 
-def eval_policy(aim, env, eval_episodes=10, test=False, nn_architecture='base', omega_space='discrete'):
+def eval_policy(aim, env, eval_episodes=10, test=True, nn_architecture='base', omega_space='discrete'):
 
     avg_reward = 0.0
     num_crashes = 0
@@ -284,7 +284,7 @@ def eval_policy(aim, env, eval_episodes=10, test=False, nn_architecture='base', 
         if nn_architecture == 'base':
             state.x[:, -1] = env.omega
         while state.x is None:
-            state, _, _, _ = env.step([])
+            state, _, _, _ = env.step([], evaluate=True)
         done = False
         ep_steps = 0
         # veh_num = 4
@@ -292,7 +292,7 @@ def eval_policy(aim, env, eval_episodes=10, test=False, nn_architecture='base', 
             ep_steps += 1
 
             if state.x is None:
-                state, _, done, _ = env.step([])
+                state, _, done, _ = env.step([], evaluate=True)
             else:
                 if test:
                     speed = 0
@@ -312,7 +312,7 @@ def eval_policy(aim, env, eval_episodes=10, test=False, nn_architecture='base', 
                 else:
                     actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type,
                                                 torch.tensor([[env.omega, 1 - env.omega]], dtype=torch.float, device=device).repeat(state.x.shape[0], 1))
-                state, reward, done, _ = env.step(rl_actions=actions)
+                state, reward, done, _ = env.step(rl_actions=actions, evaluate=True)
             if env.k.simulation.check_collision():
                 num_crashes += 1
 
@@ -331,15 +331,36 @@ def eval_policy(aim, env, eval_episodes=10, test=False, nn_architecture='base', 
         # tot_veh_num += veh_num
     avg_reward /= (eval_episodes * 10)
     # tot_veh_num = tot_veh_num / 2
-
-    print("---------------------------------------")
-    print(f"Evaluation over {eval_episodes} episodes: {avg_reward:.3f}. Number of crashes: {num_crashes}")
-    print("---------------------------------------")
     if test:
+        objectives = []
         for i in range(11):
-            print(f"Omega value: {i / 10}. Avg speed: {np.mean(avg_speed[i])}. Avg. emissions: {np.mean(avg_emissions[i])}")
+            objectives.append([np.mean(avg_speed[i]), np.mean(avg_emissions[i])])
+        num_pareto_solutions = compute_pareto_front(objectives)
 
-    return avg_reward, num_crashes
+    print("---------------------------------------")
+    print(f"Evaluation over {eval_episodes} episodes: {avg_reward:.3f}. Number of crashes: {num_crashes}."
+          f"Number of Pareto solutions: {num_pareto_solutions}")
+    print("---------------------------------------")
+
+    return avg_reward, num_crashes, num_pareto_solutions
+
+
+def compute_pareto_front(objectives):
+    # Ensure inputs are numpy arrays
+    objectives = np.array(objectives)
+
+    # Determine the Pareto front
+    num_points = objectives.shape[0]
+    is_pareto = np.ones(num_points, dtype=bool)
+    for i in range(num_points):
+        for j in range(num_points):
+            if all(objectives[j] <= objectives[i]) and any(objectives[j] < objectives[i]):
+                is_pareto[i] = False
+                break
+    pareto_front = objectives[is_pareto]
+
+    return len(pareto_front)
+
 
 def eval_policy_pareto(aim, env, eval_episodes=10, test=False, nn_architecture='base', omega_space='discrete'):
 

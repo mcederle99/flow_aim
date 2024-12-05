@@ -112,7 +112,7 @@ if args.load_model != "":
     if args.inflows == "yes":
         _, _ = eval_policy_inflows(aim, env, eval_episodes=10)
     else:
-        _, _ = eval_policy(aim, env, eval_episodes=11, test=True, nn_architecture=args.nn_architecture, omega_space=args.omega_space)
+        _, _, _ = eval_policy(aim, env, eval_episodes=11, test=True, nn_architecture=args.nn_architecture, omega_space=args.omega_space)
     env.terminate()
     raise KeyboardInterrupt
 
@@ -124,13 +124,14 @@ if args.inflows == "yes":
     print(f"Inflow_rate: {inflow_rate}")
     print("---------------------------------------")
 else:
-    ev, num_crashes = eval_policy(aim, env, eval_episodes=11, nn_architecture=args.nn_architecture, omega_space=args.omega_space)
+    ev, num_crashes, _ = eval_policy(aim, env, eval_episodes=11, nn_architecture=args.nn_architecture, omega_space=args.omega_space)
 
 evaluations.append(ev)
-max_evaluations = -10
-best_num_crashes = 110
+max_evaluations = -1000
+best_num_crashes = 5
 num_steps = env.env_params.horizon
 num_evaluations = 1
+best_num_pareto_sol = 0
 
 ep_steps = 0
 ep_return = 0
@@ -202,14 +203,16 @@ for t in range(int(args.max_timesteps)):
                 print(f"Inflow_rate: {inflow_rate}")
                 print("---------------------------------------")
             else:
-                ev, num_crashes = eval_policy(aim, env, eval_episodes=11, nn_architecture=args.nn_architecture, omega_space=args.omega_space)
+                ev, num_crashes, num_pareto_sol = eval_policy(aim, env, eval_episodes=11, nn_architecture=args.nn_architecture, omega_space=args.omega_space)
             evaluations.append(ev)
             if args.save_model:
                 np.save(f"./results/{file_name}", evaluations)
-            if evaluations[-1] > max_evaluations and num_crashes <= best_num_crashes:
+            # if evaluations[-1] > max_evaluations and num_crashes <= best_num_crashes:
+            if num_pareto_sol >= best_num_pareto_sol and num_crashes <= best_num_crashes and evaluations[-1] > max_evaluations:
                 if args.save_model:
                     aim.save(f"./models/{file_name}")
                 max_evaluations = evaluations[-1]
+                best_num_pareto_sol = num_pareto_sol
                 best_num_crashes = num_crashes
             num_evaluations += 1
             # if num_crashes == 0 and evaluations[-1] > 50:

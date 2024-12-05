@@ -298,7 +298,7 @@ class Env(gym.Env, metaclass=ABCMeta):
 
             self.initial_state[veh_id] = (type_id, edge, lane, pos, speed)
 
-    def step(self, rl_actions):
+    def step(self, rl_actions, evaluate=False):
         """Advance the environment by one step.
 
         Assigns actions to autonomous and human-driven agents (i.e. vehicles,
@@ -316,6 +316,7 @@ class Env(gym.Env, metaclass=ABCMeta):
         ----------
         rl_actions : array_like
             an list of actions provided by the rl algorithm
+        evaluate
 
         Returns
         -------
@@ -328,6 +329,12 @@ class Env(gym.Env, metaclass=ABCMeta):
         info : dict
             contains other diagnostic information from the previous action
         """
+        if not evaluate:
+            if self.omega_space == 'discrete':
+                self.omega = np.random.choice([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
+            else:
+                self.omega = np.random.rand(1).item()
+
         for _ in range(self.env_params.sims_per_step):
             self.time_counter += 1
             self.step_counter += 1
