@@ -334,7 +334,7 @@ def eval_policy(aim, env, eval_episodes=10, test=True, nn_architecture='base', o
     if test:
         objectives = []
         for i in range(11):
-            objectives.append([np.mean(avg_speed[i]), np.mean(avg_emissions[i])])
+            objectives.append([-np.mean(avg_speed[i]), np.mean(avg_emissions[i])])
         num_pareto_solutions = compute_pareto_front(objectives)
 
     print("---------------------------------------")
