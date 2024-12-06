@@ -130,7 +130,7 @@ evaluations.append(ev)
 max_evaluations = -1000
 best_num_crashes = 5
 num_steps = env.env_params.horizon
-num_evaluations = 1
+num_evaluations = 6
 best_num_pareto_sol = 0
 
 ep_steps = 0
@@ -197,7 +197,7 @@ for t in range(int(args.max_timesteps)):
     if done:
         print(f"Total T: {t + 1} Episode Num: {ep_number + 1} Episode T: {ep_steps} Reward: {ep_return:.3f}")
         # Evaluate episode
-        if (t + 1) >= args.eval_freq * num_evaluations:
+        if (t + 1) >= args.eval_freq * num_evaluations and t >= 30000:
             if args.inflows == "yes":
                 ev, num_crashes = eval_policy_inflows(aim, env, eval_episodes=10)
                 print(f"Inflow_rate: {inflow_rate}")
