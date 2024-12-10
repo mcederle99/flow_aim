@@ -5,7 +5,7 @@ from flow.core.params import SumoParams, EnvParams, InitialConfig, NetParams, Ve
 from flow.utils.registry import make_create_env
 from intersection_network import IntersectionNetwork, ADDITIONAL_NET_PARAMS
 from intersection_env_new import MyEnv, ADDITIONAL_ENV_PARAMS
-from utils import eval_policy, get_inflows, eval_policy_inflows  # , eval_policy_pareto
+from utils import eval_policy, get_inflows, eval_policy_inflows, eval_policy_pareto_discrete, eval_policy_pareto_continuous
 import argparse
 import os
 import warnings
@@ -112,7 +112,10 @@ if args.load_model != "":
     if args.inflows == "yes":
         _, _ = eval_policy_inflows(aim, env, eval_episodes=10)
     else:
-        _, _, _ = eval_policy(aim, env, eval_episodes=11, test=True, nn_architecture=args.nn_architecture, omega_space=args.omega_space)
+        if args.omega_space == "discrete":
+            _, _ = eval_policy_pareto_discrete(aim, env, eval_episodes=11, nn_architecture=args.nn_architecture)
+        else:
+            _, _ = eval_policy_pareto_continuous(aim, env, eval_episodes=11, nn_architecture=args.nn_architecture)
     env.terminate()
     raise KeyboardInterrupt
 
