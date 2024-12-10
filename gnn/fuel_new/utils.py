@@ -343,13 +343,15 @@ def compute_pareto_front(solutions):
     return pareto_front
 
 
-def compute_hypervolume(pareto_front):
+def compute_hypervolume(pareto_front, reference_point=(0, -1.03)):
     """
-    Compute the hypervolume for a two-objective maximization problem.
+    Compute the hypervolume for a two-objective maximization problem,
+    considering negative values and a custom reference point.
 
     Parameters:
-    pareto_front (list of tuples): A list of points on the Pareto front. Each point is a tuple (f1, f2),
-                                   where f1 and f2 are the two objectives.
+    pareto_front (list of tuples): A list of points on the Pareto front.
+                                   Each point is a tuple (f1, f2), where f1 and f2 are the two objectives.
+    reference_point (tuple): The reference point for computing the hypervolume.
 
     Returns:
     float: The computed hypervolume.
@@ -358,11 +360,11 @@ def compute_hypervolume(pareto_front):
     sorted_front = sorted(pareto_front, key=lambda x: (-x[0], x[1]))
 
     hypervolume = 0.0
-    previous_f2 = 0.0
+    previous_f2 = reference_point[1]
 
     for f1, f2 in sorted_front:
         if f2 > previous_f2:  # Only count non-dominated points
-            hypervolume += f1 * (f2 - previous_f2)
+            hypervolume += (f1 - reference_point[0]) * (f2 - previous_f2)
             previous_f2 = f2
 
     return hypervolume

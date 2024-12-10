@@ -4,7 +4,7 @@ from flow.controllers import ContinuousRouter, RLController
 from flow.core.params import SumoParams, EnvParams, InitialConfig, NetParams, VehicleParams, InFlows
 from flow.utils.registry import make_create_env
 from gnn.fuel.intersection_network import IntersectionNetwork, ADDITIONAL_NET_PARAMS
-from gnn.fuel.intersection_env import MyEnv, ADDITIONAL_ENV_PARAMS
+from gnn.fuel.intersection_env_new import MyEnv, ADDITIONAL_ENV_PARAMS
 import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 
@@ -61,7 +61,7 @@ flow_params['env'].horizon = 1000
 create_env, _ = make_create_env(flow_params)
 env = create_env()
 
-aim = TD3(3, 2, 1)
+# aim = TD3(3, 2, 1)
 # memory = ReplayBuffer()
 
 num_steps = env.env_params.horizon
@@ -82,7 +82,7 @@ for i in range(10):
         idx = env.k.vehicle.get_ids()[0]
         # print(env.k.vehicle.get_emission_class(idx))
         print(env.k.vehicle.kernel_api.vehicle.getCO2Emission(idx)/50000)
-        input("")
+        # input("")
         # print(env.k.vehicle.get_emission_class(idx) == "HBEFA3/PC_G_EU4")
         # print(env.k.vehicle.kernel_api.vehicle.getElectricityConsumption(idx))
         # env.k.vehicle.set_emission_class(idx)
