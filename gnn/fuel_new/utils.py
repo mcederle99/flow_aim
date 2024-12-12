@@ -279,8 +279,8 @@ def eval_policy_pareto_continuous(aim, env, eval_episodes=10, nn_architecture='b
                     for idx in env.k.vehicle.get_ids():
                         speed_per_veh += env.k.vehicle.get_speed(idx)
                         emission_per_veh += env.k.vehicle.kernel_api.vehicle.getCO2Emission(idx) / 50000
-                    speed.append(speed_per_veh/len(env.k.vehicle.get_ids()))
-                    emission.append(emission_per_veh/len(env.k.vehicle.get_ids()))
+                    speed.append(speed_per_veh / len(env.k.vehicle.get_ids()))
+                    emission.append(emission_per_veh / len(env.k.vehicle.get_ids()))
 
                     if nn_architecture == 'base':
                         actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type)

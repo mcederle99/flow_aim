@@ -121,6 +121,7 @@ for t in range(int(args.max_timesteps)):
 
     ep_steps += 1
 
+    om = env.omega
     if t < args.start_timesteps:
         actions = env.action_space.sample()
     else:
@@ -139,12 +140,12 @@ for t in range(int(args.max_timesteps)):
 
     if state_.x is None:
         if args.nn_architecture == "smart":
-            memory.add(state, actions, state, reward, done_bool, env.omega)
+            memory.add(state, actions, state, reward, done_bool, om)
         else:
             memory.add(state, actions, state, reward, done_bool)
     else:
         if args.nn_architecture == "smart":
-            memory.add(state, actions, state_, reward, done_bool, env.omega)
+            memory.add(state, actions, state_, reward, done_bool, om)
         else:
             memory.add(state, actions, state_, reward, done_bool)
 

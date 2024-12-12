@@ -119,7 +119,7 @@ class MyEnv(Env):
                 edge = 5
             else:
                 edge = edges_dict[self.k.vehicle.get_edge(q)]
-                              
+
             # ROUTE
             if self.k.vehicle.get_route(q) == '':  # just to fix a simulator bug
                 route = 0
