@@ -2,6 +2,7 @@ import numpy as np
 import torch
 from numpy.linalg import inv
 from torch_geometric.utils import from_networkx
+from itertools import product
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -331,6 +332,7 @@ def eval_policy_pareto_continuous(aim, env, eval_episodes=10, nn_architecture='b
     avg_speed = []
     avg_emissions = []
     avg_time_delta = []
+    # omegas = generate_combinations_with_sum() CHANGE ALSO NUM EVAL EPISODES (66)
     omegas = np.random.dirichlet([1, 1, 1], size=eval_episodes*10)
 
     for i in range(eval_episodes * 10):
@@ -477,3 +479,24 @@ def compute_hypervolume(pareto_front, reference_point=(0, -1.03, -10)):
             previous_f3 = max(previous_f3, f3)
 
     return hypervolume
+
+
+def generate_combinations_with_sum():
+    # Generate all ordered combinations of three integers from 0 to 10
+    combinations = [
+        combo for combo in product(range(11), repeat=3)
+        if sum(combo) == 10
+    ]
+
+    real_combinations = np.zeros((66, 3))
+    for idx, c in enumerate(combinations):
+        comb = []
+        for i in range(len(c)):
+            comb.append(c[i] / 10 + np.random.randn(1).item() * 0.01)
+            if comb[i] < 0:
+                comb[i] = 0.01
+            elif comb[i] > 1:
+                comb[i] = 0.99
+        real_combinations[idx] = comb
+
+    return real_combinations
