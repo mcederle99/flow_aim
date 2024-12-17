@@ -325,20 +325,22 @@ def from_networkx_multigraph(g, nn_architecture):
     return data
 
 
-def eval_policy_pareto_continuous(aim, env, eval_episodes=10, nn_architecture='base', test=False):
+def eval_policy_pareto_continuous(aim, env, eval_episodes=66, nn_architecture='base', test=False):
 
     avg_reward = 0.0
     tot_num_crashes = 0
     avg_speed = []
     avg_emissions = []
-    avg_time_delta = []
-    # omegas = generate_combinations_with_sum() CHANGE ALSO NUM EVAL EPISODES (66)
-    omegas = np.random.dirichlet([1, 1, 1], size=eval_episodes*10)
+    # avg_time_delta = []
+    avg_space_delta = []
+    omegas = generate_combinations_with_sum()  # CHANGE ALSO NUM EVAL EPISODES (66)
+    # omegas = np.random.dirichlet([1, 1, 1], size=eval_episodes*10)
 
-    for i in range(eval_episodes * 10):
+    for i in range(eval_episodes):
         speed = []
         emission = []
-        time_delta = []
+        # time_delta = []
+        space_delta = []
         for _ in range(10):
             state = env.reset()
             env.omegas = omegas[i]
@@ -365,18 +367,34 @@ def eval_policy_pareto_continuous(aim, env, eval_episodes=10, nn_architecture='b
                 else:
                     speed_per_veh = 0
                     emission_per_veh = 0
-                    time_per_veh_fuel = 0
-                    time_per_veh_elec = 0
-                    for idx in env.k.vehicle.get_ids():
+                    # time_per_veh_fuel = 0
+                    # time_per_veh_elec = 0
+                    space_per_veh_fuel = 0
+                    space_per_veh_elec = 0
+                    f_vehs = 0
+                    e_vehs = 0
+                    for index, idx in enumerate(env.k.vehicle.get_ids()):
                         speed_per_veh += env.k.vehicle.get_speed(idx)
                         emission_per_veh += env.k.vehicle.kernel_api.vehicle.getCO2Emission(idx) / 50000
-                        if env.k.vehicle.get_emission_class(idx) == "HBEFA3/PC_G_EU4":
-                            time_per_veh_fuel += 0.1
+                        # if env.k.vehicle.get_emission_class(idx) == "HBEFA3/PC_G_EU4":
+                            # time_per_veh_fuel += 0.1
+                        # else:
+                            # time_per_veh_elec += 0.1
+                        if state.x[index, 3].item() == 1:
+                            space_per_veh_fuel += state.x[index, 0].item() + 70
+                            f_vehs += 1
                         else:
-                            time_per_veh_elec += 0.1
+                            space_per_veh_elec += state.x[index, 0].item() + 70
+                            e_vehs += 1
+
+                    if f_vehs < e_vehs:
+                        space_per_veh_fuel += 120 * (f_vehs - e_vehs)
+                    elif f_vehs > e_vehs:
+                        space_per_veh_elec += 120 * (e_vehs - f_vehs)
+
                     speed.append(speed_per_veh / len(env.k.vehicle.get_ids()))
                     emission.append(emission_per_veh / len(env.k.vehicle.get_ids()))
-                    time_delta.append(abs(time_per_veh_elec - time_per_veh_fuel))
+                    space_delta.append(abs(space_per_veh_elec - space_per_veh_fuel) / 240)
 
                     if nn_architecture == 'base':
                         actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type)
@@ -393,13 +411,13 @@ def eval_policy_pareto_continuous(aim, env, eval_episodes=10, nn_architecture='b
 
         avg_speed.append(np.mean(speed))
         avg_emissions.append(np.mean(emission))
-        avg_time_delta.append(min(np.mean(time_delta), 10))
+        avg_space_delta.append(np.mean(space_delta))
 
-    avg_reward /= (eval_episodes * 100)
+    avg_reward /= (eval_episodes * 10)
 
     pareto_front = []
     for i in range(len(avg_speed)):
-        pareto_front.append((avg_speed[i], -avg_emissions[i], -avg_time_delta[i]))
+        pareto_front.append((avg_speed[i], -avg_emissions[i], -avg_space_delta[i]))
     front = compute_pareto_front(pareto_front)
 
     hv = compute_hypervolume(front)
@@ -412,7 +430,7 @@ def eval_policy_pareto_continuous(aim, env, eval_episodes=10, nn_architecture='b
     if test:
         np.save(f'pareto_front_continuous_{nn_architecture}.npy', front)
 
-    return tot_num_crashes, hv
+    return tot_num_crashes, hv, front
 
 
 def compute_pareto_front(solutions):
@@ -443,7 +461,7 @@ def compute_pareto_front(solutions):
     return pareto_front
 
 
-def compute_hypervolume(pareto_front, reference_point=(0, -1.03, -10)):
+def compute_hypervolume(pareto_front, reference_point=(0, -1.03, -1)):
     """
     Compute the hypervolume for a three-objective maximization problem.
 

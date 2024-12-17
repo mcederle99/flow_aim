@@ -158,9 +158,9 @@ class MyEnv(Env):
 
         return state
                                 
-    def compute_reward(self, rl_actions, **kwargs):
-        w_i = 2  # in the simulation without idle w_i = 0
-        w_c = 15
+    def compute_reward(self, rl_actions, state=None, **kwargs):
+        w_i = 1.67  # in the simulation without idle w_i = 0
+        w_c = 10
 
         # the get_ids() method is used to get the names of all vehicles in the network
         ids = self.k.vehicle.get_ids()
@@ -175,9 +175,11 @@ class MyEnv(Env):
         speeds = 0
         max_vel = 0
         re = 0
+        rf = 0
         fuel_vehs = 0
-        time_fv = 0
-        time_ev = 0
+        elec_vehs = 0
+        dist_fv = 0
+        dist_ev = 0
         for q in ids:
             vel = self.k.vehicle.get_speed(q)
             if vel > max_vel:
@@ -193,11 +195,23 @@ class MyEnv(Env):
             if self.k.vehicle.get_emission_class(q) == "HBEFA3/PC_G_EU4":
                 re += -self.k.vehicle.kernel_api.vehicle.getCO2Emission(q) / 50000
                 fuel_vehs += 1
-                time_fv += 0.1
             else:
-                time_ev += 0.1
+                elec_vehs += 1
 
-        rf = -abs(time_ev - time_fv)
+        if not_empty:
+            assert len(ids) == state.x.shape[0]
+            for idx in range(len(ids)):
+                assert state.x[idx, 3].item() == 0 or state.x[idx, 3].item() == 1
+                if state.x[idx, 3].item() == 1:
+                    dist_fv += state.x[idx, 0].item() + 70
+                else:
+                    dist_ev += state.x[idx, 0].item() + 70
+            if fuel_vehs < elec_vehs:
+                dist_fv += 120 * (fuel_vehs - elec_vehs)
+            elif fuel_vehs > elec_vehs:
+                dist_ev += 120 * (elec_vehs - fuel_vehs)
+
+            rf = -abs(dist_ev - dist_fv) / 240
 
         if fuel_vehs > 0:
             re = re / fuel_vehs
@@ -205,6 +219,7 @@ class MyEnv(Env):
             re = 0
         if crash:
             re = 0
+            rf = 0
 
         mean_speed = speeds / len(ids) if not_empty else 0.0
 

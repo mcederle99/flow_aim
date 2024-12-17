@@ -421,9 +421,9 @@ class Env(gym.Env, metaclass=ABCMeta):
         # compute the reward
         if self.env_params.clip_actions:
             #rl_clipped = self.clip_actions(rl_actions)
-            reward = self.compute_reward(rl_actions, fail=crash)	# THIS LINE
+            reward = self.compute_reward(rl_actions, fail=crash, state=next_observation)	# THIS LINE
         else:
-            reward = self.compute_reward(rl_actions, fail=crash)	# THIS LINE
+            reward = self.compute_reward(rl_actions, fail=crash, state=next_observation)	# THIS LINE
 
         return next_observation, reward, done, infos
 

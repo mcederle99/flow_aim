@@ -314,7 +314,7 @@ def eval_policy_pareto_continuous(aim, env, eval_episodes=10, nn_architecture='b
     if test:
         np.save(f'pareto_front_continuous_{nn_architecture}_fixom.npy', front)
 
-    return tot_num_crashes, hv
+    return tot_num_crashes, hv, front
 
 
 def compute_pareto_front(solutions):

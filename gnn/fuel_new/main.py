@@ -78,6 +78,7 @@ if args.save_model and not os.path.exists("./models"):
     os.makedirs("./models")
 
 torch.manual_seed(args.seed)
+np.random.seed(args.seed)
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 if args.nn_architecture == "smart":
@@ -95,17 +96,16 @@ memory = ReplayBuffer()
 if args.load_model != "":
     policy_file = file_name if args.load_model == "default" else args.load_model
     aim.load(f"./models/{policy_file}")
-    np.random.seed(np.random.randint(0, int(1e5)))
-    _, _ = eval_policy_pareto_continuous(aim, env, nn_architecture=args.nn_architecture, test=True)
+    _, _, _ = eval_policy_pareto_continuous(aim, env, nn_architecture=args.nn_architecture, test=True)
     env.terminate()
     raise KeyboardInterrupt
 
-np.random.seed(args.seed)
-
 evaluations = []
-_, hv = eval_policy_pareto_continuous(aim, env, nn_architecture=args.nn_architecture)
+fronts = []
+_, hv, front = eval_policy_pareto_continuous(aim, env, nn_architecture=args.nn_architecture)
 
 evaluations.append(hv)
+fronts.append(front)
 num_steps = env.env_params.horizon
 num_evaluations = 6
 best_hypervolume = 0
@@ -162,10 +162,12 @@ for t in range(int(args.max_timesteps)):
         print(f"Total T: {t + 1} Episode Num: {ep_number + 1} Episode T: {ep_steps} Reward: {ep_return:.3f}")
         # Evaluate episode
         if (t + 1) >= args.eval_freq * num_evaluations and t >= 30000:
-            num_crashes, hv = eval_policy_pareto_continuous(aim, env, nn_architecture=args.nn_architecture)
+            num_crashes, hv, front = eval_policy_pareto_continuous(aim, env, nn_architecture=args.nn_architecture)
             evaluations.append(hv)
+            fronts.append(front)
             if args.save_model:
-                np.save(f"./results/{file_name}", evaluations)
+                np.save(f"./results/{file_name}_hv", evaluations)
+                np.save(f"./results/{file_name}_front", fronts)
             if hv >= best_hypervolume and num_crashes <= 50:
                 if args.save_model:
                     aim.save(f"./models/{file_name}")
