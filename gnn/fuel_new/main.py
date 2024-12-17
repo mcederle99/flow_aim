@@ -102,10 +102,12 @@ if args.load_model != "":
 
 evaluations = []
 fronts = []
-_, hv, front = eval_policy_pareto_continuous(aim, env, nn_architecture=args.nn_architecture)
+crashes = []
+num_crashes, hv, front = eval_policy_pareto_continuous(aim, env, nn_architecture=args.nn_architecture)
 
 evaluations.append(hv)
 fronts.append(front)
+crashes.append(num_crashes)
 num_steps = env.env_params.horizon
 num_evaluations = 6
 best_hypervolume = 0
@@ -165,9 +167,11 @@ for t in range(int(args.max_timesteps)):
             num_crashes, hv, front = eval_policy_pareto_continuous(aim, env, nn_architecture=args.nn_architecture)
             evaluations.append(hv)
             fronts.append(front)
+            crashes.append(num_crashes)
             if args.save_model:
                 np.save(f"./results/{file_name}_hv", evaluations)
                 np.save(f"./results/{file_name}_front", fronts)
+                np.save(f"./results/{file_name}_crashes", crashes)
             if hv >= best_hypervolume and num_crashes <= 50:
                 if args.save_model:
                     aim.save(f"./models/{file_name}")
