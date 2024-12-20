@@ -124,7 +124,8 @@ class Env(gym.Env, metaclass=ABCMeta):
         flow.utils.exceptions.FatalFlowError
             if the render mode is not set to a valid value
         """
-        self.omegas = [0, 0, 0]
+        # self.omegas = [0, 0, 0]
+        self.omega = 0.0
         self.nn_architecture = 'base'
         self.omega_space = 'discrete'
 
@@ -333,7 +334,8 @@ class Env(gym.Env, metaclass=ABCMeta):
             if self.omega_space == 'discrete':
                 self.omega = np.random.choice([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
             else:
-                self.omegas = np.random.dirichlet([1, 1, 1])
+                # self.omegas = np.random.dirichlet([1, 1, 1])
+                self.omega = np.random.rand(1).item()
 
         for _ in range(self.env_params.sims_per_step):
             self.time_counter += 1
@@ -446,7 +448,8 @@ class Env(gym.Env, metaclass=ABCMeta):
         if self.omega_space == 'discrete':
             self.omega = np.random.choice([0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
         else:
-            self.omegas = np.random.dirichlet([1, 1, 1])
+            # self.omegas = np.random.dirichlet([1, 1, 1])
+            self.omega = np.random.rand(1).item()
         # reset the time counter
         self.time_counter = 0
 

@@ -138,7 +138,7 @@ class MyEnv(Env):
                            vel=torch.tensor([state[q][1]], dtype=torch.float, device=device),
                            acc=torch.tensor([state[q][2]], dtype=torch.float, device=device),
                            emission=torch.tensor([state[q][7]], dtype=torch.float, device=device),
-                           omegas=torch.tensor(self.omegas, dtype=torch.float, device=device))
+                           omegas=torch.tensor([self.omega], dtype=torch.float, device=device))
 
         edges, edges_type = compute_edges(self, state)
 
@@ -247,6 +247,7 @@ class MyEnv(Env):
         else:
             rc = 0
 
-        r = self.omegas[0] * rv + self.omegas[1] * re + self.omegas[2] * rf + w_c * rc + ri * w_i
+        # r = self.omegas[0] * rv + self.omegas[1] * re + self.omegas[2] * rf + w_c * rc + ri * w_i
+        r = self.omega * (0.5 * rv + 0.5 * re) + (1 - self.omega) * rf + w_c * rc + ri * w_i
 
         return r

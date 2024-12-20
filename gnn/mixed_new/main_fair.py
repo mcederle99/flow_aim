@@ -84,7 +84,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if args.nn_architecture == "smart":
     state_dim = 4
 else:
-    state_dim = 7
+    state_dim = 5
 edge_dim = 2
 action_dim = 1
 max_action = 5.0
@@ -130,13 +130,14 @@ for t in range(int(args.max_timesteps)):
 
     ep_steps += 1
 
-    om = [env.omegas[0].item(), env.omegas[1].item(), env.omegas[2].item()]
+    # om = [env.omegas[0].item(), env.omegas[1].item(), env.omegas[2].item()]
+    om = env.omega
     if t < args.start_timesteps:
         actions = env.action_space.sample()
     else:
         if args.nn_architecture == "smart":
             actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type,
-                                        torch.tensor([om],
+                                        torch.tensor([[om, 1 - om]],
                                                      dtype=torch.float, device=device).repeat(state.x.shape[0], 1))
         else:
             actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type)
@@ -179,7 +180,7 @@ for t in range(int(args.max_timesteps)):
                 np.save(f"./results/{file_name}_hv", evaluations)
                 np.save(f"./results/{file_name}_front", fronts)
                 np.save(f"./results/{file_name}_crashes", crashes)
-            if hv >= best_hypervolume and num_crashes <= 33:
+            if hv >= best_hypervolume and num_crashes <= 50:
                 if args.save_model:
                     aim.save(f"./models/{file_name}")
                 best_hypervolume = evaluations[-1]

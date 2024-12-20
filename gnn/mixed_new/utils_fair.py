@@ -325,7 +325,7 @@ def from_networkx_multigraph(g, nn_architecture):
     return data
 
 
-def eval_policy_pareto_continuous(aim, env, eval_episodes=66, nn_architecture='base', test=False):
+def eval_policy_pareto_continuous(aim, env, eval_episodes=10, nn_architecture='base', test=False):
 
     avg_reward = 0.0
     tot_num_crashes = 0
@@ -333,21 +333,22 @@ def eval_policy_pareto_continuous(aim, env, eval_episodes=66, nn_architecture='b
     avg_emissions = []
     # avg_time_delta = []
     avg_space_delta = []
-    omegas = generate_combinations_with_sum()  # CHANGE ALSO NUM EVAL EPISODES (66)
-    # omegas = np.random.dirichlet([1, 1, 1], size=eval_episodes*10)
+    # omegas = generate_combinations_with_sum()  # CHANGE ALSO NUM EVAL EPISODES (66)
+    omegas = np.linspace(0.0, 1.0, num=eval_episodes * 10, dtype=np.float64)
 
-    for i in range(eval_episodes):
+    for i in range(eval_episodes * 10):
         speed = []
         emission = []
         # time_delta = []
         space_delta = []
         for _ in range(10):
             state = env.reset()
-            env.omegas = omegas[i]
+            env.omega = omegas[i]
             if nn_architecture == 'base':
-                state.x[:, -3] = env.omegas[0]
-                state.x[:, -2] = env.omegas[1]
-                state.x[:, -1] = env.omegas[2]
+                # state.x[:, -3] = env.omegas[0]
+                # state.x[:, -2] = env.omegas[1]
+                # state.x[:, -1] = env.omegas[2]
+                state.x[:, -1] = env.omega
             while state.x is None:
                 state, _, _, _ = env.step([], evaluate=True)
 
@@ -399,9 +400,9 @@ def eval_policy_pareto_continuous(aim, env, eval_episodes=66, nn_architecture='b
                     if nn_architecture == 'base':
                         actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type)
                     else:
-                        om = [env.omegas[0].item(), env.omegas[1].item(), env.omegas[2].item()]
+                        # om = [env.omegas[0].item(), env.omegas[1].item(), env.omegas[2].item()]
                         actions = aim.select_action(state.x, state.edge_index, state.edge_attr, state.edge_type,
-                                                    torch.tensor([om], dtype=torch.float,
+                                                    torch.tensor([env.omega, 1 - env.omega], dtype=torch.float,
                                                                  device=device).repeat(state.x.shape[0], 1))
                     state, reward, done, _ = env.step(rl_actions=actions, evaluate=True)
                 if env.k.simulation.check_collision():
@@ -413,11 +414,12 @@ def eval_policy_pareto_continuous(aim, env, eval_episodes=66, nn_architecture='b
         avg_emissions.append(np.mean(emission))
         avg_space_delta.append(np.mean(space_delta))
 
-    avg_reward /= (eval_episodes * 10)
+    avg_reward /= (eval_episodes * 100)
 
     pareto_front = []
     for i in range(len(avg_speed)):
-        pareto_front.append((avg_speed[i], -avg_emissions[i], -avg_space_delta[i]))
+        # pareto_front.append((avg_speed[i], -avg_emissions[i], -avg_space_delta[i]))
+        pareto_front.append((-np.mean(avg_speed[i] + avg_emissions[i]), -avg_space_delta[i]))
     front = compute_pareto_front(pareto_front)
 
     hv = compute_hypervolume(front)
@@ -435,6 +437,59 @@ def eval_policy_pareto_continuous(aim, env, eval_episodes=66, nn_architecture='b
 
 def compute_pareto_front(solutions):
     """
+    Compute the Pareto frontier for a two-objective maximization problem.
+
+    Parameters:
+    solutions (list of tuples): A list of solutions. Each solution is a tuple (f1, f2),
+                                 where f1 and f2 are the two objectives.
+
+    Returns:
+    list of tuples: The Pareto frontier as a list of non-dominated solutions.
+    """
+    # Sort solutions by the first objective in descending order, breaking ties by the second in descending order
+    sorted_solutions = sorted(solutions, key=lambda x: (-x[0], -x[1]))
+
+    pareto_front = []
+    max_f2 = float('-inf')
+
+    for f1, f2 in sorted_solutions:
+        # If the solution is not dominated by any other, add it to the Pareto frontier
+        if f2 > max_f2:
+            pareto_front.append((f1, f2))
+            max_f2 = f2
+
+    return pareto_front
+
+
+def compute_hypervolume(pareto_front, reference_point=(0, -1.03)):
+    """
+    Compute the hypervolume for a two-objective maximization problem,
+    considering negative values and a custom reference point.
+
+    Parameters:
+    pareto_front (list of tuples): A list of points on the Pareto front.
+                                   Each point is a tuple (f1, f2), where f1 and f2 are the two objectives.
+    reference_point (tuple): The reference point for computing the hypervolume.
+
+    Returns:
+    float: The computed hypervolume.
+    """
+    # Sort the Pareto front by the first objective in descending order, breaking ties by the second objective
+    sorted_front = sorted(pareto_front, key=lambda x: (-x[0], x[1]))
+
+    hypervolume = 0.0
+    previous_f2 = reference_point[1]
+
+    for f1, f2 in sorted_front:
+        if f2 > previous_f2:  # Only count non-dominated points
+            hypervolume += (f1 - reference_point[0]) * (f2 - previous_f2)
+            previous_f2 = f2
+
+    return hypervolume
+
+"""
+def compute_pareto_front(solutions):
+
     Compute the Pareto frontier for a three-objective maximization problem.
 
     Parameters:
@@ -443,7 +498,7 @@ def compute_pareto_front(solutions):
 
     Returns:
     list of tuples: The Pareto frontier as a list of non-dominated solutions.
-    """
+
     # Sort solutions by the first objective in descending order, breaking ties by second and third in descending order
     sorted_solutions = sorted(solutions, key=lambda x: (-x[0], -x[1], -x[2]))
 
@@ -462,7 +517,7 @@ def compute_pareto_front(solutions):
 
 
 def compute_hypervolume(pareto_front, reference_point=(0, -1.03, -1)):
-    """
+
     Compute the hypervolume for a three-objective maximization problem.
 
     Parameters:
@@ -472,7 +527,7 @@ def compute_hypervolume(pareto_front, reference_point=(0, -1.03, -1)):
 
     Returns:
     float: The computed hypervolume.
-    """
+
     # Sort Pareto front by the first objective in descending order, breaking ties with the second and third objectives
     sorted_front = sorted(pareto_front, key=lambda x: (-x[0], -x[1], -x[2]))
 
@@ -518,3 +573,4 @@ def generate_combinations_with_sum():
         real_combinations[idx] = comb
 
     return real_combinations
+"""

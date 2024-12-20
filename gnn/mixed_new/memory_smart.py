@@ -20,7 +20,7 @@ class ReplayBuffer(object):
 
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    def add(self, state, action, next_state, reward, done, omegas):
+    def add(self, state, action, next_state, reward, done, omega):
         del state.dist
 
         transition = PairData(x_s=state.x, edge_index_s=state.edge_index,
@@ -31,8 +31,8 @@ class ReplayBuffer(object):
         transition.actions = torch.tensor(action, device=device).unsqueeze(dim=1)
         transition.reward = torch.tensor([reward], dtype=torch.float32, device=device)
         transition.not_done = 1. - torch.tensor([done], device=device)
-        transition.omega_s = torch.tensor([omegas], dtype=torch.float, device=device).repeat(state.x.shape[0], 1)
-        transition.omega_t = torch.tensor([omegas], dtype=torch.float, device=device).repeat(
+        transition.omega_s = torch.tensor([[omega, 1 - omega]], dtype=torch.float, device=device).repeat(state.x.shape[0], 1)
+        transition.omega_t = torch.tensor([[omega, 1 - omega]], dtype=torch.float, device=device).repeat(
             next_state.x.shape[0], 1)
 
         if len(list(self.buffer)) >= self.buffer_size:

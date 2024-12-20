@@ -13,7 +13,7 @@ class Actor(nn.Module):
         # edge encoder
         self.e_enc = nn.Linear(edge_dim, 32)
         # omega encoder
-        self.o_enc = nn.Linear(3, 64)
+        self.o_enc = nn.Linear(2, 64)
 
         self.conv1 = RGCNLayer(64, 64, 8, 32)
         self.conv2 = gnn.RGCNConv(64, 64, 8, aggr='max')
@@ -45,7 +45,7 @@ class Critic(nn.Module):
         # edge encoder
         self.e_enc1 = nn.Linear(edge_dim, 32)
         # omega encoder
-        self.o_enc1 = nn.Linear(3, 64)
+        self.o_enc1 = nn.Linear(2, 64)
 
         self.conv1 = RGCNLayer(64, 64, 8, 32)
         self.conv2 = gnn.RGCNConv(64, 64, 8, aggr='max')
@@ -57,7 +57,7 @@ class Critic(nn.Module):
         # edge encoder
         self.e_enc2 = nn.Linear(edge_dim, 32)
         # omega encoder
-        self.o_enc2 = nn.Linear(3, 64)
+        self.o_enc2 = nn.Linear(2, 64)
 
         self.conv3 = RGCNLayer(64, 64, 8, 32)
         self.conv4 = gnn.RGCNConv(64, 64, 8, aggr='max')
