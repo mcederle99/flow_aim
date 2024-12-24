@@ -10,6 +10,7 @@ import argparse
 import os
 import warnings
 warnings.filterwarnings("ignore", category=RuntimeWarning)
+warnings.filterwarnings("ignore", category=UserWarning)
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--seed", default=0, type=int)                # Sets PyTorch and Numpy seeds
