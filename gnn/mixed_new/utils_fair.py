@@ -455,7 +455,7 @@ def compute_pareto_front(solutions):
     for f1, f2 in sorted_solutions:
         # If the solution is not dominated by any other, add it to the Pareto frontier
         if f2 > max_f2:
-            pareto_front.append((f1, f2))
+            pareto_front.append([f1, f2])
             max_f2 = f2
 
     return pareto_front
