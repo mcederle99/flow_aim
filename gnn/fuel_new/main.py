@@ -9,6 +9,7 @@ from utils import eval_policy_pareto_continuous
 import argparse
 import os
 import warnings
+import pickle
 warnings.filterwarnings("ignore", category=RuntimeWarning)
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -170,9 +171,15 @@ for t in range(int(args.max_timesteps)):
             fronts.append(front)
             crashes.append(num_crashes)
             if args.save_model:
-                np.save(f"./results/{file_name}_hv", evaluations)
-                np.save(f"./results/{file_name}_front", fronts)
-                np.save(f"./results/{file_name}_crashes", crashes)
+                with open(f"./results/{file_name}_hv.pkl", "wb") as f:
+                    pickle.dump(evaluations, f)
+                with open(f"./results/{file_name}_front.pkl", "wb") as f:
+                    pickle.dump(fronts, f)
+                with open(f"./results/{file_name}_crashes.pkl", "wb") as f:
+                    pickle.dump(crashes, f)
+                # np.save(f"./results/{file_name}_hv", evaluations)
+                # np.save(f"./results/{file_name}_front", fronts)
+                # np.save(f"./results/{file_name}_crashes", crashes)
             if hv >= best_hypervolume and num_crashes <= 50:
                 if args.save_model:
                     aim.save(f"./models/{file_name}")
