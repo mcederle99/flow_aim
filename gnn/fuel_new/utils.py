@@ -294,6 +294,10 @@ def eval_policy_pareto_continuous(aim, env, eval_episodes=10, nn_architecture='b
 
                 avg_reward += reward
 
+        if test:
+            np.save(f'results/vehicle_speeds_{nn_architecture}_{omegas[i]}.npy', speed)
+            np.save(f'results/vehicle_emissions_{nn_architecture}_{omegas[i]}.npy', emission)
+
         avg_speed.append(np.mean(speed))
         avg_emissions.append(np.mean(emission))
 
