@@ -175,11 +175,11 @@ class MyEnv(Env):
         speeds = 0
         max_vel = 0
         re = 0
-        rf = 0
+        # rf = 0
         fuel_vehs = 0
         elec_vehs = 0
-        dist_fv = 0
-        dist_ev = 0
+        # dist_fv = 0
+        # dist_ev = 0
         for q in ids:
             vel = self.k.vehicle.get_speed(q)
             if vel > max_vel:
@@ -198,20 +198,20 @@ class MyEnv(Env):
             else:
                 elec_vehs += 1
 
-        if not_empty:
-            assert len(ids) == state.x.shape[0]
-            for idx in range(len(ids)):
-                assert state.x[idx, 3].item() == 0 or state.x[idx, 3].item() == 1
-                if state.x[idx, 3].item() == 1:
-                    dist_fv += state.x[idx, 0].item() + 70
-                else:
-                    dist_ev += state.x[idx, 0].item() + 70
-            if fuel_vehs < elec_vehs:
-                dist_fv += 120 * (fuel_vehs - elec_vehs)
-            elif fuel_vehs > elec_vehs:
-                dist_ev += 120 * (elec_vehs - fuel_vehs)
-
-            rf = -abs(dist_ev - dist_fv) / 240
+        # if not_empty:
+        #     assert len(ids) == state.x.shape[0]
+        #     for idx in range(len(ids)):
+        #         assert state.x[idx, 3].item() == 0 or state.x[idx, 3].item() == 1
+        #         if state.x[idx, 3].item() == 1:
+        #             dist_fv += state.x[idx, 0].item() + 70
+        #         else:
+        #             dist_ev += state.x[idx, 0].item() + 70
+        #     if fuel_vehs < elec_vehs:
+        #         dist_fv += 120 * (fuel_vehs - elec_vehs)
+        #     elif fuel_vehs > elec_vehs:
+        #         dist_ev += 120 * (elec_vehs - fuel_vehs)
+        #
+        #     rf = -abs(dist_ev - dist_fv) / 240
 
         if fuel_vehs > 0:
             re = re / fuel_vehs
@@ -219,7 +219,7 @@ class MyEnv(Env):
             re = 0
         if crash:
             re = 0
-            rf = 0
+            # rf = 0
 
         mean_speed = speeds / len(ids) if not_empty else 0.0
 
@@ -247,7 +247,7 @@ class MyEnv(Env):
         else:
             rc = 0
 
-        # r = self.omegas[0] * rv + self.omegas[1] * re + self.omegas[2] * rf + w_c * rc + ri * w_i
-        r = self.omega * (0.5 * rv + 0.5 * re) + (1 - self.omega) * rf + w_c * rc + ri * w_i
+        # r = self.omega * (0.5 * rv + 0.5 * re) + (1 - self.omega) * rf + w_c * rc + ri * w_i
+        r = self.omega * rv + (1 - self.omega) * re + w_c * rc + ri * w_i
 
         return r

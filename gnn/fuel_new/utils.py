@@ -294,9 +294,9 @@ def eval_policy_pareto_continuous(aim, env, eval_episodes=10, nn_architecture='b
 
                 avg_reward += reward
 
-        if test:
-            np.save(f'results/vehicle_speeds_{nn_architecture}_{omegas[i]}.npy', speed)
-            np.save(f'results/vehicle_emissions_{nn_architecture}_{omegas[i]}.npy', emission)
+        # if test:
+        #     np.save(f'results/vehicle_speeds_{nn_architecture}_{omegas[i]}.npy', speed)
+        #     np.save(f'results/vehicle_emissions_{nn_architecture}_{omegas[i]}.npy', emission)
 
         avg_speed.append(np.mean(speed))
         avg_emissions.append(np.mean(emission))
@@ -306,7 +306,7 @@ def eval_policy_pareto_continuous(aim, env, eval_episodes=10, nn_architecture='b
     pareto_front = []
     for i in range(len(avg_speed)):
         pareto_front.append((avg_speed[i], -avg_emissions[i]))
-    front = compute_pareto_front(pareto_front)
+    front, indexes = compute_pareto_front(pareto_front)
 
     hv = compute_hypervolume(front)
 
@@ -315,10 +315,10 @@ def eval_policy_pareto_continuous(aim, env, eval_episodes=10, nn_architecture='b
           f"Number of crashes: {tot_num_crashes}. Hypervolume: {hv}")
     print("---------------------------------------")
 
-    if test:
-        np.save(f'pareto_front_continuous_{nn_architecture}_fixom.npy', front)
+    # if test:
+    #     np.save(f'pareto_front_continuous_{nn_architecture}_fixom.npy', front)
 
-    return tot_num_crashes, hv, front
+    return tot_num_crashes, hv, front, indexes
 
 
 def compute_pareto_front(solutions):
@@ -336,15 +336,17 @@ def compute_pareto_front(solutions):
     sorted_solutions = sorted(solutions, key=lambda x: (-x[0], -x[1]))
 
     pareto_front = []
+    pareto_indexes = []
     max_f2 = float('-inf')
 
     for f1, f2 in sorted_solutions:
         # If the solution is not dominated by any other, add it to the Pareto frontier
         if f2 > max_f2:
             pareto_front.append([f1, f2])
+            pareto_indexes.append(solutions.index([f1, f2]))
             max_f2 = f2
 
-    return pareto_front
+    return pareto_front, pareto_indexes
 
 
 def compute_hypervolume(pareto_front, reference_point=(0, -1.03)):
@@ -372,3 +374,20 @@ def compute_hypervolume(pareto_front, reference_point=(0, -1.03)):
             previous_f2 = f2
 
     return hypervolume
+
+
+def compute_sparsity(pareto_front):
+    # Sort the Pareto front by the first objective in descending order, breaking ties by the second objective
+    sorted_front = sorted(pareto_front, key=lambda x: (-x[0], x[1]))
+
+    sparsity = 0.0
+    num_sol = len(sorted_front)
+    if num_sol <= 1:
+        return np.inf
+
+    for j in range(2):
+        for i in range(num_sol - 1):
+            sparsity += (sorted_front[i][j] - sorted_front[i+1][j])**2
+    sparsity /= (num_sol - 1)
+
+    return sparsity

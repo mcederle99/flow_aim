@@ -98,14 +98,14 @@ memory = ReplayBuffer()
 if args.load_model != "":
     policy_file = file_name if args.load_model == "default" else args.load_model
     aim.load(f"./models/{policy_file}")
-    _, _, _ = eval_policy_pareto_continuous(aim, env, nn_architecture=args.nn_architecture, test=True)
+    _, _, _, _ = eval_policy_pareto_continuous(aim, env, nn_architecture=args.nn_architecture, test=True)
     env.terminate()
     raise KeyboardInterrupt
 
 evaluations = []
 fronts = []
 crashes = []
-num_crashes, hv, front = eval_policy_pareto_continuous(aim, env, nn_architecture=args.nn_architecture)
+num_crashes, hv, front, _ = eval_policy_pareto_continuous(aim, env, nn_architecture=args.nn_architecture)
 
 evaluations.append(hv)
 fronts.append(front)
@@ -113,6 +113,7 @@ crashes.append(num_crashes)
 num_steps = env.env_params.horizon
 num_evaluations = 6
 best_hypervolume = 0
+best_num_sol = 0
 
 ep_steps = 0
 ep_return = 0
@@ -166,7 +167,8 @@ for t in range(int(args.max_timesteps)):
         print(f"Total T: {t + 1} Episode Num: {ep_number + 1} Episode T: {ep_steps} Reward: {ep_return:.3f}")
         # Evaluate episode
         if (t + 1) >= args.eval_freq * num_evaluations and t >= 30000:
-            num_crashes, hv, front = eval_policy_pareto_continuous(aim, env, nn_architecture=args.nn_architecture)
+            num_crashes, hv, front, pareto_indexes = eval_policy_pareto_continuous(aim, env,
+                                                                                   nn_architecture=args.nn_architecture)
             evaluations.append(hv)
             fronts.append(front)
             crashes.append(num_crashes)
@@ -180,10 +182,18 @@ for t in range(int(args.max_timesteps)):
                 # np.save(f"./results/{file_name}_hv", evaluations)
                 # np.save(f"./results/{file_name}_front", fronts)
                 # np.save(f"./results/{file_name}_crashes", crashes)
-            if hv >= best_hypervolume and num_crashes <= 50:
-                if args.save_model:
+            if num_crashes <= 50 and args.save_model:
+                if len(front) > best_num_sol:
                     aim.save(f"./models/{file_name}")
-                best_hypervolume = evaluations[-1]
+                    best_hypervolume = evaluations[-1]
+                    best_num_sol = len(front)
+                    with open(f"./results/{file_name}_pareto_indexes.pkl", "wb") as f:
+                        pickle.dump(pareto_indexes, f)
+                if len(front) == best_num_sol and hv > best_hypervolume:
+                    aim.save(f"./models/{file_name}")
+                    best_hypervolume = evaluations[-1]
+                    with open(f"./results/{file_name}_pareto_indexes.pkl", "wb") as f:
+                        pickle.dump(pareto_indexes, f)
             num_evaluations += 1
 
         # Reset environment
