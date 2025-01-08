@@ -305,7 +305,7 @@ def eval_policy_pareto_continuous(aim, env, eval_episodes=10, nn_architecture='b
 
     pareto_front = []
     for i in range(len(avg_speed)):
-        pareto_front.append((avg_speed[i], -avg_emissions[i]))
+        pareto_front.append((round(avg_speed[i], 9), round(-avg_emissions[i], 9)))
     front, indexes = compute_pareto_front(pareto_front)
 
     hv = compute_hypervolume(front)
