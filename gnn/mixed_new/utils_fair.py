@@ -324,7 +324,7 @@ def from_networkx_multigraph(g, nn_architecture):
     return data
 
 
-def eval_policy_pareto_continuous(aim, env, eval_episodes=10, nn_architecture='base', test=False):
+def eval_policy_pareto_continuous(aim, env, eval_episodes=10, nn_architecture='base'):
 
     avg_reward = 0.0
     tot_num_crashes = 0
@@ -404,10 +404,6 @@ def eval_policy_pareto_continuous(aim, env, eval_episodes=10, nn_architecture='b
 
                 avg_reward += reward
 
-        # if test:
-        #     np.save(f'results/vehicle_speeds_{nn_architecture}_{omegas[i]}.npy', speed)
-        #     np.save(f'results/vehicle_emissions_{nn_architecture}_{omegas[i]}.npy', emission)
-
         avg_speed.append(np.mean(speed))
         avg_emissions.append(np.mean(emission))
         # avg_space_delta.append(np.mean(space_delta))
@@ -426,9 +422,6 @@ def eval_policy_pareto_continuous(aim, env, eval_episodes=10, nn_architecture='b
     print(f"Evaluation over {eval_episodes} episodes: {avg_reward:.3f}."
           f"Number of crashes: {tot_num_crashes}. Hypervolume: {hv}")
     print("---------------------------------------")
-
-    # if test:
-    #     np.save(f'pareto_front_continuous_{nn_architecture}.npy', front)
 
     return tot_num_crashes, hv, front, indexes
 
