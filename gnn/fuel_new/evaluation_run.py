@@ -189,7 +189,7 @@ for i in indexes:
 #         count += 1
 # print(count)
 
-with open(f"boxplot_speeds_{args.nn_architecture}.pkl", "wb") as f:
+with open(f"boxplot_speeds_{args.nn_architecture}_{args.seed}.pkl", "wb") as f:
     pickle.dump(boxplot_speeds, f)
-with open(f"boxplot_emissions_{args.nn_architecture}.pkl", "wb") as f:
+with open(f"boxplot_emissions_{args.nn_architecture}_{args.seed}.pkl", "wb") as f:
     pickle.dump(boxplot_emissions, f)

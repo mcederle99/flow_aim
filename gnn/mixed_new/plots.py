@@ -7,7 +7,7 @@ import matplotlib.patches as mpatches
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--nn_architecture", default="base")
+parser.add_argument("--nn_architecture", default="smart")
 parser.add_argument("--seed", default=0, type=int)
 parser.add_argument("--save", action="store_true")
 args = parser.parse_args()
