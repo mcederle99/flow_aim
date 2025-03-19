@@ -124,58 +124,58 @@ plt.close()
 print(crashes_list[best_index])
 
 # PARETO FRONTS COMPARISON
-with open(f"results/aim_fair_{args.seed}_continuous_base_front.pkl", "rb") as f:
-    fronts_list_base = pickle.load(f)
-with open(f"results/aim_fair_{args.seed}_continuous_smart_front.pkl", "rb") as f:
-    fronts_list_smart = pickle.load(f)
-
-best_num_sol_base = 0
-best_index_base = 0
-for i in range(len(fronts_list_base)):
-    if len(fronts_list_base[i]) > best_num_sol_base and crashes_list[i] <= 50:
-        best_num_sol_base = len(fronts_list_base[i])
-        best_index_base = i
-
-best_num_sol_smart = 0
-best_index_smart = 0
-for i in range(len(fronts_list_smart)):
-    if len(fronts_list_smart[i]) > best_num_sol_smart and crashes_list[i] <= 50:
-        best_num_sol_smart = len(fronts_list_smart[i])
-        best_index_smart = i
-
-front_base = np.array(fronts_list_base[best_index_base])
-front_smart = np.array(fronts_list_smart[best_index_smart])
-
-pareto_vel_base, pareto_em_base = [], []
-for i in range(front_base.shape[0]):
-    pareto_vel_base.append(front_base[i][0])
-    pareto_em_base.append(front_base[i][1])
-
-pareto_vel_smart, pareto_em_smart = [], []
-for i in range(front_smart.shape[0]):
-    pareto_vel_smart.append(front_smart[i][0])
-    pareto_em_smart.append(front_smart[i][1])
-
-# Create the staircase points
-x_staircase_base = np.concatenate([[pareto_vel_base[0]], pareto_vel_base])
-y_staircase_base = np.concatenate([pareto_em_base, [pareto_em_base[-1]]])
-x_staircase_smart = np.concatenate([[pareto_vel_smart[0]], pareto_vel_smart])
-y_staircase_smart = np.concatenate([pareto_em_smart, [pareto_em_smart[-1]]])
-
-# Create the figure and axis
-plt.figure(figsize=(8, 6))
-plt.step(x_staircase_base, y_staircase_base, where='post', label='Base')
-plt.scatter(np.array(pareto_vel_base), np.array(pareto_em_base))
-plt.step(x_staircase_smart, y_staircase_smart, where='post', label='Smart', color='#ff7f0e')
-plt.scatter(np.array(pareto_vel_smart), np.array(pareto_em_smart), color='#ff7f0e')
-
-# Set plot labels and title
-plt.xlabel('Velocity [m/s]')
-plt.ylabel('-CO2 emissions [mg/s]')
-plt.legend(fontsize=16)
-plt.grid(True)
-plt.show()
-plt.close()
+# with open(f"results/aim_fair_{args.seed}_continuous_base_front.pkl", "rb") as f:
+#     fronts_list_base = pickle.load(f)
+# with open(f"results/aim_fair_{args.seed}_continuous_smart_front.pkl", "rb") as f:
+#     fronts_list_smart = pickle.load(f)
+#
+# best_num_sol_base = 0
+# best_index_base = 0
+# for i in range(len(fronts_list_base)):
+#     if len(fronts_list_base[i]) > best_num_sol_base and crashes_list[i] <= 50:
+#         best_num_sol_base = len(fronts_list_base[i])
+#         best_index_base = i
+#
+# best_num_sol_smart = 0
+# best_index_smart = 0
+# for i in range(len(fronts_list_smart)):
+#     if len(fronts_list_smart[i]) > best_num_sol_smart and crashes_list[i] <= 50:
+#         best_num_sol_smart = len(fronts_list_smart[i])
+#         best_index_smart = i
+#
+# front_base = np.array(fronts_list_base[best_index_base])
+# front_smart = np.array(fronts_list_smart[best_index_smart])
+#
+# pareto_vel_base, pareto_em_base = [], []
+# for i in range(front_base.shape[0]):
+#     pareto_vel_base.append(front_base[i][0])
+#     pareto_em_base.append(front_base[i][1])
+#
+# pareto_vel_smart, pareto_em_smart = [], []
+# for i in range(front_smart.shape[0]):
+#     pareto_vel_smart.append(front_smart[i][0])
+#     pareto_em_smart.append(front_smart[i][1])
+#
+# # Create the staircase points
+# x_staircase_base = np.concatenate([[pareto_vel_base[0]], pareto_vel_base])
+# y_staircase_base = np.concatenate([pareto_em_base, [pareto_em_base[-1]]])
+# x_staircase_smart = np.concatenate([[pareto_vel_smart[0]], pareto_vel_smart])
+# y_staircase_smart = np.concatenate([pareto_em_smart, [pareto_em_smart[-1]]])
+#
+# # Create the figure and axis
+# plt.figure(figsize=(8, 6))
+# plt.step(x_staircase_base, y_staircase_base, where='post', label='Base')
+# plt.scatter(np.array(pareto_vel_base), np.array(pareto_em_base))
+# plt.step(x_staircase_smart, y_staircase_smart, where='post', label='Smart', color='#ff7f0e')
+# plt.scatter(np.array(pareto_vel_smart), np.array(pareto_em_smart), color='#ff7f0e')
+#
+# # Set plot labels and title
+# plt.xlabel('Velocity [m/s]')
+# plt.ylabel('-CO2 emissions [mg/s]')
+# plt.legend(fontsize=16)
+# plt.grid(True)
+# plt.show()
+# plt.close()
 
 # BOXPLOTS + FAIRNESS DISCUSSION
 with open(f"results/boxplot_speeds_{args.nn_architecture}_{args.seed}.pkl", "rb") as f:
