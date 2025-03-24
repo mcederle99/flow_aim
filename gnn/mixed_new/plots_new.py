@@ -7,13 +7,12 @@ import matplotlib.patches as mpatches
 
 
 parser = argparse.ArgumentParser()
-parser.add_argument("--nn_architecture", default="base")
 parser.add_argument("--save", action="store_true")
-parser.add_argument("--compare", action="store_true")
 args = parser.parse_args()
 
 num_seeds = 10
 num_eval = 55
+nn_architecture = "smart"
 
 fronts_list = []
 hv_list = np.zeros((num_seeds, num_eval))
@@ -21,12 +20,18 @@ crashes_list = np.zeros((num_seeds, num_eval))
 
 for seed in range(1, 11):
     # Load the object from the file
-    with open(f"results/aim_{seed}_continuous_{args.nn_architecture}_fixom_front.pkl", "rb") as f:
+    with open(f"results/aim_fair_{seed}_continuous_{nn_architecture}_front.pkl", "rb") as f:
         fronts_list.append(pickle.load(f))
-    with open(f"results/aim_{seed}_continuous_{args.nn_architecture}_fixom_hv.pkl", "rb") as f:
-        hv_list[seed - 1] = pickle.load(f)
-    with open(f"results/aim_{seed}_continuous_{args.nn_architecture}_fixom_crashes.pkl", "rb") as f:
-        crashes_list[seed - 1] = pickle.load(f)
+    with open(f"results/aim_fair_{seed}_continuous_{nn_architecture}_hv.pkl", "rb") as f:
+        tmp = pickle.load(f)
+        while len(tmp) < 55:
+            tmp.append(0)
+        hv_list[seed - 1] = tmp
+    with open(f"results/aim_fair_{seed}_continuous_{nn_architecture}_crashes.pkl", "rb") as f:
+        tmp = pickle.load(f)
+        while len(tmp) < 55:
+            tmp.append(0)
+        crashes_list[seed - 1] = tmp
 
 
 def compute_and_plot_ema(data, alpha=0.2):
@@ -36,7 +41,6 @@ def compute_and_plot_ema(data, alpha=0.2):
     Parameters:
         data (array-like): The input data to compute EMA on.
         alpha (float): The smoothing factor (0 < alpha ≤ 1). Smaller alpha means more smoothing.
-        plot (bool): Whether to plot the original data and EMA (default is True).
 
     Returns:
         np.ndarray: The computed EMA array.
@@ -69,7 +73,7 @@ plt.ylabel('Hypervolume')
 plt.grid(True, which='major', linestyle=':', linewidth=1, color='grey', alpha=0.7)
 plt.tight_layout()
 if args.save:
-    plt.savefig(f"plots/hypervolume_{args.nn_architecture}.pdf", format='pdf')
+    plt.savefig(f"plots/hypervolume_{nn_architecture}.pdf", format='pdf')
 else:
     plt.show()
 plt.close()
@@ -91,7 +95,7 @@ plt.ylabel('Number of crashes')
 plt.grid(True, which='major', linestyle=':', linewidth=1, color='grey', alpha=0.7)
 plt.tight_layout()
 if args.save:
-    plt.savefig(f"plots/crashes_{args.nn_architecture}.pdf", format='pdf')
+    plt.savefig(f"plots/crashes_{nn_architecture}.pdf", format='pdf')
 else:
     plt.show()
 plt.close()
@@ -147,16 +151,18 @@ for seed in range(10):
     plt.title('Pareto front velocity vs emissions')
     plt.grid(True)
     if args.save:
-        plt.savefig(f"plots/pareto_{args.nn_architecture}_{seed+1}.pdf", format='pdf')
+        plt.savefig(f"plots/pareto_{nn_architecture}_{seed+1}.pdf", format='pdf')
     else:
         plt.show()
     plt.close()
 
-    # BOXPLOTS
-    with open(f"results/boxplot_speeds_{args.nn_architecture}_{seed+1}.pkl", "rb") as f:
+    # BOXPLOTS + FAIRNESS DISCUSSION
+    with open(f"results/boxplot_speeds_{nn_architecture}_{seed+1}.pkl", "rb") as f:
         boxplot_speeds = pickle.load(f)
-    with open(f"results/boxplot_emissions_{args.nn_architecture}_{seed+1}.pkl", "rb") as f:
+    with open(f"results/boxplot_emissions_{nn_architecture}_{seed+1}.pkl", "rb") as f:
         boxplot_emissions = pickle.load(f)
+    with open(f"results/delta_fairness_{nn_architecture}_{seed+1}.pkl", "rb") as f:
+        delta_fairness = pickle.load(f)
 
     indexed_bs = list(enumerate(boxplot_speeds))
     sorted_indexed_bs = sorted(indexed_bs, key=lambda x: np.median(x[1]))
@@ -168,88 +174,89 @@ for seed in range(10):
         new_boxplot_emissions.append(boxplot_emissions[i])
         new_boxplot_speeds.append(boxplot_speeds[i])
 
+    new_delta_fairness_a = []
+    for i in original_indexes_bs:
+        new_delta_fairness_a.append(delta_fairness[i])
+    x = np.arange(len(delta_fairness))
+    y = new_delta_fairness_a
+
+    n_clusters = 2  # Number of categories
+    kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+    clusters = kmeans.fit_predict(np.array(y).reshape(-1, 1))
+    plt.figure(figsize=(8, 6))
+    colors = ['red', 'green']
+    for i in range(len(y)):
+        plt.scatter(x[i], y[i], label=f"Cluster {i + 1}", c=colors[clusters[i]])
+    plt.show()
+    plt.close()
+
+    # Fit a parabola (degree 2) to the data
+    coefficients = np.polyfit(x, y, deg=2)  # Returns coefficients [a, b, c] for ax^2 + bx + c
+    parabola = np.poly1d(coefficients)  # Create a polynomial function from the coefficients
+    # Generate smooth curve for the parabola
+    x_smooth = np.linspace(min(x), max(x), 500)
+    y_smooth = parabola(x_smooth)
+    y_fitted = parabola(x)  # Fitted y-values at original x points
+    residuals = y - y_fitted  # Residuals
+    std_error = np.sqrt(np.sum(residuals ** 2) / (len(y) - len(coefficients)))
+    # Confidence interval (95%)
+    from scipy.stats import t
+    alpha = 0.025  # Significance level
+    t_value = t.ppf(1 - alpha / 2, df=len(y) - len(coefficients))  # t-value for 95% CI
+    # Confidence interval bounds
+    confidence_interval = t_value * std_error
+    y_upper = y_smooth + confidence_interval
+    y_lower = y_smooth - confidence_interval
+
+    fig, ax = plt.subplots(figsize=(10, 6), dpi=100)
+    # Plot the original data points
+    ax.scatter(x, y, color="blue", label="Data Points", zorder=3)
+    # Plot the fitted parabola
+    ax.plot(x_smooth, y_smooth, color="orange", label=f"Fitted Parabola: {parabola}")
+    # Plot the confidence interval
+    ax.fill_between(
+        x_smooth, y_lower, y_upper, color="orange", alpha=0.3, label="97.5% Confidence Interval"
+    )
+    # Customize the plot
+    ax.set_title("Average $\Delta$ travel time between fuel and electric vehicles")
+    ax.set_xlabel("Pareto efficient solutions")
+    ax.set_ylabel("Time [s]")
+    ax.set_xticks(range(len(x)))
+    ax.set_xticklabels([])
+    # ax.legend()
+    ax.grid(True, which='major', linestyle=':', linewidth=1, color='grey', alpha=0.7)
+    if args.save:
+        plt.savefig(f"plots/delta_time_{nn_architecture}_{seed+1}.pdf", format='pdf')
+    else:
+        plt.show()
+    plt.close()
+
+    fairest_solution = np.argmin(new_delta_fairness_a) + 1
+
     _, ax = plt.subplots(figsize=(10, 6), dpi=100)
     ax.boxplot(new_boxplot_speeds, vert=True, patch_artist=True)
+    # plt.axvline(x=fairest_solution, color="red", linestyle="--", linewidth=2)
     ax.grid(True, which='major', linestyle=':', linewidth=1, color='grey', alpha=0.7)
     ax.set_xlabel("Pareto efficient solutions")
     ax.set_ylabel("Velocity [m/s]")
     ax.set_xticklabels([])
     ax.set_title("Velocities distribution at test time")
     if args.save:
-        plt.savefig(f"plots/boxplot_vel_{args.nn_architecture}_{seed+1}.pdf", format='pdf')
+        plt.savefig(f"plots/boxplot_vel_{nn_architecture}_{seed+1}.pdf", format='pdf')
     else:
         plt.show()
     plt.close()
 
     _, ax = plt.subplots(figsize=(10, 6), dpi=100)
     ax.boxplot(new_boxplot_emissions, vert=True, patch_artist=True)
+    # plt.axvline(x=fairest_solution, color="red", linestyle="--", linewidth=2)
     ax.grid(True, which='major', linestyle=':', linewidth=1, color='grey', alpha=0.7)
     ax.set_xlabel("Pareto efficient solutions")
     ax.set_ylabel("CO2 emissions [mg/s]")
     ax.set_xticklabels([])
     ax.set_title("Emissions distribution at test time")
     if args.save:
-        plt.savefig(f"plots/boxplot_em_{args.nn_architecture}_{seed+1}.pdf", format='pdf')
+        plt.savefig(f"plots/boxplot_em_{nn_architecture}_{seed+1}.pdf", format='pdf')
     else:
         plt.show()
     plt.close()
-
-# PARETO FRONTS COMPARISON
-if args.compare:
-    for seed in range(10):
-        with open(f"results/aim_{seed+1}_continuous_base_fixom_front.pkl", "rb") as f:
-            fronts_list_base = pickle.load(f)
-        with open(f"results/aim_{seed+1}_continuous_smart_fixom_front.pkl", "rb") as f:
-            fronts_list_smart = pickle.load(f)
-
-        best_num_sol_base = 0
-        best_index_base = 0
-        for i in range(len(fronts_list_base)):
-            if len(fronts_list_base[i]) > best_num_sol_base:
-                best_num_sol_base = len(fronts_list_base[i])
-                best_index_base = i
-
-        best_num_sol_smart = 0
-        best_index_smart = 0
-        for i in range(len(fronts_list_smart)):
-            if len(fronts_list_smart[i]) > best_num_sol_smart:
-                best_num_sol_smart = len(fronts_list_smart[i])
-                best_index_smart = i
-
-        front_base = np.array(fronts_list_base[best_index_base])
-        front_smart = np.array(fronts_list_smart[best_index_smart])
-
-        pareto_vel_base, pareto_em_base = [], []
-        for i in range(front_base.shape[0]):
-            pareto_vel_base.append(front_base[i][0])
-            pareto_em_base.append(front_base[i][1])
-
-        pareto_vel_smart, pareto_em_smart = [], []
-        for i in range(front_smart.shape[0]):
-            pareto_vel_smart.append(front_smart[i][0])
-            pareto_em_smart.append(front_smart[i][1])
-
-        # Create the staircase points
-        x_staircase_base = np.concatenate([[pareto_vel_base[0]], pareto_vel_base])
-        y_staircase_base = np.concatenate([pareto_em_base, [pareto_em_base[-1]]])
-        x_staircase_smart = np.concatenate([[pareto_vel_smart[0]], pareto_vel_smart])
-        y_staircase_smart = np.concatenate([pareto_em_smart, [pareto_em_smart[-1]]])
-
-        # Create the figure and axis
-        plt.figure(figsize=(8, 6))
-        plt.step(x_staircase_base, y_staircase_base, where='post', label='Architecture A', color='red')
-        plt.scatter(np.array(pareto_vel_base), np.array(pareto_em_base), color='red')
-        plt.step(x_staircase_smart, y_staircase_smart, where='post', label='Architecture B', color='green')
-        plt.scatter(np.array(pareto_vel_smart), np.array(pareto_em_smart), color='green')
-
-        # Set plot labels and title
-        plt.xlabel('Velocity [m/s]')
-        plt.ylabel('-CO2 emissions [mg/s]')
-        plt.title('Comparison between Pareto fronts')
-        plt.legend(fontsize=16)
-        plt.grid(True)
-        if args.save:
-            plt.savefig(f"plots/pareto_comparison_{seed+1}.pdf", format='pdf')
-        else:
-            plt.show()
-        plt.close()

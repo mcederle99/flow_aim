@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Script to reproduce results
-for ((s=1;s<11;s+=1))
+for ((s=1;s<8;s+=6))
 do
   python evaluation_run.py \
   --seed $s \
